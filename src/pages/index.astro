@@ -5,6 +5,7 @@ import { Image } from "astro:assets";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { SITE } from "../config/site";
 import { galleryStats, loadPhotos } from "../lib/photos";
+import SplitFlapBoard from "../components/SplitFlapBoard.astro";
 
 const photos = await loadPhotos();
 const stats = galleryStats(photos);
@@ -38,12 +39,14 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft))
       </p>
     </section>
 
+    <SplitFlapBoard photos={photos} />
+
     {
       showcase.length > 0 && (
         <section class="mt-20" aria-labelledby="recent-heading">
           <div class="border-rule flex items-baseline justify-between gap-6 border-b pb-2">
             <h2 id="recent-heading" class="font-display text-3xl">
-              Recent frames
+              Recent shots
             </h2>
             <a href="/spotting" class="data hover:text-signal transition-colors">
               All {stats.count}

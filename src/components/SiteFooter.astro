@@ -41,29 +41,68 @@ const elsewhere = [
       </li>
     </ul>
 
-    {/* Decorative aviation detail: Zulu (UTC) clock over the home field. */}
-    <p class="data" aria-hidden="true">
-      <span>N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}</span>
-      <span class="text-rule mx-2">/</span>
-      <span data-zulu>--:--:--Z</span>
-    </p>
+    {/* Decorative aviation detail. Local time sits above Zulu the way a clock
+        pair does on a dispatch wall: the one you live by, and the one that is
+        the same everywhere. */}
+    <div class="data md:text-right" aria-hidden="true">
+      <p>N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}</p>
+      <p class="mt-1">
+        <span class="text-rule">LCL</span>
+        <span class="ml-2" data-local>--:--:--</span>
+      </p>
+      <p class="mt-0.5">
+        <span class="text-rule">UTC</span>
+        <span class="ml-2" data-zulu>--:--:--Z</span>
+      </p>
+    </div>
   </div>
 </footer>
 
 <script>
-  // Progressive enhancement: the markup ships a placeholder, and this only
-  // upgrades it if JS runs. Zulu time is what aviation actually uses, so the
-  // clock is deliberately UTC rather than the visitor's local time.
-  const el = document.querySelector<HTMLElement>("[data-zulu]");
+  // Progressive enhancement: the markup ships placeholders, and this only
+  // upgrades them if JS runs.
+  const zulu = document.querySelector<HTMLElement>("[data-zulu]");
+  const local = document.querySelector<HTMLElement>("[data-local]");
 
-  if (el) {
+  if (zulu || local) {
     const pad = (n: number) => String(n).padStart(2, "0");
+
+    /**
+     * The reader's own zone, taken from the browser rather than hardcoded to
+     * his. Everyone gets their own local clock next to Zulu, which is the
+     * pairing that is actually useful: the difference between the two is the
+     * reader's offset, not a number about somebody else.
+     *
+     * Resolved once. It cannot change while the page is open, and asking for
+     * it every second would be wasteful.
+     */
+    const zone = (() => {
+      try {
+        return (
+          new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+            .formatToParts(new Date())
+            .find((part) => part.type === "timeZoneName")?.value ?? ""
+        );
+      } catch {
+        // Some very old engines have no timeZoneName support. The clock is
+        // still correct, it just goes unlabelled.
+        return "";
+      }
+    })();
 
     const tick = () => {
       const now = new Date();
-      el.textContent = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(
-        now.getUTCSeconds(),
-      )}Z`;
+
+      if (zulu) {
+        zulu.textContent = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(
+          now.getUTCSeconds(),
+        )}Z`;
+      }
+
+      if (local) {
+        const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        local.textContent = zone ? `${time} ${zone}` : time;
+      }
     };
 
     tick();

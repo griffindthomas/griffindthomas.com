@@ -1,0 +1,361 @@
+---
+/**
+ * Split-flap departure board.
+ *
+ * The thing that stops this being a widget bolted onto the page is that it is
+ * not decorative text: every row is a photograph in the library, with the
+ * registration read off that airframe, the date the shutter actually fired,
+ * and the field it was shot at. It is a departure board of aircraft he has
+ * personally caught, so it fills out on its own as photos are added.
+ *
+ * Rendered as printed card rather than as a glowing airport screen: paper
+ * flaps, ink characters, a hairline seam across each one. Real Solari boards
+ * are mechanical and matte, which is the version that belongs here.
+ *
+ * The final text is server-rendered into every flap, so with JavaScript off
+ * the board is simply a correctly filled departure board. The flipping is
+ * pure enhancement.
+ */
+import type { Photo } from "../lib/photos";
+
+interface Props {
+  photos: Photo[];
+  /** Rows to show. Past about eight it stops reading as a board. */
+  limit?: number;
+}
+
+const { photos, limit = 6 } = Astro.props;
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+/**
+ * Aircraft names have to survive a fixed module count, so trim them the way a
+ * board would: the manufacturer is the least useful word when every row is an
+ * aircraft, and the marketing name is the second least useful. "Boeing 787-9
+ * Dreamliner" becomes "787-9", "Boeing F/A-18E Super Hornet" becomes
+ * "F/A-18E". Truncating instead would leave "F/A-18E SUPER" on the board.
+ */
+function boardName(aircraft: string): string {
+  const withoutMaker = aircraft.replace(
+    /^(Boeing|Airbus|Embraer|Bombardier|Lockheed(\s+Martin)?|McDonnell\s+Douglas)\s+/i,
+    "",
+  );
+  // The designation is the first token; anything after it is a given name.
+  return withoutMaker.split(/\s+/)[0] ?? withoutMaker;
+}
+
+/**
+ * One row per distinct aircraft, operator and field.
+ *
+ * Six photographs from one airshow would otherwise be six identical rows,
+ * which is a worse board than three varied ones. The most recent frame of
+ * each combination wins, and `photos` arrives newest first.
+ */
+const seen = new Set<string>();
+const chosen: Photo[] = [];
+for (const p of photos) {
+  const where = p.field ? p.field.icao : p.data.location;
+  const key = `${p.data.aircraft}|${p.data.operator}|${where}`;
+  if (seen.has(key)) continue;
+  seen.add(key);
+  chosen.push(p);
+  if (chosen.length >= limit) break;
+}
+
+const rows = chosen.map((p) => {
+  const where = p.field ? p.field.icao : p.data.location.split(",")[0];
+  // Year is deliberately not shown: the board is a recent log, and a year
+  // column would be the same value on every row.
+  const [, m, d] = p.data.shotAt.slice(0, 10).split("-");
+
+  return {
+    values: {
+      date: `${d} ${MONTHS[Number(m) - 1]}`,
+      reg: p.data.registration,
+      type: boardName(p.data.aircraft),
+      operator: p.data.operator,
+      field: where,
+    },
+    // Screen readers get this sentence instead of fifty single characters.
+    summary: [
+      p.data.operator,
+      p.data.aircraft,
+      p.data.registration,
+      `at ${p.placeLong || where}`,
+      p.date,
+    ]
+      .filter(Boolean)
+      .join(", "),
+  };
+});
+
+/**
+ * Module count per column, measured from the content rather than guessed.
+ *
+ * A real board has fixed-width modules, but choosing those widths by hand is
+ * how words end up sliced in half. Taking the longest actual value means the
+ * board is exactly as wide as it needs to be and nothing is ever truncated,
+ * and it stays correct as photos are added.
+ */
+const COLUMNS = (
+  [
+    { id: "date", label: "Date" },
+    { id: "reg", label: "Reg", hideBelow: "md" },
+    { id: "type", label: "Aircraft" },
+    { id: "operator", label: "Operator", hideBelow: "lg" },
+    { id: "field", label: "Field" },
+  ] as const
+).map((col) => ({
+  ...col,
+  width: Math.max(col.label.length, ...rows.map((r) => r.values[col.id].length)),
+}));
+
+const cells = (text: string, width: number) => text.toUpperCase().padEnd(width, " ").split("");
+---
+
+{
+  rows.length > 0 && (
+    <section class="mt-20" aria-labelledby="board-heading">
+      <div class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-2">
+        <h2 id="board-heading" class="font-display text-3xl">
+          Spotting log
+        </h2>
+        <p class="data">
+          <span>Every row is a frame I shot</span>
+          <span class="text-rule mx-2">/</span>
+          <a href="/spotting" class="hover:text-signal transition-colors">
+            The gallery
+            <span class="ml-1" aria-hidden="true">
+              &rarr;
+            </span>
+          </a>
+        </p>
+      </div>
+
+      <div class="board-wrap mt-8">
+        <div class="board" data-board>
+          <div class="board-head" aria-hidden="true">
+            {COLUMNS.map((col) => (
+              <span
+                class="data col-label"
+                data-hide={"hideBelow" in col ? col.hideBelow : undefined}
+                style={`--modules:${col.width}`}
+              >
+                {col.label}
+              </span>
+            ))}
+          </div>
+
+          {rows.map((row) => (
+            <div class="board-row">
+              <span class="sr-only">{row.summary}</span>
+
+              {COLUMNS.map((col) => (
+                <span
+                  class="col"
+                  data-hide={"hideBelow" in col ? col.hideBelow : undefined}
+                  aria-hidden="true"
+                >
+                  {cells(row.values[col.id], col.width).map((ch) => (
+                    <span class="flap" data-flap>
+                      {ch === " " ? " " : ch}
+                    </span>
+                  ))}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* The board is wider than a phone. It scrolls inside its own box rather
+     than making the whole page scroll sideways. */
+  .board-wrap {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .board {
+    --flap-w: 0.95rem;
+    --flap-gap: 2px;
+    display: grid;
+    gap: 0.375rem 1.25rem;
+    min-width: max-content;
+  }
+
+  .board-head,
+  .board-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .col {
+    display: flex;
+    gap: var(--flap-gap);
+    flex-shrink: 0;
+  }
+
+  /* Header labels are sized to the exact width of the module group they sit
+     over, so the two line up. Without this they are spaced by their own text
+     length and drift out of register with the columns below. */
+  .col-label {
+    flex-shrink: 0;
+    width: calc(var(--modules) * var(--flap-w) + (var(--modules) - 1) * var(--flap-gap));
+    color: var(--color-graphite);
+  }
+
+  .flap {
+    /* A physical module: fixed width, so characters do not jitter sideways
+       as they cycle. Tabular figures alone would not do it, since letters
+       vary in width too. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--flap-w);
+    height: 1.45rem;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--color-paper-sunk);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    border-radius: 1px;
+  }
+
+  /* The seam. This one line is most of what makes it read as a split-flap
+     rather than as monospaced text on grey boxes. */
+  .flap::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--color-paper);
+    opacity: 0.9;
+  }
+
+  /* Held mid-flip. Squashing vertically about the seam is what a falling flap
+     looks like, and it costs one transform. */
+  .flap[data-flipping] {
+    transform: scaleY(0.55);
+    color: var(--color-graphite);
+  }
+
+  @media (max-width: 1023px) {
+    [data-hide="lg"] {
+      display: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    [data-hide="md"] {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flap[data-flipping] {
+      transform: none;
+      color: var(--color-ink);
+    }
+  }
+</style>
+
+<script>
+  const board = document.querySelector<HTMLElement>("[data-board]");
+
+  if (board) {
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Landing on the real character is the point, so the deck it cycles
+    // through is the set actually used on the board plus the alphabet.
+    const DECK = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 /-:".split("");
+
+    interface Cell {
+      el: HTMLElement;
+      target: string;
+      /** Changes still to burn before this cell settles. */
+      remaining: number;
+      /** Frame this cell starts moving on. */
+      start: number;
+    }
+
+    /** Position within its own row, so the cascade does not depend on a magic
+     *  row length that breaks the moment a column is added. */
+    const cells: Cell[] = [];
+    const rows = [...board.querySelectorAll<HTMLElement>(".board-row")];
+
+    rows.forEach((row, rowIndex) => {
+      const flaps = [...row.querySelectorAll<HTMLElement>("[data-flap]")];
+      flaps.forEach((el, colIndex) => {
+        cells.push({
+          el,
+          target: el.textContent ?? "",
+          remaining: 6 + Math.floor(Math.random() * 10),
+          // Left to right, top to bottom, the way a real board cascades
+          // rather than every module going at once.
+          start: colIndex * 1.5 + rowIndex * 6,
+        });
+      });
+    });
+
+    function play() {
+      if (calm || cells.length === 0) return;
+
+      let frame = 0;
+      let active = cells.length;
+
+      const tick = () => {
+        frame += 1;
+
+        // Every cell changes on the same cadence, three frames apart, which
+        // is slow enough to read as mechanical rather than as a blur.
+        if (frame % 3 === 0) {
+          for (const cell of cells) {
+            if (cell.remaining <= 0 || frame < cell.start) continue;
+
+            cell.remaining -= 1;
+
+            if (cell.remaining <= 0) {
+              cell.el.textContent = cell.target;
+              cell.el.removeAttribute("data-flipping");
+              active -= 1;
+            } else {
+              cell.el.textContent = DECK[Math.floor(Math.random() * DECK.length)];
+              cell.el.setAttribute("data-flipping", "");
+            }
+          }
+        }
+
+        if (active > 0) requestAnimationFrame(tick);
+      };
+
+      // One loop driving every module, rather than a timer each. With several
+      // hundred modules, that many intervals would fight and drift apart.
+      requestAnimationFrame(tick);
+    }
+
+    // Only run once the board is actually on screen, and only once.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            observer.disconnect();
+            play();
+          }
+        }
+      },
+      { threshold: 0.25 },
+    );
+
+    observer.observe(board);
+  }
+</script>

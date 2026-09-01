@@ -147,29 +147,25 @@ fs.writeFileSync(
 );
 console.log(`${'crest.png'.padEnd(22)} 360px wide silhouette for CSS masking`);
 
-// --- theme-aware SVG icon --------------------------------------------------
+// --- no SVG icon ----------------------------------------------------------
 /*
- * The griffin is raster artwork, so this SVG is a wrapper around the PNG
- * rather than a real vector tracing. It exists for one reason: an SVG favicon
- * can carry a `prefers-color-scheme` rule, and a PNG cannot.
+ * There is deliberately no favicon.svg.
  *
- * That matters because the icon is now transparent. Against a dark tab bar a
- * navy silhouette sits at roughly 1.3:1 and effectively disappears, so under
- * a dark theme the mark is brightened into a mid blue that still reads as the
- * same colour family. Browsers that cannot render an SVG icon fall back to
- * the PNGs above and simply get the navy version.
+ * An earlier version shipped one: a thin SVG wrapping this PNG as a data URI,
+ * so it could carry a `prefers-color-scheme` rule and lighten the navy
+ * against a dark tab bar. It loads and paints perfectly as an ordinary image
+ * and still did not render as a tab icon, because the favicon pipeline is far
+ * stricter than the image pipeline and an `<image>` element inside an SVG
+ * icon is not reliably honoured. Declared first, it won the browser's pick
+ * and then drew nothing, so the tab showed no icon at all.
+ *
+ * A favicon that always renders beats one that adapts and sometimes does not.
+ * The dark-tab-bar contrast is a real but much smaller problem than an
+ * invisible icon, and fixing it properly needs a genuine vector tracing of
+ * the griffin rather than a wrapper.
  */
-const embedded = (await icon(128)).toString('base64');
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <style>
-    /* Multiplies the navy up to about #4278bd, which holds against a dark
-       tab bar while staying recognisably the same blue. */
-    @media (prefers-color-scheme: dark) {
-      image { filter: brightness(3); }
-    }
-  </style>
-  <image href="data:image/png;base64,${embedded}" width="128" height="128"/>
-</svg>
-`;
-fs.writeFileSync(path.join(PUBLIC, 'favicon.svg'), svg);
-console.log(`${'favicon.svg'.padEnd(22)} ${(svg.length / 1024).toFixed(1)} KB, dark-theme aware`);
+const staleSvg = path.join(PUBLIC, 'favicon.svg');
+if (fs.existsSync(staleSvg)) {
+  fs.rmSync(staleSvg);
+  console.log(`${'favicon.svg'.padEnd(22)} removed (does not render as a tab icon)`);
+}

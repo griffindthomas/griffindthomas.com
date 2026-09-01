@@ -29,3 +29,9 @@ pnpm-debug.log*
 # photo drop folder: originals stay in Lightroom/OneDrive, the processed
 # copies in src/content/photos are what ship
 photos-inbox/
+
+# Flight path showpiece: built and working, but Griffin does not want it on
+# the site. Ignored rather than merely uncommitted so that a `git add -A`
+# cannot sweep it into a push by accident. Remove this line only when he
+# asks for it specifically.
+src/components/FlightPath.astro
