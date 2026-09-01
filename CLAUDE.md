@@ -58,6 +58,33 @@ contain dots.
 - `locals.runtime.cf` -> `Astro.request.cf`
 - `locals.runtime.caches` -> the global `caches`
 
+### Outbound fetch from Workers: shared egress IPs
+
+Workers make outbound requests from IP addresses **shared with other
+Cloudflare customers**. A third-party API's per-IP rate limit can therefore
+be exhausted by traffic that has nothing to do with this site.
+
+Observed in production on `/api/adsb.json` while local dev worked perfectly:
+
+```
+adsb.lol        HTTP 429  (rate limited)
+airplanes.live  HTTP 403  (forbidden)
+adsb.fi         HTTP 200
+```
+
+Edge caching does not rescue this - there is no successful response to cache.
+Hence the `PROVIDERS` array: failures are expected, not a bug. Never assume a
+public API that works from a laptop will work from a Worker; verify in
+production.
+
+`?debug=1` on `/api/adsb.json` reports per-provider status codes. It bypasses
+the cache in both directions and exposes nothing secret.
+
+A direct browser-side fetch would sidestep shared egress entirely (each
+visitor spends their own IP's quota), but **adsb.lol sends no
+`Access-Control-Allow-Origin` header**, so that is not available for it.
+Re-check CORS per provider before relying on that approach.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

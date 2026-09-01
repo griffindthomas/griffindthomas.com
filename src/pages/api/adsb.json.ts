@@ -20,21 +20,56 @@ export const prerender = false;
 
 const CACHE_SECONDS = 15;
 
-/** adsb.lol is primary: verified working, no key required. */
-const PRIMARY = (lat: number, lon: number, dist: number) =>
-  `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${dist}`;
+interface Provider {
+  id: string;
+  /** Build the query URL. Radius is in nautical miles. */
+  url: (lat: number, lon: number, dist: number) => string;
+}
 
 /**
- * airplanes.live is the fallback. It 403s requests without a real
- * User-Agent, so one is always sent. Radius is a bare third path segment
- * in nautical miles, capped upstream at 250.
+ * Providers are tried in order until one succeeds.
+ *
+ * All of these speak the ADSBExchange v2 response shape, which is what makes
+ * a single normaliser sufficient. To add Griffin's own receiver later, append
+ * an entry here (or unshift it to make it primary) and implement its
+ * response shape in `normalise` if it differs - the radar component consumes
+ * this route's normalised output and never learns where the data came from.
+ *
+ * Known behaviour from production testing:
+ *   - adsb.lol      429s from Cloudflare's shared egress IPs (see NOTE below)
+ *   - airplanes.live 403s from Cloudflare egress even with a real User-Agent
+ *   - adsb.fi       responds 200
+ *
+ * NOTE: Workers egress from IPs shared with other Cloudflare customers, so a
+ * provider's per-IP rate limit can be exhausted by unrelated traffic. That is
+ * why this list exists and why failures here are expected rather than a bug.
  */
-const FALLBACK = (lat: number, lon: number, dist: number) =>
-  `https://api.airplanes.live/v2/point/${lat}/${lon}/${dist}`;
+const PROVIDERS: Provider[] = [
+  {
+    id: 'adsb.lol',
+    url: (lat, lon, dist) => `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${dist}`,
+  },
+  {
+    id: 'adsb.fi',
+    url: (lat, lon, dist) =>
+      `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${dist}`,
+  },
+  {
+    id: 'airplanes.live',
+    url: (lat, lon, dist) => `https://api.airplanes.live/v2/point/${lat}/${lon}/${dist}`,
+  },
+];
 
 const USER_AGENT = 'griffindthomas.com (personal planespotting site)';
 
-const ATTRIBUTION = 'Live traffic via adsb.lol - ODbL 1.0';
+/**
+ * ODbL 1.0 requires attributing the actual source, so this follows whichever
+ * provider answered rather than naming a fixed one.
+ */
+const attributionFor = (source: string | null): string =>
+  source && source !== 'cache'
+    ? `Live traffic via ${source} - ODbL 1.0`
+    : 'Live traffic via community ADS-B feeders - ODbL 1.0';
 
 /** Sky Harbor - the default scope centre. */
 const DEFAULT_LAT = 33.4342;
@@ -64,7 +99,8 @@ export interface Aircraft {
 
 export interface AdsbPayload {
   status: 'ok' | 'unavailable';
-  source: 'adsb.lol' | 'airplanes.live' | 'cache' | null;
+  /** Provider id that answered, `'cache'` when serving stale, else null. */
+  source: string | null;
   now: number;
   center: { lat: number; lon: number; dist: number };
   count: number;
@@ -213,22 +249,23 @@ export const GET: APIRoute = async ({ url, locals }) => {
   let source: AdsbPayload['source'] = null;
   const attempts: Array<{ provider: string; status: number | null; error: string | null }> = [];
 
-  const primary = await fetchJson(PRIMARY(lat, lon, dist));
-  attempts.push({ provider: 'adsb.lol', status: primary.status, error: primary.error });
-
-  if (primary.ok) {
-    aircraft = normalise(primary.data);
-    source = 'adsb.lol';
-  } else {
-    const fallback = await fetchJson(FALLBACK(lat, lon, dist));
+  for (const provider of PROVIDERS) {
+    const outcome = await fetchJson(provider.url(lat, lon, dist));
     attempts.push({
-      provider: 'airplanes.live',
-      status: fallback.status,
-      error: fallback.error,
+      provider: provider.id,
+      status: outcome.status,
+      error: outcome.error,
     });
-    if (fallback.ok) {
-      aircraft = normalise(fallback.data);
-      source = 'airplanes.live';
+
+    if (outcome.ok) {
+      const parsed = normalise(outcome.data);
+      // A provider that answers 200 with an unparseable or empty body is
+      // treated as a failure so the next one still gets a turn.
+      if (parsed.length > 0) {
+        aircraft = parsed;
+        source = provider.id;
+        break;
+      }
     }
   }
 
@@ -242,7 +279,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
       center: { lat, lon, dist },
       count: aircraft.length,
       aircraft,
-      attribution: ATTRIBUTION,
+      attribution: attributionFor(source),
     };
     lastGood = { payload, at: Date.now() };
   } else if (lastGood && Date.now() - lastGood.at < STALE_LIMIT_MS) {
@@ -258,7 +295,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
       center: { lat, lon, dist },
       count: 0,
       aircraft: [],
-      attribution: ATTRIBUTION,
+      attribution: attributionFor(null),
     };
   }
 
