@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PhotoGallery from "../components/PhotoGallery.astro";
+import SplitFlapBoard from "../components/SplitFlapBoard.astro";
 import { buildFilters, galleryStats, loadPhotos } from "../lib/photos";
 
 const photos = await loadPhotos();
@@ -45,6 +46,23 @@ const readout = [
         ))
       }
     </dl>
+
+    {
+      photos.length > 0 && (
+        <section class="mt-16" aria-labelledby="board-heading">
+          <div class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-2">
+            <h2 id="board-heading" class="font-display text-3xl">
+              Latest catches
+            </h2>
+            <p class="data">Newest first, one row per type</p>
+          </div>
+
+          <div class="mt-8">
+            <SplitFlapBoard photos={photos} limit={10} />
+          </div>
+        </section>
+      )
+    }
 
     {
       photos.length > 0 ? (

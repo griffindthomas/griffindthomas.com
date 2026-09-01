@@ -1,0 +1,160 @@
+---
+/**
+ * One run of split-flap modules.
+ *
+ * This is the only component that renders flaps and the only one that
+ * animates them: its script scans the whole document for flap groups, so a
+ * page can use any number of these, in any layout, and they all cascade from
+ * one animation loop rather than one timer each.
+ *
+ * The final text is always server-rendered into the modules. With JavaScript
+ * off, or under reduced motion, this is simply text in boxes. The flipping is
+ * pure enhancement, never the thing that puts the words there.
+ */
+interface Props {
+  text: string;
+  /**
+   * Pad to exactly this many modules and keep them as one unbreakable run.
+   * Used by the departure board, where every row must occupy the same grid
+   * whether or not there is anything to put in it. Omit for free text, which
+   * is grouped by word so a wrap never splits one down the middle.
+   */
+  width?: number;
+  /** Extra classes on the wrapper, for per-context module sizing. */
+  class?: string;
+  /** Ordering hint so a grid of these cascades in reading order. */
+  group?: number;
+}
+
+const { text, width, class: className = "", group = 0 } = Astro.props;
+
+const upper = text.toUpperCase();
+
+/**
+ * Fixed width means one padded run. Free text is split on spaces into
+ * separate runs, with a narrow spacer between them: real boards do not wrap,
+ * but a photo caption in a grid column has to.
+ */
+const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) : [upper.padEnd(width, " ")];
+---
+
+<span class:list={["sf", className]} data-flap-group data-group-order={group}>
+  {
+    runs.map((run, i) => (
+      <>
+        {i > 0 && <span class="sf-space" aria-hidden="true" />}
+        <span class="sf-word">
+          {run.split("").map((ch) => (
+            <span class="flap" data-flap>
+              {ch === " " ? " " : ch}
+            </span>
+          ))}
+        </span>
+      </>
+    ))
+  }
+</span>
+
+<script>
+  /**
+   * Drives every flap group on the page from a single animation loop.
+   *
+   * One timer per module would mean several hundred of them on the gallery,
+   * all drifting apart from each other. One loop keeps the whole page on the
+   * same cadence, which is what makes separate groups look like one machine.
+   */
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-flap-group]")];
+
+  if (groups.length > 0) {
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Landing on the real character is the point, so the deck it cycles
+    // through is the set actually used plus the alphabet.
+    const DECK = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 /-:.".split("");
+
+    interface Cell {
+      el: HTMLElement;
+      target: string;
+      /** Changes still to burn before this module settles. */
+      remaining: number;
+      /** Frame this module starts moving on. */
+      start: number;
+    }
+
+    let cells: Cell[] = [];
+    let running = false;
+    let frame = 0;
+
+    const tick = () => {
+      let active = 0;
+
+      // Every module changes on the same cadence, a few frames apart, which
+      // reads as mechanical rather than as a blur.
+      for (const cell of cells) {
+        if (cell.remaining <= 0) continue;
+        active += 1;
+      }
+
+      if (active === 0) {
+        running = false;
+        cells = [];
+        return;
+      }
+
+      frame += 1;
+      if (frame % 3 === 0) {
+        for (const cell of cells) {
+          if (cell.remaining <= 0 || frame < cell.start) continue;
+          cell.remaining -= 1;
+
+          if (cell.remaining <= 0) {
+            cell.el.textContent = cell.target;
+            cell.el.removeAttribute("data-flipping");
+          } else {
+            cell.el.textContent = DECK[Math.floor(Math.random() * DECK.length)];
+            cell.el.setAttribute("data-flipping", "");
+          }
+        }
+      }
+
+      requestAnimationFrame(tick);
+    };
+
+    function enqueue(group: HTMLElement) {
+      const order = Number(group.dataset.groupOrder ?? 0);
+      const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
+
+      flaps.forEach((el, i) => {
+        cells.push({
+          el,
+          target: el.textContent ?? "",
+          remaining: 6 + Math.floor(Math.random() * 10),
+          // Left to right within a group, and later groups start later, so a
+          // grid of these cascades in reading order.
+          start: frame + i * 1.5 + order * 5,
+        });
+      });
+
+      if (!running) {
+        running = true;
+        requestAnimationFrame(tick);
+      }
+    }
+
+    if (!calm) {
+      // Only animate a group once it is actually on screen, and only once.
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            observer.unobserve(entry.target);
+            enqueue(entry.target as HTMLElement);
+          }
+        },
+        { threshold: 0.2 },
+      );
+
+      for (const group of groups) observer.observe(group);
+    }
+  }
+</script>

@@ -95,6 +95,7 @@ const payload = photos.map((p, i) => ({
       <li
         class="shot"
         style={`--ar:${p.aspect.toFixed(4)}`}
+        data-slug={p.slug}
         data-operator={p.data.operator}
         data-aircraft={p.data.aircraft}
         data-place={p.data.airport || p.data.location}
@@ -563,6 +564,23 @@ const payload = photos.map((p, i) => ({
           // rest of the page for free. Worth using instead of rebuilding.
           dlg.showModal();
         });
+      }
+
+      /**
+       * Deep link: /spotting?photo=<slug> opens straight into that frame.
+       *
+       * This is what makes a photograph on the home page linkable to itself
+       * rather than to the gallery in general. Any active filter is applied
+       * first, and a slug that is filtered out or unknown simply does not
+       * open, which is better than opening the wrong photo.
+       */
+      const wanted = new URLSearchParams(location.search).get("photo");
+      if (wanted) {
+        const target = items.find((li) => li.dataset.slug === wanted && !li.hidden);
+        if (target) {
+          show(items.filter((x) => !x.hidden).indexOf(target));
+          dlg.showModal();
+        }
       }
 
       dlg.querySelector("[data-lb-prev]")?.addEventListener("click", () => show(current - 1));

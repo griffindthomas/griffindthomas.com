@@ -249,3 +249,90 @@ canvas {
 .copy li + li {
   margin-top: 0.4em;
 }
+
+/* ---------------------------------------------------------------------------
+   Split-flap
+   ---------------------------------------------------------------------------
+   Global rather than scoped because two components render these modules: the
+   departure board on /spotting and the aircraft names on the home page. One
+   set of rules, sized per context by overriding the three custom properties.
+   --------------------------------------------------------------------------- */
+
+.sf {
+  --flap-w: 0.95rem;
+  --flap-h: 1.45rem;
+  --flap-fs: 0.75rem;
+  --flap-gap: 2px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--flap-gap);
+  vertical-align: baseline;
+}
+
+/* Words are kept whole so a wrapping line never splits one mid-way. A board
+   cell passes a fixed width instead and becomes a single unbreakable group. */
+.sf-word {
+  display: inline-flex;
+  gap: var(--flap-gap);
+  flex-shrink: 0;
+}
+
+/* The space between words: an empty module's width, without a module drawn. */
+.sf-space {
+  width: calc(var(--flap-w) * 0.45);
+  flex-shrink: 0;
+}
+
+.flap {
+  /* A physical module. Fixed width, so characters do not jitter sideways as
+     they cycle; tabular figures alone would not do it, since letters vary. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--flap-w);
+  height: var(--flap-h);
+  flex-shrink: 0;
+  position: relative;
+  background: var(--color-paper-sunk);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--flap-fs);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  border-radius: 1px;
+}
+
+/* The seam. This one line is most of what makes it read as a split-flap
+   rather than as monospaced text on grey boxes. */
+.flap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-paper);
+  opacity: 0.9;
+}
+
+/* Held mid-flip. Squashing about the seam is what a falling flap looks like,
+   and it costs one transform. */
+.flap[data-flipping] {
+  transform: scaleY(0.55);
+  color: var(--color-graphite);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flap[data-flipping] {
+    transform: none;
+    color: var(--color-ink);
+  }
+}
+
+/* Smaller modules for a photo card, where an aircraft name has to sit inside
+   a third of the page rather than across a departure board. */
+.sf-card {
+  --flap-w: 0.72rem;
+  --flap-h: 1.1rem;
+  --flap-fs: 0.5625rem;
+}

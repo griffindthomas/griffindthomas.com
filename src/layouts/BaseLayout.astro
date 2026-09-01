@@ -44,13 +44,18 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-    {/* Griffin crest on a transparent ground, cropped to the bird because the
-        full logo with its swoosh is 1.8:1 and dissolves at 16px.
+    {/* Griffin crest, cropped to the bird because the full logo with its
+        swoosh is 1.8:1 and dissolves at 16px.
 
-        Raster only, and deliberately so: an SVG icon was tried and did not
-        render as a tab icon, which left the tab blank because browsers pick
-        the SVG first. See scripts/make-favicons.mjs for the detail.
-        Regenerate every size with `node scripts/make-favicons.mjs`. */}
+        The SVG is a real vector tracing and is listed first on purpose: it is
+        the only one of these that adapts, going navy on a light browser and
+        paper on a dark one. An earlier attempt did this by wrapping the PNG
+        in an SVG `<image>`, which renders as an ordinary image but not as a
+        tab icon, and left the tab blank. Geometry has no such problem.
+
+        The PNGs are the fallback and stay navy. Regenerate everything with
+        `node scripts/make-favicons.mjs`. */}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />

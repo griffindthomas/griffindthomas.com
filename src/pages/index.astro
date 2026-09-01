@@ -5,7 +5,7 @@ import { Image } from "astro:assets";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { SITE } from "../config/site";
 import { galleryStats, loadPhotos } from "../lib/photos";
-import SplitFlapBoard from "../components/SplitFlapBoard.astro";
+import SplitFlapText from "../components/SplitFlapText.astro";
 
 const photos = await loadPhotos();
 const stats = galleryStats(photos);
@@ -39,8 +39,6 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft))
       </p>
     </section>
 
-    <SplitFlapBoard photos={photos} />
-
     {
       showcase.length > 0 && (
         <section class="mt-20" aria-labelledby="recent-heading">
@@ -59,7 +57,7 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft))
           <ul class="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-3">
             {showcase.map((p, i) => (
               <li>
-                <a href="/spotting" class="group block">
+                <a href={`/spotting?photo=${p.slug}`} class="group block">
                   <div class="bg-paper-sunk aspect-[3/2] overflow-hidden">
                     <Image
                       src={p.data.image}
@@ -72,8 +70,8 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft))
                     />
                   </div>
 
-                  <p class="border-rule font-display mt-3 border-t pt-3 text-lg">
-                    {p.data.aircraft}
+                  <p class="border-rule mt-3 border-t pt-3">
+                    <SplitFlapText text={p.data.aircraft} class="sf-card" group={i} />
                   </p>
                   <p class="data mt-1">
                     <span>{p.data.operator}</span>

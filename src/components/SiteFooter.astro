@@ -16,7 +16,12 @@ const elsewhere = [
   <div
     class="mx-auto flex max-w-[88rem] flex-col gap-6 px-5 py-8 sm:px-8 md:flex-row md:items-baseline md:justify-between lg:px-12"
   >
-    <p class="data">&copy; {year} {SITE.name}</p>
+    <div class="data">
+      <p>&copy; {year} {SITE.name}</p>
+      <p class="mt-1" aria-hidden="true">
+        N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}
+      </p>
+    </div>
 
     <ul class="flex flex-wrap gap-x-5 gap-y-2">
       {
@@ -45,12 +50,11 @@ const elsewhere = [
         pair does on a dispatch wall: the one you live by, and the one that is
         the same everywhere. */}
     <div class="data md:text-right" aria-hidden="true">
-      <p>N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}</p>
-      <p class="mt-1">
+      <p>
         <span class="text-rule">LCL</span>
         <span class="ml-2" data-local>--:--:--</span>
       </p>
-      <p class="mt-0.5">
+      <p class="mt-1">
         <span class="text-rule">UTC</span>
         <span class="ml-2" data-zulu>--:--:--Z</span>
       </p>

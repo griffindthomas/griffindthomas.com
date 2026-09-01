@@ -17,13 +17,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import { Potrace } from 'potrace';
 
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PUBLIC = path.join(ROOT, 'public');
 const SRC = path.join(ROOT, 'brand', 'griffin.png');
 
-/** Must match --color-chart in src/styles/global.css. */
+/** Must match --color-chart and --color-paper in src/styles/global.css. */
 const NAVY = { r: 0x16, g: 0x28, b: 0x3f };
+const NAVY_HEX = '#16283f';
+const PAPER_HEX = '#faf8f4';
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 
 /** Share of the icon's width left as margin on each side. */
@@ -147,25 +150,71 @@ fs.writeFileSync(
 );
 console.log(`${'crest.png'.padEnd(22)} 360px wide silhouette for CSS masking`);
 
-// --- no SVG icon ----------------------------------------------------------
+// --- theme-aware vector icon ----------------------------------------------
 /*
- * There is deliberately no favicon.svg.
+ * A real vector tracing of the griffin, which is what finally makes a
+ * theme-aware favicon possible.
  *
- * An earlier version shipped one: a thin SVG wrapping this PNG as a data URI,
- * so it could carry a `prefers-color-scheme` rule and lighten the navy
- * against a dark tab bar. It loads and paints perfectly as an ordinary image
- * and still did not render as a tab icon, because the favicon pipeline is far
- * stricter than the image pipeline and an `<image>` element inside an SVG
- * icon is not reliably honoured. Declared first, it won the browser's pick
- * and then drew nothing, so the tab showed no icon at all.
+ * The previous attempt wrapped this PNG in an SVG `<image>` so it could carry
+ * a `prefers-color-scheme` rule. That renders fine as an ordinary image and
+ * not at all as a tab icon, because the favicon pipeline will not follow an
+ * embedded raster reference, so the tab came out blank. Actual `<path>`
+ * geometry has no such problem: the fill is just a CSS property, and swapping
+ * it under a media query is exactly what SVG icons are for.
  *
- * A favicon that always renders beats one that adapts and sometimes does not.
- * The dark-tab-bar contrast is a real but much smaller problem than an
- * invisible icon, and fixing it properly needs a genuine vector tracing of
- * the griffin rather than a wrapper.
+ * So the mark is navy on a light browser and paper on a dark one, and the
+ * PNGs below remain the fallback for anything that will not take an SVG icon.
  */
-const staleSvg = path.join(PUBLIC, 'favicon.svg');
-if (fs.existsSync(staleSvg)) {
-  fs.rmSync(staleSvg);
-  console.log(`${'favicon.svg'.padEnd(22)} removed (does not render as a tab icon)`);
+function tracePath(buffer) {
+  return new Promise((resolve, reject) => {
+    const tracer = new Potrace({
+      threshold: 128,
+      // Drops specks smaller than this many pixels. The artwork is clean, so
+      // this only guards against stray anti-aliasing crumbs.
+      turdSize: 2,
+      optCurve: true,
+      optTolerance: 0.2,
+    });
+    tracer.loadImage(buffer, (err) => {
+      if (err) return reject(err);
+      const svg = tracer.getSVG();
+      const d = [...svg.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]);
+      const size = svg.match(/width="(\d+)" height="(\d+)"/);
+      if (!d.length || !size) return reject(new Error('trace produced no geometry'));
+      resolve({ d, width: Number(size[1]), height: Number(size[2]) });
+    });
+  });
+}
+
+{
+  const art = await trimmedAlpha({ cropToGriffin: true });
+  // potrace wants black-on-white, so composite the silhouette onto white
+  // first. The shape is in the alpha channel, so flattening is what turns it
+  // into something with an edge to trace.
+  const flat = await sharp(art.buffer).flatten({ background: '#ffffff' }).png().toBuffer();
+  const { d, width, height } = await tracePath(flat);
+
+  // Square the frame with the same inset the raster icons use, so the vector
+  // and the PNGs are visually identical.
+  const side = Math.max(width, height) / (1 - INSET * 2);
+  const dx = (side - width) / 2;
+  const dy = (side - height) / 2;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${side.toFixed(1)} ${side.toFixed(1)}">
+  <style>
+    path { fill: ${NAVY_HEX}; }
+    @media (prefers-color-scheme: dark) {
+      path { fill: ${PAPER_HEX}; }
+    }
+  </style>
+  <g transform="translate(${dx.toFixed(1)} ${dy.toFixed(1)})">
+${d.map((shape) => `    <path d="${shape}"/>`).join('\n')}
+  </g>
+</svg>
+`;
+  fs.writeFileSync(path.join(PUBLIC, 'favicon.svg'), svg);
+  console.log(
+    `${'favicon.svg'.padEnd(22)} ${(svg.length / 1024).toFixed(1)} KB, ` +
+      `${d.length} traced path${d.length === 1 ? '' : 's'}, light and dark`,
+  );
 }
