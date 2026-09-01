@@ -204,6 +204,18 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       // Big enough to actually see. A flap is only about 20px tall, so a
       // small angle is a sub-pixel change; this is a swing, not a nudge.
       const MAX_TILT = 38;
+      /**
+       * Floor on the swing, and the reason this works at all.
+       *
+       * Scaling purely by velocity looked right on paper and produced about
+       * two degrees in practice, which is invisible. How much scroll arrives
+       * per event varies enormously between a wheel notch, a trackpad glide
+       * and a touch flick, so velocity alone cannot be trusted to land
+       * anywhere near the intended range. Any scroll at all now moves the
+       * modules by at least this much, and speed only decides how much
+       * further past it they swing.
+       */
+      const MIN_TILT = 16;
       let lastY = window.scrollY;
       let lastT = performance.now();
       let tilt = 0;
@@ -211,7 +223,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
 
       const settle = () => {
         // Ease back to flat, and stop asking for frames once it is there.
-        tilt *= 0.82;
+        tilt *= 0.88;
         if (Math.abs(tilt) < 0.05) {
           tilt = 0;
           settling = false;
@@ -230,13 +242,19 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           if (dt < 8) return;
 
           const dy = window.scrollY - lastY;
+          // A scroll event that did not move the page is not a scroll.
+          // Returning without touching lastY/lastT keeps the next real move
+          // measured against where it actually started.
+          if (dy === 0) return;
+
           lastY = window.scrollY;
           lastT = now;
 
-          // Pixels per millisecond, scaled into degrees and clamped so a
-          // flung scroll does not fold the modules flat.
-          const velocity = dy / dt;
-          tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, velocity * 22));
+          // Direction decides which way they swing; speed only decides how
+          // far past the floor they go.
+          const speed = Math.abs(dy) / dt;
+          const amount = Math.min(MAX_TILT, Math.max(MIN_TILT, speed * 30));
+          tilt = dy > 0 ? amount : -amount;
           document.documentElement.style.setProperty("--jig", tilt.toFixed(2));
 
           // Same reasoning as the flip backstop: the easing runs on frames,
