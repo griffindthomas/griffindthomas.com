@@ -31,7 +31,9 @@
   --color-signal: #d6451f;
   --color-signal-soft: #f5e0d8;
 
-  /* Secondary data only - never for emphasis. */
+  /* Second data series only, never for emphasis. Held in reserve until
+     something genuinely needed two series: it now carries long course on the
+     swim chart, against international orange for short course. */
   --color-chart: #2b4c7e;
 
   --font-display: "Newsreader Variable", ui-serif, Georgia, serif;

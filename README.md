@@ -79,8 +79,19 @@ producing a broken filter. To use a new one, add it to
 | Links, email address, site name | `src/config/site.ts` |
 | Projects | `src/content/projects/*.md` |
 | Resume | `src/pages/resume.astro`, and `public/griffin-thomas-resume.pdf` |
-| Swim times | `data/swims-raw.tsv`, then `node scripts/import-swims.mjs` |
+| Swim times | `data/swims-raw.tsv` (short course) and `data/swims-raw-lcm.tsv` (long course), then `node scripts/import-swims.mjs` |
 | Log posts | `src/content/log/*.md`. The nav link appears on its own once one exists |
+
+### Adding swim times
+
+Paste from SwimCloud into the file for that course, four columns: time, flag,
+meet, date. The flag column can be empty. Then run the importer.
+
+**Keep the courses in separate files.** The importer works out the 50 from the
+100 by how long the swim took, which is safe because the gap is wide. It cannot
+tell yards from metres that way: a slow short course 100 and a fast long course
+100 are both about 1:10. The file a time came from is what makes its course a
+fact rather than a guess.
 
 ---
 

@@ -328,18 +328,38 @@
           status.textContent = "";
           status.className = "status";
         }, 1800);
+
+        // A save changes what git has to publish, so the button has to be told.
+        // Deliberately not a full load(): re-rendering the cards would rip the
+        // focus out from under whatever field is being edited next.
+        refreshStatus();
+      }
+
+      function applyStatus({ photoCount, gaps, changed }) {
+        $("#summary").textContent =
+          `${photoCount} photos / ${gaps.length} incomplete / ` +
+          `${changed.length} unpublished change${changed.length === 1 ? "" : "s"}`;
+        $("#publish").disabled = changed.length === 0;
+      }
+
+      async function refreshStatus() {
+        try {
+          applyStatus(await (await fetch("/api/status")).json());
+        } catch {
+          // A failed status poll must never block editing. The next save
+          // tries again, and load() resets it on refresh.
+        }
       }
 
       async function load() {
         const state = await (await fetch("/api/state")).json();
         AIRPORTS = state.airports;
 
-        const pending = state.git.changed.length;
-        $("#summary").textContent =
-          `${state.photos.length} photos / ${state.gaps.length} incomplete / ` +
-          `${pending} unpublished change${pending === 1 ? "" : "s"}`;
-
-        $("#publish").disabled = pending === 0;
+        applyStatus({
+          photoCount: state.photos.length,
+          gaps: state.gaps,
+          changed: state.git.changed,
+        });
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
 
         // One listener per card, not per input.

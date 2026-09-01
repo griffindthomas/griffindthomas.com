@@ -13,8 +13,12 @@ import swims from "../data/swims.json";
 // Read from the swim data rather than typed in. A personal best on a resume
 // that disagrees with the chart two pages away is the kind of mistake nobody
 // catches until an interviewer does.
-const best50 = swims.summary["50 Breast"].best.time;
-const best100 = swims.summary["100 Breast"].best.time;
+//
+// Both courses are quoted and both are labelled. An unlabelled breaststroke
+// time is ambiguous to anyone who swims, and quoting only the yards would hide
+// the long course record entirely.
+const scy = swims.summary.SCY;
+const lcm = swims.summary.LCM;
 const raceCount = swims.swims.length;
 
 const sections = [
@@ -74,7 +78,9 @@ const sections = [
         meta: "2021 to 2026",
         detail: "Breaststroke, short course yards",
         points: [
-          `${raceCount} recorded races. Best times ${best50} in the 50 and ${best100} in the 100`,
+          `${raceCount} recorded races across both courses`,
+          `Short course bests ${scy["50 Breast"].best.time} in the 50 and ${scy["100 Breast"].best.time} in the 100`,
+          `Long course bests ${lcm["50 Breast"].best.time} in the 50 and ${lcm["100 Breast"].best.time} in the 100`,
         ],
       },
     ],

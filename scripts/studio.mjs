@@ -145,6 +145,19 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // --- git status only -------------------------------------------------
+    // Separate from /api/state so a save can refresh the Publish button
+    // without re-sending every photo and re-rendering the cards underneath
+    // whatever field is being edited.
+    if (req.method === 'GET' && url.pathname === '/api/status') {
+      const status = await git('status', '--porcelain');
+      return json(res, 200, {
+        changed: status.ok ? status.out.split('\n').filter(Boolean) : [],
+        gaps: findGaps(),
+        photoCount: readLibrary().length,
+      });
+    }
+
     // --- save one photo --------------------------------------------------
     if (req.method === 'POST' && url.pathname === '/api/save') {
       const { slug, patch } = JSON.parse((await readBody(req)).toString('utf8'));
