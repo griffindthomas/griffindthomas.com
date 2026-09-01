@@ -168,6 +168,38 @@ file URL is `file:///C:/...` with three slashes. Use
 `pathToFileURL(process.argv[1]).href`. The naive form fails silently, so the
 CLI block simply never runs.
 
+## The accent colour is small text, so it has a contrast floor
+
+`--color-signal` is used for nav active state, filter chips and data plates,
+all of which are 11px mono. That makes it SMALL TEXT under WCAG, so it needs
+4.5:1 against `--color-paper` (#faf8f4).
+
+The original international orange (#d6451f) was 4.19:1 and failed. It is now
+chestnut #8a4429 at 6.74:1, with deep navy #1b2f4d at 12.69:1 as the second
+series. Measure before changing either; do not pick an accent by eye.
+
+The two accents are close in lightness (1.88:1 between them), which is where
+colour-blind readers lose a warm brown against a navy. The swim chart therefore
+distinguishes its series by marker shape as well as hue, and every series is
+labelled in text. Keep that if a third series ever appears.
+
+## Favicons are generated, not hand-edited
+
+`public/favicon.svg` is the source. After editing it run:
+
+```
+node scripts/make-favicons.mjs
+```
+
+which rewrites `favicon.ico`, `favicon-32.png`, `favicon-192.png` and
+`apple-touch-icon.png`. They are committed, so this is not part of the build.
+
+The rasterising is not just for old browsers: the SVG sets the monogram in a
+font, and browser chrome rendering an SVG favicon does not reliably have the
+same serif. Baking the letterforms into pixels makes the tab icon consistent.
+The `.ico` is a PNG wrapped in a minimal ICO container, which every browser
+still requesting `/favicon.ico` accepts.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build
