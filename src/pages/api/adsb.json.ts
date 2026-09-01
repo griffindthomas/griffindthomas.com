@@ -133,8 +133,21 @@ function normalise(raw: unknown): Aircraft[] {
   return out;
 }
 
-/** Fetch with a hard timeout so one slow provider cannot hang the request. */
-async function fetchJson(url: string, timeoutMs = 6000): Promise<unknown | null> {
+interface FetchOutcome {
+  ok: boolean;
+  status: number | null;
+  data: unknown | null;
+  error: string | null;
+}
+
+/**
+ * Fetch with a hard timeout so one slow provider cannot hang the request.
+ *
+ * Returns the failure reason rather than swallowing it: an upstream that
+ * works locally but not on the edge is otherwise impossible to diagnose,
+ * since the only symptom is a generic "unavailable".
+ */
+async function fetchJson(url: string, timeoutMs = 6000): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -142,10 +155,17 @@ async function fetchJson(url: string, timeoutMs = 6000): Promise<unknown | null>
       signal: controller.signal,
       headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
     });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
+    if (!res.ok) {
+      return { ok: false, status: res.status, data: null, error: `HTTP ${res.status}` };
+    }
+    return { ok: true, status: res.status, data: await res.json(), error: null };
+  } catch (err) {
+    return {
+      ok: false,
+      status: null,
+      data: null,
+      error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -174,27 +194,40 @@ export const GET: APIRoute = async ({ url, locals }) => {
   const cfContext = (locals as { cfContext?: { waitUntil?: (p: Promise<unknown>) => void } })
     ?.cfContext;
 
+  // `?debug=1` surfaces why the providers failed. It bypasses the cache in
+  // both directions so a diagnostic response can never be served to a
+  // real visitor, and it exposes nothing secret - only upstream status codes.
+  const debug = url.searchParams.get('debug') === '1';
+
   const cacheKey = new Request(
     `https://adsb-cache.internal/v1?lat=${lat}&lon=${lon}&dist=${dist}`,
     { method: 'GET' },
   );
 
-  if (cacheStore) {
+  if (cacheStore && !debug) {
     const hit = await cacheStore.match(cacheKey);
     if (hit) return hit;
   }
 
   let aircraft: Aircraft[] = [];
   let source: AdsbPayload['source'] = null;
+  const attempts: Array<{ provider: string; status: number | null; error: string | null }> = [];
 
   const primary = await fetchJson(PRIMARY(lat, lon, dist));
-  if (primary) {
-    aircraft = normalise(primary);
+  attempts.push({ provider: 'adsb.lol', status: primary.status, error: primary.error });
+
+  if (primary.ok) {
+    aircraft = normalise(primary.data);
     source = 'adsb.lol';
   } else {
     const fallback = await fetchJson(FALLBACK(lat, lon, dist));
-    if (fallback) {
-      aircraft = normalise(fallback);
+    attempts.push({
+      provider: 'airplanes.live',
+      status: fallback.status,
+      error: fallback.error,
+    });
+    if (fallback.ok) {
+      aircraft = normalise(fallback.data);
       source = 'airplanes.live';
     }
   }
@@ -229,20 +262,22 @@ export const GET: APIRoute = async ({ url, locals }) => {
     };
   }
 
-  const response = new Response(JSON.stringify(payload), {
+  const body = debug ? { ...payload, debug: { attempts } } : payload;
+
+  const response = new Response(JSON.stringify(body), {
     status: 200,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       // Only cache successful lookups, and let the edge serve slightly stale
       // data while it revalidates rather than stalling the client.
       'Cache-Control':
-        payload.status === 'ok'
+        payload.status === 'ok' && !debug
           ? `public, max-age=${CACHE_SECONDS}, stale-while-revalidate=60`
           : 'no-store',
     },
   });
 
-  if (cacheStore && payload.status === 'ok') {
+  if (cacheStore && payload.status === 'ok' && !debug) {
     const put = cacheStore.put(cacheKey, response.clone());
     if (cfContext?.waitUntil) cfContext.waitUntil(put);
     else await put;
