@@ -44,14 +44,13 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-    {/* GT monogram. The ICO wraps a PNG so the letterforms are pixels rather
-        than font-dependent text; the SVG is offered for displays that want to
-        scale it. Regenerate the bitmaps with `node scripts/make-favicons.mjs`
-        after editing favicon.svg. */}
+    {/* Griffin crest, navy on paper. Cropped to the bird for the tab, because
+        the full logo with its swoosh is 1.8:1 and dissolves at 16px.
+        Regenerate every size with `node scripts/make-favicons.mjs`. */}
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE_NAME} />

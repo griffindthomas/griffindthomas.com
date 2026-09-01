@@ -175,30 +175,49 @@ all of which are 11px mono. That makes it SMALL TEXT under WCAG, so it needs
 4.5:1 against `--color-paper` (#faf8f4).
 
 The original international orange (#d6451f) was 4.19:1 and failed. It is now
-chestnut #8a4429 at 6.74:1, with deep navy #1b2f4d at 12.69:1 as the second
-series. Measure before changing either; do not pick an accent by eye.
+chestnut #7e3d23 at 7.68:1, with deep navy #16283f at 14.05:1 as the second
+series and the colour of the crest. Measure before changing either; do not
+pick an accent by eye.
 
-The two accents are close in lightness (1.88:1 between them), which is where
+The two accents are close in lightness (1.83:1 between them), which is where
 colour-blind readers lose a warm brown against a navy. The swim chart therefore
 distinguishes its series by marker shape as well as hue, and every series is
 labelled in text. Keep that if a third series ever appears.
 
-## Favicons are generated, not hand-edited
+## Brand assets are generated, not hand-edited
 
-`public/favicon.svg` is the source. After editing it run:
+`brand/griffin.png` is the source of truth, committed so this works on any
+machine. After changing it or either accent colour, run:
 
 ```
 node scripts/make-favicons.mjs
 ```
 
-which rewrites `favicon.ico`, `favicon-32.png`, `favicon-192.png` and
-`apple-touch-icon.png`. They are committed, so this is not part of the build.
+which rewrites every icon size plus `public/crest.png`. Outputs are committed,
+so this is not part of the build.
 
-The rasterising is not just for old browsers: the SVG sets the monogram in a
-font, and browser chrome rendering an SVG favicon does not reliably have the
-same serif. Baking the letterforms into pixels makes the tab icon consistent.
+Three things about the artwork worth knowing:
+
+**The shape lives entirely in the alpha channel** (RGB is pure black). That is
+why recolouring is exact rather than a chroma-key guess, and why the same file
+can be handed to CSS `mask-image` and tinted at runtime.
+
+**The tab icon is cropped to the griffin, dropping the swoosh.** The full logo
+is about 1.8:1, so squaring it leaves the bird at half the frame with a thin
+streak eating the rest, which resolves to an unreadable smudge at 16px. The
+crop point was measured: column coverage holds above 110px of vertical extent
+across the body and collapses to 19px immediately after 56% of the width.
+
+**The nav crest is masked, not a coloured PNG**, so it follows the palette
+tokens and recolours on hover from one file. It is wrapped in `@supports`:
+without that, a browser ignoring `mask` paints the fallback background across
+the whole box and the crest becomes a navy rectangle beside the name.
+
 The `.ico` is a PNG wrapped in a minimal ICO container, which every browser
 still requesting `/favicon.ico` accepts.
+
+There is no `favicon.svg`: the griffin is raster only, so shipping one would
+mean inventing a vector that is not the real artwork.
 
 ## Documentation
 

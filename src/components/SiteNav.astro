@@ -27,22 +27,18 @@ const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
     aria-label="Primary"
     class="mx-auto flex max-w-[88rem] flex-col gap-2 px-5 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-8 sm:py-4 lg:px-12"
   >
-    {/* Monogram plus wordmark. The mark is set in Newsreader rather than
-        drawn, so it is the same letterforms as the headings and it stays
-        crisp at any size. This is the ruled variant of the tab icon: a
-        hairline box works on paper but vanishes at 16px in a browser tab,
-        which is why the favicon is the solid version instead. */}
+    {/* Crest plus wordmark.
+        The wordmark is set in Newsreader rather than taken from the supplied
+        logo art, whose lettering is a geometric sans. Three typefaces would
+        fight, and that one pulls towards a sports badge rather than the rest
+        of this site. The griffin carries the identity; the type stays the
+        site's own. */}
     <a
       href="/"
-      class="group flex items-center gap-2.5 transition-colors"
+      class="group flex items-center gap-3 transition-colors"
       aria-label="Griffin Thomas, home"
     >
-      <span
-        class="border-rule text-ink group-hover:border-signal group-hover:text-signal font-display flex size-7 shrink-0 items-center justify-center border pt-px text-sm leading-none transition-colors"
-        aria-hidden="true"
-      >
-        GT
-      </span>
+      <span class="crest" aria-hidden="true"></span>
       <span
         class="font-display group-hover:text-signal text-xl leading-none tracking-tight transition-colors"
       >
@@ -72,3 +68,36 @@ const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
     </ul>
   </nav>
 </header>
+
+<style>
+  /* The crest is painted with `mask-image`, not shipped as a coloured PNG.
+     The artwork carries its whole shape in the alpha channel, so masking a
+     background colour through it means the mark follows the palette tokens
+     and can change on hover, from one file with no second asset to keep in
+     sync. Same trick a coloured icon font would use, without the font. */
+  /* Hidden by default and only revealed where masking actually works. Without
+     the guard, a browser that ignores `mask` paints the fallback background
+     across the whole box and the crest becomes a navy rectangle next to the
+     name. Dropping the mark is a far better failure than that; the wordmark
+     still carries the identity. */
+  .crest {
+    display: none;
+    width: 2.75rem;
+    height: 1.55rem;
+    flex-shrink: 0;
+  }
+
+  @supports ((-webkit-mask-image: url("/crest.png")) or (mask-image: url("/crest.png"))) {
+    .crest {
+      display: block;
+      background-color: var(--color-chart);
+      -webkit-mask: url("/crest.png") center / contain no-repeat;
+      mask: url("/crest.png") center / contain no-repeat;
+      transition: background-color 160ms ease;
+    }
+
+    .group:hover .crest {
+      background-color: var(--color-signal);
+    }
+  }
+</style>

@@ -32,15 +32,16 @@
 
      It replaces international orange (#d6451f), which measured only 4.19:1
      against paper and so FAILED WCAG AA for the small mono text it is used
-     in throughout the nav and the data plates. Chestnut is 6.74:1. Any
+     in throughout the nav and the data plates. Chestnut is 7.68:1. Any
      future change to this token has to clear 4.5:1 for the same reason. */
-  --color-signal: #8a4429;
-  --color-signal-soft: #eee0d6;
+  --color-signal: #7e3d23;
+  --color-signal-soft: #ecdcd1;
 
   /* Second data series only, never for emphasis. Held in reserve until
      something genuinely needed two series: it now carries long course on the
-     swim chart, against chestnut for short course. Deep navy at 12.69:1. */
-  --color-chart: #1b2f4d;
+     swim chart, against chestnut for short course, and it is also the
+     colour of the griffin crest. Deep navy at 14.05:1. */
+  --color-chart: #16283f;
 
   --font-display: "Newsreader Variable", ui-serif, Georgia, serif;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
