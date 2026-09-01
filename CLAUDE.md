@@ -64,18 +64,36 @@ Workers make outbound requests from IP addresses **shared with other
 Cloudflare customers**. A third-party API's per-IP rate limit can therefore
 be exhausted by traffic that has nothing to do with this site.
 
-Observed in production on `/api/adsb.json` while local dev worked perfectly:
+Observed in production on `/api/adsb.json` while local dev worked perfectly.
+**All three community feeds fail from the Worker**, including one that
+returns 200 from a laptop on the same request:
 
 ```
-adsb.lol        HTTP 429  (rate limited)
-airplanes.live  HTTP 403  (forbidden)
-adsb.fi         HTTP 200
+                 from laptop      from Worker
+adsb.lol         200              429  (rate limited)
+adsb.fi          200              403  (forbidden)
+airplanes.live   403 (no UA)      403  (forbidden)
 ```
 
-Edge caching does not rescue this - there is no successful response to cache.
-Hence the `PROVIDERS` array: failures are expected, not a bug. Never assume a
-public API that works from a laptop will work from a Worker; verify in
-production.
+Edge caching does not rescue this - there is no successful response to cache,
+and adding more providers of the same kind does not either. **The Worker-proxy
+approach does not work for free community ADS-B APIs.** Treat this as settled;
+do not re-litigate it by adding a fourth similar provider.
+
+Viable paths for the live radar (Phase 4), best first:
+
+1. **Griffin's own receiver** (Pi + RTL-SDR, West Seattle). Expose `dump1090`'s
+   `aircraft.json` through a free Cloudflare Tunnel and have the Worker read
+   that. No third-party limits, and "fed by my own antenna" is a better story
+   than proxying someone else's feed.
+2. **OpenSky Network** with registered OAuth2 credentials - actual auth rather
+   than anonymous per-IP limits.
+3. **Scheduled fetch from non-Cloudflare egress** (e.g. a GitHub Actions cron)
+   writing into KV, which the Worker then serves.
+
+Browser-side fetch sidesteps shared egress entirely but needs CORS, and
+**adsb.lol sends no `Access-Control-Allow-Origin`**. Re-check per provider
+before relying on it.
 
 `?debug=1` on `/api/adsb.json` reports per-provider status codes. It bypasses
 the cache in both directions and exposes nothing secret.

@@ -35,14 +35,25 @@ interface Provider {
  * response shape in `normalise` if it differs - the radar component consumes
  * this route's normalised output and never learns where the data came from.
  *
- * Known behaviour from production testing:
- *   - adsb.lol      429s from Cloudflare's shared egress IPs (see NOTE below)
- *   - airplanes.live 403s from Cloudflare egress even with a real User-Agent
- *   - adsb.fi       responds 200
+ * PRODUCTION STATUS: all three currently fail from Cloudflare Workers, even
+ * though adsb.lol and adsb.fi both return 200 for the identical request from
+ * an ordinary machine:
  *
- * NOTE: Workers egress from IPs shared with other Cloudflare customers, so a
- * provider's per-IP rate limit can be exhausted by unrelated traffic. That is
- * why this list exists and why failures here are expected rather than a bug.
+ *   adsb.lol       429 (rate limited)
+ *   adsb.fi        403
+ *   airplanes.live 403
+ *
+ * Workers egress from IPs shared with other Cloudflare customers, and these
+ * feeds throttle or block that range. Edge caching cannot help - there is no
+ * successful response to cache - and adding a fourth similar provider will
+ * not either.
+ *
+ * So this route currently and correctly serves `status: "unavailable"` in
+ * production. That is a known limitation, not a bug to re-fix here. The real
+ * fix is a data source that does not depend on Cloudflare egress reputation;
+ * see CLAUDE.md for the ranked options (Griffin's own receiver via Cloudflare
+ * Tunnel is first). This list stays because it costs nothing, still works in
+ * local dev, and is the seam those options plug into.
  */
 const PROVIDERS: Provider[] = [
   {
