@@ -27,5 +27,17 @@ export default defineConfig({
   // No `output` set: every route is prerendered to static by default.
   // The adapter exists so individual routes can opt in to running in the
   // Worker at request time via `export const prerender = false`.
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    // Transform images at BUILD time, not per request.
+    //
+    // The adapter defaults to `cloudflare-binding`, which serves every photo
+    // through `/_image?href=...` and resizes it in the Worker on each request.
+    // Measured on the live site that produced a 204 KB webp from a 60 KB
+    // source JPEG, and spent a Worker invocation to do it. The gallery is
+    // fully prerendered, so there is nothing to decide at request time.
+    //
+    // `compile` bakes the variants into `_astro/` as ordinary static files
+    // served straight from the CDN.
+    imageService: 'compile',
+  }),
 });
