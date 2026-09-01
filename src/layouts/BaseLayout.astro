@@ -16,9 +16,11 @@ interface Props {
   image?: string;
   /** Drop the default page padding, for pages that manage their own layout. */
   bare?: boolean;
+  /** Keep the page out of search results and the sitemap. */
+  noindex?: boolean;
 }
 
-const { title, description, image, bare = false } = Astro.props;
+const { title, description, image, bare = false, noindex = false } = Astro.props;
 
 // Astro.site is set in astro.config.mjs, so these resolve to absolute URLs -
 // required for OG tags, which reject relative paths.
@@ -40,6 +42,7 @@ const fullTitle = title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />

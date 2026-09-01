@@ -18,7 +18,13 @@ export default defineConfig({
   trailingSlash: 'never',
   build: { format: 'file' },
 
-  integrations: [react(), mdx(), sitemap()],
+  integrations: [
+    react(),
+    mdx(),
+    // /type is a throwaway font comparison and must not be indexed. It is also
+    // marked noindex in the page itself; this keeps it out of the sitemap.
+    sitemap({ filter: (page) => !page.includes('/type') }),
+  ],
 
   vite: {
     plugins: [tailwindcss()],
