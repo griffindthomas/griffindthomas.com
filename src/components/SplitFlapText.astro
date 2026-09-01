@@ -74,6 +74,8 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
 
     interface Cell {
       el: HTMLElement;
+      /** The group this module belongs to, so a group knows when it is done. */
+      owner: HTMLElement;
       target: string;
       /** Changes still to burn before this module settles. */
       remaining: number;
@@ -84,6 +86,18 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
     let cells: Cell[] = [];
     let running = false;
     let frame = 0;
+
+    /** Modules still in flight per group, so a group is never restarted while
+     *  it is already shuffling. */
+    const busy = new Map<HTMLElement, number>();
+
+    function finish(cell: Cell) {
+      cell.el.textContent = cell.target;
+      cell.el.removeAttribute("data-flipping");
+      const left = (busy.get(cell.owner) ?? 1) - 1;
+      if (left <= 0) busy.delete(cell.owner);
+      else busy.set(cell.owner, left);
+    }
 
     const tick = () => {
       let active = 0;
@@ -108,8 +122,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           cell.remaining -= 1;
 
           if (cell.remaining <= 0) {
-            cell.el.textContent = cell.target;
-            cell.el.removeAttribute("data-flipping");
+            finish(cell);
           } else {
             cell.el.textContent = DECK[Math.floor(Math.random() * DECK.length)];
             cell.el.setAttribute("data-flipping", "");
@@ -133,8 +146,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       for (const cell of cells) {
         if (cell.remaining <= 0) continue;
         cell.remaining = 0;
-        cell.el.textContent = cell.target;
-        cell.el.removeAttribute("data-flipping");
+        finish(cell);
       }
     }
 
@@ -142,9 +154,16 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       const order = Number(group.dataset.groupOrder ?? 0);
       const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
 
+      busy.set(group, flaps.length);
+
       flaps.forEach((el, i) => {
         cells.push({
           el,
+          owner: group,
+          // Read the SETTLED text, never a character mid-flip. A group is
+          // only ever enqueued when it is not already busy, which is what
+          // guarantees this is the real value and not a random letter that
+          // would then get baked in as the target.
           target: el.textContent ?? "",
           remaining: 6 + Math.floor(Math.random() * 10),
           // Left to right within a group, and later groups start later, so a
@@ -182,7 +201,9 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
      * would be an obvious way to make scrolling stutter.
      */
     if (!calm) {
-      const MAX_TILT = 9;
+      // Big enough to actually see. A flap is only about 20px tall, so a
+      // small angle is a sub-pixel change; this is a swing, not a nudge.
+      const MAX_TILT = 38;
       let lastY = window.scrollY;
       let lastT = performance.now();
       let tilt = 0;
@@ -215,7 +236,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           // Pixels per millisecond, scaled into degrees and clamped so a
           // flung scroll does not fold the modules flat.
           const velocity = dy / dt;
-          tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, velocity * 6));
+          tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, velocity * 22));
           document.documentElement.style.setProperty("--jig", tilt.toFixed(2));
 
           // Same reasoning as the flip backstop: the easing runs on frames,
@@ -238,13 +259,23 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
     }
 
     if (!calm) {
-      // Only animate a group once it is actually on screen, and only once.
+      /*
+       * Re-shuffles every time a group comes back into view, so scrolling
+       * away and back replays it rather than leaving a board that only ever
+       * moved once.
+       *
+       * The group stays observed, and the `busy` guard is what makes that
+       * safe: without it, a group scrolled past quickly could be enqueued
+       * again while still mid-flip, and the second pass would capture a
+       * random in-flight character as its target and freeze it there.
+       */
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
             if (!entry.isIntersecting) continue;
-            observer.unobserve(entry.target);
-            enqueue(entry.target as HTMLElement);
+            const group = entry.target as HTMLElement;
+            if (busy.has(group)) continue;
+            enqueue(group);
           }
         },
         { threshold: 0.2 },

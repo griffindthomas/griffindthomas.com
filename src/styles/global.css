@@ -270,8 +270,6 @@ canvas {
   flex-wrap: wrap;
   gap: var(--flap-gap);
   vertical-align: baseline;
-  /* Gives the flaps somewhere to hinge towards when they rattle. */
-  perspective: 260px;
 }
 
 /* Words are kept whole so a wrapping line never splits one mid-way. A board
@@ -280,6 +278,11 @@ canvas {
   display: inline-flex;
   gap: var(--flap-gap);
   flex-shrink: 0;
+  /* Perspective has to sit on the DIRECT parent of the flaps. On .sf it
+     never reached them, because .sf-word sits in between with the default
+     flat transform-style, and the hinge collapsed into an invisible
+     sub-pixel squash. */
+  perspective: 300px;
 }
 
 /* The space between words: an empty module's width, without a module drawn. */
@@ -305,18 +308,30 @@ canvas {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   border-radius: 1px;
-  /* Two independent motions on one transform: `--jig` is the loose rattle
-     driven by scrolling, `--squash` is the flip itself. Keeping them as
-     separate custom properties means neither one clobbers the other. */
-  transform: rotateX(calc(var(--jig, 0) * 1deg)) scaleY(var(--squash, 1));
-  transition: transform 170ms ease-out;
+  /* Three independent motions on one transform, each with its own custom
+     property so none of them clobbers the others: `--jig` is the rattle
+     driven by scrolling, `--dir` is this module's share of it, and
+     `--squash` is the flip. */
+  transform: rotateX(calc(var(--jig, 0) * var(--dir, 1) * 1deg))
+    scaleY(var(--squash, 1));
+  transition: transform 190ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
   will-change: transform;
 }
 
-/* Alternate the hinge direction along a word so the row rattles rather than
-   tilting as one rigid block. */
-.sf-word .flap:nth-child(even) {
-  transform: rotateX(calc(var(--jig, 0) * -1deg)) scaleY(var(--squash, 1));
+/* Each module gets a different share of the swing, so a row rattles like a
+   line of loose flaps instead of tilting as one rigid block. Four phases is
+   enough to look uncorrelated without looking random. */
+.sf-word .flap {
+  --dir: 1;
+}
+.sf-word .flap:nth-child(4n + 2) {
+  --dir: -0.8;
+}
+.sf-word .flap:nth-child(4n + 3) {
+  --dir: 0.55;
+}
+.sf-word .flap:nth-child(4n + 4) {
+  --dir: -1;
 }
 
 /* The seam. This one line is most of what makes it read as a split-flap
@@ -342,8 +357,7 @@ canvas {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flap,
-  .sf-word .flap:nth-child(even) {
+  .flap {
     transform: none;
     transition: none;
   }
