@@ -33,10 +33,17 @@ interface Swim {
 
 const swims = data.swims as Swim[];
 
-/** Orange is short course, blue is long course, everywhere on this chart. */
+/**
+ * Chestnut is short course, navy is long course, everywhere on this chart.
+ *
+ * Marker SHAPE carries the same distinction, so the two series stay separable
+ * without relying on hue: a deep warm brown and a deep navy sit close in
+ * lightness, which is exactly where colour-blind readers lose them. Circles
+ * and squares are also just how a technical drawing distinguishes two series.
+ */
 const COURSES = [
-  { id: "SCY", label: "Short course yards", colour: "var(--color-signal)" },
-  { id: "LCM", label: "Long course metres", colour: "var(--color-chart)" },
+  { id: "SCY", label: "Short course yards", colour: "var(--color-signal)", square: false },
+  { id: "LCM", label: "Long course metres", colour: "var(--color-chart)", square: true },
 ];
 
 /**
@@ -50,7 +57,10 @@ const COURSES = [
  */
 const markers = [
   { date: data.summary.moveDate as string, label: "moved to NH", dy: 10 },
-  { date: "2024-05-01", label: "shoulder surgery", dy: 26 },
+  // Sits inside the racing gap, after the last meet before it: he swam the
+  // Eastern Zone Super Sectional on 2024-05-16 and did not race again until
+  // 2024-11-03.
+  { date: "2024-06-01", label: "shoulder surgery", dy: 26 },
 ];
 
 const W = 860;
@@ -185,7 +195,7 @@ const swimcloud = profile("swimcloud");
               {p.series.map((s) => (
                 <span class="data flex flex-wrap items-baseline gap-x-2">
                   <span
-                    class="inline-block size-2 shrink-0 rounded-full"
+                    class:list={["inline-block size-2 shrink-0", !s.square && "rounded-full"]}
                     style={`background:${s.colour}`}
                     aria-hidden="true"
                   />
@@ -307,18 +317,35 @@ const swimcloud = profile("swimcloud");
                 <g>
                   {s.rows
                     .filter((r) => !r.isPB)
-                    .map((r) => (
-                      <circle
-                        cx={x(r.date)}
-                        cy={s.y(r.seconds)}
-                        r="2.5"
-                        fill="none"
-                        stroke={s.colour}
-                        stroke-width="1"
-                        opacity="0.35"
-                        data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
-                      />
-                    ))}
+                    .map((r) =>
+                      s.square ? (
+                        // Sized by area rather than by radius: a square drawn
+                        // to the same half-width as a circle's radius reads
+                        // noticeably heavier than it.
+                        <rect
+                          x={x(r.date) - 2.2}
+                          y={s.y(r.seconds) - 2.2}
+                          width="4.4"
+                          height="4.4"
+                          fill="none"
+                          stroke={s.colour}
+                          stroke-width="1"
+                          opacity="0.35"
+                          data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
+                        />
+                      ) : (
+                        <circle
+                          cx={x(r.date)}
+                          cy={s.y(r.seconds)}
+                          r="2.5"
+                          fill="none"
+                          stroke={s.colour}
+                          stroke-width="1"
+                          opacity="0.35"
+                          data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
+                        />
+                      ),
+                    )}
 
                   <path
                     d={s.path}
@@ -328,18 +355,32 @@ const swimcloud = profile("swimcloud");
                     stroke-linejoin="round"
                   />
 
-                  {s.pbs.map((r) => (
-                    <circle
-                      cx={x(r.date)}
-                      cy={s.y(r.seconds)}
-                      r="3.5"
-                      fill={s.colour}
-                      tabindex="0"
-                      role="button"
-                      aria-label={`${s.label} personal best ${r.time} at ${r.meet}, ${r.date}`}
-                      data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
-                    />
-                  ))}
+                  {s.pbs.map((r) =>
+                    s.square ? (
+                      <rect
+                        x={x(r.date) - 3.1}
+                        y={s.y(r.seconds) - 3.1}
+                        width="6.2"
+                        height="6.2"
+                        fill={s.colour}
+                        tabindex="0"
+                        role="button"
+                        aria-label={`${s.label} personal best ${r.time} at ${r.meet}, ${r.date}`}
+                        data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
+                      />
+                    ) : (
+                      <circle
+                        cx={x(r.date)}
+                        cy={s.y(r.seconds)}
+                        r="3.5"
+                        fill={s.colour}
+                        tabindex="0"
+                        role="button"
+                        aria-label={`${s.label} personal best ${r.time} at ${r.meet}, ${r.date}`}
+                        data-swim={`${r.time} / ${s.id} / ${r.meet} / ${r.date}`}
+                      />
+                    ),
+                  )}
 
                   <text
                     x={x(s.best.date) - 8}

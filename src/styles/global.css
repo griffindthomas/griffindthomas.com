@@ -26,15 +26,21 @@
   --color-graphite: #5a5a57;
   --color-rule: #d8d2c6;
 
-  /* Signal. International orange. Reserved for live/active state and the
-     single most important number in any given block. */
-  --color-signal: #d6451f;
-  --color-signal-soft: #f5e0d8;
+  /* Signal. Chestnut: a deep burnt orange that has gone most of the way to
+     brown. Reserved for live/active state and the single most important
+     number in any given block.
+
+     It replaces international orange (#d6451f), which measured only 4.19:1
+     against paper and so FAILED WCAG AA for the small mono text it is used
+     in throughout the nav and the data plates. Chestnut is 6.74:1. Any
+     future change to this token has to clear 4.5:1 for the same reason. */
+  --color-signal: #8a4429;
+  --color-signal-soft: #eee0d6;
 
   /* Second data series only, never for emphasis. Held in reserve until
      something genuinely needed two series: it now carries long course on the
-     swim chart, against international orange for short course. */
-  --color-chart: #2b4c7e;
+     swim chart, against chestnut for short course. Deep navy at 12.69:1. */
+  --color-chart: #1b2f4d;
 
   --font-display: "Newsreader Variable", ui-serif, Georgia, serif;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;

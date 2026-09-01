@@ -27,12 +27,27 @@ const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
     aria-label="Primary"
     class="mx-auto flex max-w-[88rem] flex-col gap-2 px-5 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-8 sm:py-4 lg:px-12"
   >
+    {/* Monogram plus wordmark. The mark is set in Newsreader rather than
+        drawn, so it is the same letterforms as the headings and it stays
+        crisp at any size. This is the ruled variant of the tab icon: a
+        hairline box works on paper but vanishes at 16px in a browser tab,
+        which is why the favicon is the solid version instead. */}
     <a
       href="/"
-      class="font-display hover:text-signal text-xl leading-none tracking-tight transition-colors"
+      class="group flex items-center gap-2.5 transition-colors"
       aria-label="Griffin Thomas, home"
     >
-      Griffin Thomas
+      <span
+        class="border-rule text-ink group-hover:border-signal group-hover:text-signal font-display flex size-7 shrink-0 items-center justify-center border pt-px text-sm leading-none transition-colors"
+        aria-hidden="true"
+      >
+        GT
+      </span>
+      <span
+        class="font-display group-hover:text-signal text-xl leading-none tracking-tight transition-colors"
+      >
+        Griffin Thomas
+      </span>
     </a>
 
     {/* Wraps onto its own line below the wordmark on narrow screens, which
