@@ -22,9 +22,9 @@ const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PUBLIC = path.join(ROOT, 'public');
 const SRC = path.join(ROOT, 'brand', 'griffin.png');
 
-/** Must match --color-chart and --color-paper in src/styles/global.css. */
+/** Must match --color-chart in src/styles/global.css. */
 const NAVY = { r: 0x16, g: 0x28, b: 0x3f };
-const PAPER = { r: 0xfa, g: 0xf8, b: 0xf4 };
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 
 /** Share of the icon's width left as margin on each side. */
 const INSET = 0.08;
@@ -57,12 +57,13 @@ async function trimmedAlpha({ cropToGriffin = false } = {}) {
 }
 
 /**
- * The griffin recoloured, on a paper square.
+ * The griffin recoloured, on a transparent square.
  *
- * Paper rather than transparent on purpose: a navy silhouette on a
- * transparent ground disappears completely against a dark browser theme, and
- * a tab icon that is invisible for half the world's users is not an icon.
- * A paper field is also what the whole site is.
+ * Transparent means the icon picks up whatever the browser paints behind it,
+ * which is the point, but it also means a navy silhouette has almost no
+ * contrast against a dark tab bar. That is handled by `favicon.svg` below,
+ * which lightens the mark under `prefers-color-scheme: dark`. These PNGs are
+ * the fallback for anything that cannot render an SVG icon.
  */
 async function icon(size) {
   const art = await trimmedAlpha({ cropToGriffin: true });
@@ -85,7 +86,7 @@ async function icon(size) {
     .toBuffer();
 
   return sharp({
-    create: { width: size, height: size, channels: 4, background: PAPER },
+    create: { width: size, height: size, channels: 4, background: TRANSPARENT },
   })
     .composite([{ input: navy, gravity: 'center' }])
     .png({ compressionLevel: 9 })
@@ -146,10 +147,29 @@ fs.writeFileSync(
 );
 console.log(`${'crest.png'.padEnd(22)} 360px wide silhouette for CSS masking`);
 
-// The GT monogram this replaces was a vector; the griffin is raster only, so
-// there is no honest favicon.svg to ship any more.
-const oldSvg = path.join(PUBLIC, 'favicon.svg');
-if (fs.existsSync(oldSvg)) {
-  fs.rmSync(oldSvg);
-  console.log(`${'favicon.svg'.padEnd(22)} removed (no vector source for the griffin)`);
-}
+// --- theme-aware SVG icon --------------------------------------------------
+/*
+ * The griffin is raster artwork, so this SVG is a wrapper around the PNG
+ * rather than a real vector tracing. It exists for one reason: an SVG favicon
+ * can carry a `prefers-color-scheme` rule, and a PNG cannot.
+ *
+ * That matters because the icon is now transparent. Against a dark tab bar a
+ * navy silhouette sits at roughly 1.3:1 and effectively disappears, so under
+ * a dark theme the mark is brightened into a mid blue that still reads as the
+ * same colour family. Browsers that cannot render an SVG icon fall back to
+ * the PNGs above and simply get the navy version.
+ */
+const embedded = (await icon(128)).toString('base64');
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <style>
+    /* Multiplies the navy up to about #4278bd, which holds against a dark
+       tab bar while staying recognisably the same blue. */
+    @media (prefers-color-scheme: dark) {
+      image { filter: brightness(3); }
+    }
+  </style>
+  <image href="data:image/png;base64,${embedded}" width="128" height="128"/>
+</svg>
+`;
+fs.writeFileSync(path.join(PUBLIC, 'favicon.svg'), svg);
+console.log(`${'favicon.svg'.padEnd(22)} ${(svg.length / 1024).toFixed(1)} KB, dark-theme aware`);
