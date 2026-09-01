@@ -93,14 +93,14 @@ const years = [2022, 2023, 2024, 2025, 2026];
 <section class="mt-16" aria-labelledby="swim-heading">
   <div class="border-rule flex items-baseline justify-between border-b pb-2">
     <h2 id="swim-heading" class="font-display text-3xl">Swimming</h2>
-    <p class="data hidden sm:block">{swims.length} swims / 2021—2026</p>
+    <p class="data hidden sm:block">{swims.length} swims / 2021-2026</p>
   </div>
 
   <p class="measure text-graphite mt-5">
-    Breaststroke, short course yards. Every race is plotted — the faint marks are the
-    volume, and the solid line is the record: each personal best holding until it was
-    beaten. Faster is up. The gap after May 2024 is shoulder surgery; both best times
-    came the following December.
+    Breaststroke, short course yards. Every race I have swum is on here. The faint marks
+    are all of them. The solid line is the record, each best holding until it was beaten.
+    Faster is up. The gap after May 2024 is shoulder surgery. Both best times came that
+    December.
   </p>
 
   <div class="mt-10 space-y-12">
@@ -254,7 +254,7 @@ const years = [2022, 2023, 2024, 2025, 2026];
           </svg>
 
           <p class="data mt-2 min-h-[1.2em]" data-readout aria-live="polite">
-            {p.best.time} — {p.best.meet}
+            {p.best.time} / {p.best.meet}
           </p>
         </figure>
       ))
