@@ -32,14 +32,21 @@ npm run clean
 
 ### Running the Worker locally
 
-`wrangler.jsonc` in the repo root is the *source* config. The build generates
-`dist/server/wrangler.json` with the real entrypoint (`main: entry.mjs`,
-`assets.directory: ../client`) - that generated file is what actually runs.
-Pointing `wrangler dev` at the root config instead produces a 500 on every
-on-demand route.
+`wrangler.jsonc` in the repo root is the *source* config. The build also
+generates `dist/server/wrangler.json` (`main: entry.mjs`,
+`assets.directory: ../client`), which is what `astro preview` runs.
 
-The preview server binds to IPv6 only, so use `http://localhost:PORT`;
-`127.0.0.1` will not connect.
+Both work. `npm run preview` and a bare `npx wrangler dev` from the root each
+serve static routes and on-demand routes correctly - verified with a 200 and
+live data on `/api/adsb.json`.
+
+`astro preview` binds to IPv6 only, so use `http://localhost:PORT` with it;
+`127.0.0.1` will not connect. `wrangler dev` binds to both.
+
+**The Worker name in the Cloudflare dashboard must exactly match `name` in
+`wrangler.jsonc` (`griffindthomas`) or the deploy fails.** Note this differs
+from the GitHub repo name (`griffindthomas.com`) - Worker names cannot
+contain dots.
 
 ### Cloudflare runtime API (Astro v6+)
 
