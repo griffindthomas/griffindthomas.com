@@ -12,11 +12,22 @@ const OUT = 'src/data/swims.json';
 
 /**
  * Events are separated by time magnitude, not by position in the file: the
- * 50 tops out at 36.33 and the 100 starts at 58.99, so there is a wide,
- * unambiguous gap. Splitting on a row index would silently mis-assign
- * everything after any future edit to the paste.
+ * 50 tops out at 36.33 and the 100 starts at 58.99, so the gap is wide and
+ * unambiguous. Splitting on a row index would silently mis-assign everything
+ * after any future edit to the paste.
  */
 const SPLIT_SECONDS = 45;
+
+/**
+ * Griffin swam in the Pacific Northwest, then moved to New Hampshire for high
+ * school. Era is derived from the DATE, not from meet names: he travelled to
+ * meets outside whichever region he was living in (Four Corners 2026 was in
+ * Carmel, Indiana; THSC 2022 was in Oregon), so name matching mislabels those.
+ *
+ * The boundary is clean in the data - last PNW meet 2023-08-01, first New
+ * England meet 2023-12-02 - so any date in between works.
+ */
+const MOVE_DATE = '2023-09-01';
 
 /** "1:01.15" or "27.62" -> seconds as a number. */
 function toSeconds(text) {
@@ -25,49 +36,24 @@ function toSeconds(text) {
   return Number(text);
 }
 
-/** Seconds -> the canonical swimming format ("58.99", "1:01.15"). */
-function toTimeText(seconds) {
-  if (seconds < 60) return seconds.toFixed(2);
-  const m = Math.floor(seconds / 60);
-  const s = seconds - m * 60;
-  return `${m}:${s.toFixed(2).padStart(5, '0')}`;
-}
-
-/**
- * Which swimming region the meet belongs to. Griffin swam in the Pacific
- * Northwest before moving to New Hampshire, so this is what lets the chart
- * show the move rather than just a line going down.
- *
- * Anything unmatched stays null - better an unlabelled point than a wrong one.
- */
-const PNW = /\bPN\b|Pacific Northwest|Sea-King|Seattle|SMAC|KING|VAST|BBST|Washington|Western Zone/i;
-const NE = /\bNE\b|NHIAA|New England|EHS|ORHS|Garrison|Bishop Guertin|BG,|Exeter|Ithaca|Providence|CRIM|NSSC/i;
-
-function regionOf(meet) {
-  // Check PNW first: "2022 PN Washington Age Group" matches both otherwise.
-  if (PNW.test(meet)) return 'pnw';
-  if (NE.test(meet)) return 'ne';
-  return null;
-}
-
 const raw = fs.readFileSync(IN, 'utf8');
 
 const rows = raw
   .split(/\r?\n/)
   .filter((line) => line.trim())
   .map((line) => {
-    const [time, flag, meet, date] = line.split('\t');
+    // Column 2 is a SwimCloud marker (relay split / cut / user-submitted).
+    // Deliberately discarded: it says nothing about the swim itself.
+    const [time, , meet, date] = line.split('\t');
     const seconds = toSeconds(time.trim());
+    const iso = new Date(`${date.trim()} UTC`).toISOString().slice(0, 10);
     return {
       event: seconds < SPLIT_SECONDS ? '50 Breast' : '100 Breast',
       time: time.trim(),
       seconds: Number(seconds.toFixed(2)),
-      // Raw SwimCloud marker (X / D1 / U). Meaning unconfirmed, so it is
-      // carried through verbatim rather than interpreted.
-      flag: flag?.trim() || null,
       meet: meet.trim(),
-      date: new Date(`${date.trim()} UTC`).toISOString().slice(0, 10),
-      region: regionOf(meet),
+      date: iso,
+      era: iso < MOVE_DATE ? 'pnw' : 'ne',
     };
   });
 
@@ -94,21 +80,22 @@ for (const event of ['50 Breast', '100 Breast']) {
   };
 }
 
+summary.moveDate = MOVE_DATE;
+
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify({ summary, swims: rows }, null, 2) + '\n');
 
 console.log(`${rows.length} swims -> ${OUT}\n`);
-for (const [event, s] of Object.entries(summary)) {
-  console.log(`${event}`);
+for (const event of ['50 Breast', '100 Breast']) {
+  const s = summary[event];
+  console.log(event);
   console.log(`  swims    ${s.count}`);
   console.log(`  first    ${s.first.time}  (${s.first.date})`);
-  console.log(`  best     ${s.best.time}  (${s.best.date}) — ${s.best.meet}`);
+  console.log(`  best     ${s.best.time}  (${s.best.date}) - ${s.best.meet}`);
   console.log(`  dropped  ${s.dropped}s`);
   console.log(`  PBs      ${rows.filter((r) => r.event === event && r.isPB).length}`);
 }
-
-const unknown = rows.filter((r) => !r.region);
-console.log(`\nregion: pnw ${rows.filter((r) => r.region === 'pnw').length}` +
-  `, ne ${rows.filter((r) => r.region === 'ne').length}` +
-  `, unclassified ${unknown.length}`);
-for (const u of [...new Set(unknown.map((r) => r.meet))]) console.log(`  ? ${u}`);
+console.log(
+  `\nera: pnw ${rows.filter((r) => r.era === 'pnw').length}` +
+    `, ne ${rows.filter((r) => r.era === 'ne').length}`,
+);
