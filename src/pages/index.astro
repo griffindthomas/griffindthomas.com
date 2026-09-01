@@ -1,17 +1,37 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
 
+// Phase 0 placeholder. Its job is to prove the whole pipeline end to end -
+// fonts, design tokens, custom @utility rules, nav, footer, build, deploy,
+// DNS, HTTPS - against the real domain before any feature work lands.
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title="Griffin Thomas"
+  description="Aerospace engineering student at Arizona State University. Planespotter, RC aircraft builder, and lifeguard."
+>
+  <section class="mx-auto max-w-[88rem]">
+    <p class="data">
+      <span>Tempe, Arizona</span>
+      <span class="text-rule mx-2">/</span>
+      <span>N33.4342 W112.0116</span>
+    </p>
+
+    <h1 class="font-display mt-6 text-5xl leading-[0.95] sm:text-7xl lg:text-[7rem]">
+      Griffin Thomas
+    </h1>
+
+    <p class="measure text-graphite mt-8 text-lg leading-relaxed">
+      Aerospace engineering student at Arizona State. Planespotter, RC aircraft builder, and
+      lifeguard. Climbing the Cascade volcanoes one at a time.
+    </p>
+
+    <hr class="rule mt-14" />
+
+    <p class="data mt-6">
+      <span class="text-signal">Site in progress</span>
+      <span class="text-rule mx-2">/</span>
+      <span>More here shortly</span>
+    </p>
+  </section>
+</BaseLayout>

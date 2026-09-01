@@ -1,0 +1,46 @@
+---
+const links = [
+  { href: "/spotting", label: "Spotting" },
+  { href: "/projects", label: "Projects" },
+  { href: "/log", label: "Log" },
+  { href: "/about", label: "About" },
+];
+
+const path = Astro.url.pathname;
+/** Treat nested routes (/projects/foo) as their section being active. */
+const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
+---
+
+<header class="border-rule bg-paper/90 sticky top-0 z-40 border-b backdrop-blur-sm">
+  <nav
+    aria-label="Primary"
+    class="mx-auto flex max-w-[88rem] items-baseline justify-between gap-6 px-5 py-4 sm:px-8 lg:px-12"
+  >
+    <a
+      href="/"
+      class="font-display hover:text-signal text-xl leading-none tracking-tight transition-colors"
+      aria-label="Griffin Thomas — home"
+    >
+      Griffin Thomas
+    </a>
+
+    <ul class="flex items-baseline gap-5 sm:gap-7">
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              class:list={[
+                "data hover:text-ink transition-colors",
+                isActive(link.href) ? "text-signal" : "text-graphite",
+              ]}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>

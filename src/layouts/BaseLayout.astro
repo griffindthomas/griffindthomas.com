@@ -1,0 +1,75 @@
+---
+// Self-hosted fonts. Imported here rather than via @import in global.css so
+// bundling handles them and no request ever leaves for a third-party CDN.
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/global.css";
+
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absolute or site-relative path to the social preview image. */
+  image?: string;
+  /** Drop the default page padding, for pages that manage their own layout. */
+  bare?: boolean;
+}
+
+const { title, description, image, bare = false } = Astro.props;
+
+// Astro.site is set in astro.config.mjs, so these resolve to absolute URLs -
+// required for OG tags, which reject relative paths.
+const canonical = new URL(Astro.url.pathname, Astro.site);
+// Only advertise a preview image once one actually exists: pointing og:image
+// at a missing file makes every share render a broken thumbnail, which is
+// worse than shipping no image at all. Generated in Phase 5.
+const ogImage = image ? new URL(image, Astro.site) : null;
+
+const SITE_NAME = "Griffin Thomas";
+const fullTitle = title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+
+    <meta name="generator" content={Astro.generator} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+
+  <body class="bg-paper text-ink flex min-h-svh flex-col">
+    <a
+      href="#main"
+      class="bg-ink text-paper sr-only px-4 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav />
+
+    <main id="main" class={bare ? "flex-1" : "flex-1 px-5 py-12 sm:px-8 lg:px-12"}>
+      <slot />
+    </main>
+
+    <SiteFooter />
+  </body>
+</html>

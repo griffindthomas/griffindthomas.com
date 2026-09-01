@@ -1,1 +1,174 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   ---------------------------------------------------------------------------
+   The visual system is "ink on paper": aviation sectional charts, Swiss
+   engineering drawings, NASA technical reports. Everything technical on this
+   site - the radar, the split-flap, the flight path - is drawn as if printed,
+   never as a glowing screen. That is what keeps a live data readout from
+   looking like a widget bolted onto an editorial layout.
+
+   Consequences that hold site-wide:
+     - hairline rules, never heavy borders or drop shadows
+     - one signal colour, used sparingly enough that it always means something
+     - all numeric/technical text is mono with tabular figures
+   --------------------------------------------------------------------------- */
+
+@theme {
+  /* Surfaces. Warm off-white; pure #FFF reads cold and makes photos look grey. */
+  --color-paper: #faf8f4;
+  --color-paper-sunk: #f2eee6;
+  --color-paper-edge: #e8e2d6;
+
+  /* Ink. Near-black, never pure #000 - softer against warm paper. */
+  --color-ink: #141414;
+  --color-graphite: #5a5a57;
+  --color-rule: #d8d2c6;
+
+  /* Signal. International orange. Reserved for live/active state and the
+     single most important number in any given block. */
+  --color-signal: #d6451f;
+  --color-signal-soft: #f5e0d8;
+
+  /* Secondary data only - never for emphasis. */
+  --color-chart: #2b4c7e;
+
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Hairline width. Kept as a token so it can be nudged globally if it ever
+     renders too heavy on low-DPI displays. */
+  --rule-width: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Deliberate single-look commitment: this design is paper. Declaring the
+     scheme keeps form controls and scrollbars from being auto-inverted. */
+  color-scheme: light;
+}
+
+html {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  font-size: 1rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Very fine paper grain. Sits under content, costs one tiny inline SVG, and
+   is what stops large flat areas of off-white looking like plain #FFF. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background-color: var(--color-signal);
+  color: var(--color-paper);
+}
+
+/* Visible, on-brand focus ring. Never remove without replacing. */
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: from-font;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Component primitives
+   --------------------------------------------------------------------------- */
+
+/* Technical/numeric text. Tabular figures matter: without them, live-updating
+   readouts (altitude, speed, counts) jitter horizontally as digits change. */
+@utility data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-graphite);
+}
+
+/* A drawn hairline, matching the chart-line language. */
+@utility rule {
+  border: 0;
+  border-top: var(--rule-width) solid var(--color-rule);
+}
+
+/* Comfortable reading measure for prose. */
+@utility measure {
+  max-width: 68ch;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   ---------------------------------------------------------------------------
+   Global safety net. Individual components ALSO branch on reduced motion in
+   JS (the radar stops sweeping, the split-flap snaps to its final characters,
+   the flight path renders fully drawn) because simply making an animation
+   instant is not always the same as making it calm.
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

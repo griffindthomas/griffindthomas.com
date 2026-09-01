@@ -1,0 +1,21 @@
+---
+// Temporary scaffolding so the live site has no broken nav links during
+// Phase 0. Replaced by real content in Phases 2-3; delete this component
+// once the last stub page is gone.
+interface Props {
+  title: string;
+  note: string;
+}
+
+const { title, note } = Astro.props;
+---
+
+<section class="mx-auto max-w-[88rem]">
+  <h1 class="font-display text-4xl sm:text-6xl">{title}</h1>
+  <hr class="rule mt-10" />
+  <p class="data mt-6">
+    <span class="text-signal">In progress</span>
+    <span class="text-rule mx-2">/</span>
+    <span>{note}</span>
+  </p>
+</section>
