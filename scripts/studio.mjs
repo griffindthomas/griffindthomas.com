@@ -67,7 +67,13 @@ function readLibrary() {
 
 async function git(...args) {
   try {
-    const { stdout } = await execFileAsync('git', args, { cwd: ROOT });
+    const { stdout } = await execFileAsync('git', args, {
+      cwd: ROOT,
+      // No terminal is attached to this subprocess. Without this, an expired
+      // credential makes `git push` block forever on a prompt nobody can see
+      // and the Publish button just spins. Fail fast and show the error.
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    });
     return { ok: true, out: stdout.trim() };
   } catch (err) {
     return { ok: false, out: `${err.stdout ?? ''}${err.stderr ?? ''}`.trim() || String(err) };
