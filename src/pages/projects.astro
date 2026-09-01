@@ -1,11 +1,75 @@
 ---
+import { getCollection } from "astro:content";
+
 import BaseLayout from "../layouts/BaseLayout.astro";
-import StubSection from "../components/StubSection.astro";
+
+const projects = (await getCollection("projects", ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
 ---
 
 <BaseLayout
   title="Projects"
-  description="Projects by Griffin Thomas. UAV airframes, a desktop wind tunnel, and an ADS-B ground station."
+  description="Projects by Griffin Thomas. A modular 3D-printed UAV, a desktop wind tunnel, and an ADS-B ground station."
 >
-  <StubSection title="Projects" note="Project write-ups land in Phase 3." />
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">Aerospace engineering / Arizona State</p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Projects</h1>
+      <p class="measure text-graphite mt-6 text-lg leading-relaxed">
+        Things I have built and then found out what was wrong with. Each one has the
+        numbers that matter and an honest note about what still does not work.
+      </p>
+    </header>
+
+    <ol class="mt-16">
+      {
+        projects.map((project, i) => (
+          <li class="border-rule border-t">
+            <a
+              href={`/projects/${project.id}`}
+              class="group grid gap-x-10 gap-y-5 py-10 lg:grid-cols-12"
+            >
+              <div class="data flex items-baseline gap-4 lg:col-span-2 lg:block">
+                <span class="text-signal">{String(i + 1).padStart(2, "0")}</span>
+                <span class="lg:mt-3 lg:block">{project.data.status}</span>
+                <span class="lg:mt-1 lg:block">{project.data.period}</span>
+              </div>
+
+              <div class="lg:col-span-6">
+                <h2 class="font-display group-hover:text-signal text-3xl transition-colors sm:text-4xl">
+                  {project.data.title}
+                </h2>
+                <p class="text-graphite mt-3 max-w-[46ch] leading-relaxed">
+                  {project.data.summary}
+                </p>
+                <p class="data text-signal mt-5">
+                  Read the write-up
+                  <span
+                    class="ml-2 inline-block transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  >
+                    &rarr;
+                  </span>
+                </p>
+              </div>
+
+              {/* Specs sit in the index, not just the detail page: the numbers
+                  are the most interesting thing about each of these, and they
+                  are what makes the list read as engineering rather than as
+                  three cards with headings. */}
+              <dl class="lg:col-span-4">
+                {project.data.specs.map((spec) => (
+                  <div class="border-rule flex items-baseline justify-between gap-4 border-b py-1.5 last:border-b-0">
+                    <dt class="data">{spec.label}</dt>
+                    <dd class="font-mono text-xs tabular-nums">{spec.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
 </BaseLayout>

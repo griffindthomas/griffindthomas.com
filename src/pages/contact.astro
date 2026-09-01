@@ -1,8 +1,138 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import StubSection from "../components/StubSection.astro";
+import { PROFILES, RESUME_PDF, SITE } from "../config/site";
+
+/**
+ * No contact form. A form needs somewhere to send mail from, and on this stack
+ * that means signing up for a third-party sender to save a recruiter one tap
+ * on a mailto link. The address is the honest version, and it is the same
+ * address printed on the resume PDF.
+ */
 ---
 
-<BaseLayout title="Contact" description="Get in touch with Griffin Thomas.">
-  <StubSection title="Contact" note="Links and email land in Phase 3." />
+<BaseLayout
+  title="Contact"
+  description="Get in touch with Griffin Thomas. Email, LinkedIn, Instagram, SwimCloud, and GitHub."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">Tempe, Arizona / Seattle, Washington</p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Contact</h1>
+      <p class="measure text-graphite mt-6 text-lg leading-relaxed">
+        Looking for a summer 2027 aerospace internship in design, test, or
+        manufacturing. Happy to talk about anything on this site, and quicker to
+        reply about aircraft than about most things.
+      </p>
+    </header>
+
+    <section class="border-rule mt-16 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+      <h2 class="data text-signal lg:col-span-2">Email</h2>
+
+      <div class="lg:col-span-10">
+        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-3">
+          <a
+            href={`mailto:${SITE.email}`}
+            class="font-display hover:text-signal text-3xl break-all transition-colors sm:text-4xl"
+          >
+            {SITE.email}
+          </a>
+
+          <button
+            type="button"
+            class="data border-rule hover:border-ink hover:text-ink border px-3 py-1.5 transition-colors"
+            data-copy={SITE.email}
+            hidden
+          >
+            Copy
+          </button>
+        </div>
+
+        <p class="text-graphite mt-4">This is the address on my resume. It reaches me directly.</p>
+      </div>
+    </section>
+
+    <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+      <h2 class="data text-signal lg:col-span-2">Elsewhere</h2>
+
+      <ul class="lg:col-span-10">
+        {
+          PROFILES.map((p) => (
+            <li class="border-rule border-b last:border-b-0">
+              <a
+                href={p.href}
+                target="_blank"
+                rel="me noopener noreferrer"
+                class="group grid items-baseline gap-x-6 gap-y-1 py-5 sm:grid-cols-12"
+              >
+                <span class="data sm:col-span-2">{p.label}</span>
+
+                <span class="font-display group-hover:text-signal text-xl transition-colors sm:col-span-4">
+                  {p.handle}
+                </span>
+
+                <span class="text-graphite sm:col-span-5">{p.note}</span>
+
+                <span
+                  class="data text-rule group-hover:text-signal hidden text-right transition-colors sm:col-span-1 sm:block"
+                  aria-hidden="true"
+                >
+                  &nearr;
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+      <h2 class="data text-signal lg:col-span-2">Resume</h2>
+
+      <div class="lg:col-span-10">
+        <p class="text-graphite measure">
+          The full version is on this site, and the PDF is the same document if you need a
+          file to attach.
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-4">
+          <a
+            href="/resume"
+            class="border-ink hover:bg-ink hover:text-paper data border px-5 py-3 transition-colors"
+          >
+            Read the resume
+          </a>
+          <a
+            href={RESUME_PDF}
+            download
+            class="border-rule hover:border-ink hover:text-ink data border px-5 py-3 transition-colors"
+          >
+            Download PDF
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
 </BaseLayout>
+
+<script>
+  // Progressive enhancement. The button ships hidden because the Clipboard API
+  // is not available on insecure origins, and a copy button that silently does
+  // nothing is worse than no copy button.
+  const btn = document.querySelector<HTMLButtonElement>("[data-copy]");
+
+  if (btn && navigator.clipboard) {
+    btn.hidden = false;
+
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy ?? "");
+        btn.textContent = "Copied";
+        window.setTimeout(() => (btn.textContent = "Copy"), 1600);
+      } catch {
+        // Denied permission or a non-secure context. The address is right
+        // next to the button, so failing quietly is acceptable here.
+        btn.textContent = "Select it above";
+      }
+    });
+  }
+</script>

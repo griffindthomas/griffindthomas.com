@@ -103,6 +103,71 @@ visitor spends their own IP's quota), but **adsb.lol sends no
 `Access-Control-Allow-Origin` header**, so that is not available for it.
 Re-check CORS per provider before relying on that approach.
 
+## Photo pipeline
+
+`scripts/photos.mjs` imports; `scripts/studio.mjs` is a local editor on
+127.0.0.1 that edits the same files. Photos live as a JPEG plus a JSON sidecar
+side by side in `src/content/photos/`.
+
+**The invariant: `exif`, `source`, `image` and `lqip` are DERIVED and rewritten
+on every import. Everything else is hand-entered and must never be clobbered.**
+The studio enforces the same split with an `EDITABLE` allowlist, which is why
+the two tools can share files without fighting.
+
+### EXIF timestamps are LOCAL time, not UTC
+
+An earlier note in the plan file claimed the camera clock was set to UTC and
+that timestamps needed shifting to PDT. **That was wrong**, and the conversion
+it produced moved an afternoon airshow to 08:33 in the morning.
+
+Verified against the frames: `_MG_1080` reads `12:08` for a midday Boeing Field
+shot, and the Blue Angels Seafair demo reads `15:33`, which is when Seafair
+actually flies.
+
+EXIF carries no timezone at all. `shotAt` therefore stores a naive wall clock
+with no offset and no trailing `Z`, and `timezone` records which zone that
+clock belongs to. Do not append an offset and do not feed `shotAt` to
+`new Date()` for formatting: that reinterprets it in the build machine's zone
+and can slide the date across midnight. Format it by string slicing.
+
+Photos shot in Arizona need `America/Phoenix`, which is MST year round.
+
+### Variant suffixes are one digit
+
+`baseOf()` strips `_\d$`, not `_\d+$`. The base name ends in the camera's
+3-4 digit frame number, so the greedy form collapses `_MG_1080`, `_MG_1141`
+and `_MG_1250` into a single bogus `_MG` group and silently drops photos.
+
+Selection among variants is strictly by pixel count, ties broken by file size.
+The `_1` suffix does not indicate resolution and is inverted on several files.
+
+## Zod 4: `.default({})` on an object does not typecheck
+
+Astro 7 ships Zod 4, where `.default()` types its argument as the schema's
+**output**, so `z.object({...}).default({})` fails even when every inner field
+has its own default. Use `.prefault({})`, which applies the value as **input**
+and lets the inner defaults fill it in.
+
+Also: `z` is still re-exported from `astro:content` but deprecated there.
+Import from `zod` directly.
+
+## `startViewTransition` makes filters lag one click behind
+
+It runs its callback asynchronously. Calling it again before the previous
+transition settles leaves the DOM showing the earlier result, so every click
+appears to apply the *previous* filter. Observed on the gallery: clicking
+Clear rendered the filter set from the click before it.
+
+Filtering is now synchronous. A crossfade is not worth a control that lies
+about its own state.
+
+## Node CLI detection on Windows
+
+`import.meta.url === \`file://${process.argv[1]}\`` never matches: a Windows
+file URL is `file:///C:/...` with three slashes. Use
+`pathToFileURL(process.argv[1]).href`. The naive form fails silently, so the
+CLI block simply never runs.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

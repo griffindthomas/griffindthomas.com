@@ -1,0 +1,42 @@
+{
+  "KSEA": {
+    "icao": "KSEA",
+    "iata": "SEA",
+    "name": "Seattle-Tacoma International",
+    "city": "Seattle, Washington",
+    "lat": 47.4502,
+    "lon": -122.3088
+  },
+  "KBFI": {
+    "icao": "KBFI",
+    "iata": "BFI",
+    "name": "Boeing Field / King County International",
+    "city": "Seattle, Washington",
+    "lat": 47.5299,
+    "lon": -122.3018
+  },
+  "KPHX": {
+    "icao": "KPHX",
+    "iata": "PHX",
+    "name": "Phoenix Sky Harbor International",
+    "city": "Phoenix, Arizona",
+    "lat": 33.4342,
+    "lon": -112.0116
+  },
+  "KPAE": {
+    "icao": "KPAE",
+    "iata": "PAE",
+    "name": "Paine Field",
+    "city": "Everett, Washington",
+    "lat": 47.9063,
+    "lon": -122.2816
+  },
+  "KIWA": {
+    "icao": "KIWA",
+    "iata": "AZA",
+    "name": "Phoenix-Mesa Gateway",
+    "city": "Mesa, Arizona",
+    "lat": 33.3078,
+    "lon": -111.6555
+  }
+}

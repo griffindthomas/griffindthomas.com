@@ -1,0 +1,213 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { RESUME_PDF, SITE } from "../config/site";
+import swims from "../data/swims.json";
+
+/**
+ * The resume is written out as real markup rather than shipped only as a PDF.
+ * A PDF is a dead end for a phone, for a screen reader and for search, and a
+ * recruiter opening this on a laptop between career-fair booths should not
+ * have to wait for a plugin. The PDF is still here, embedded and downloadable,
+ * because that is what an application form asks for.
+ */
+// Read from the swim data rather than typed in. A personal best on a resume
+// that disagrees with the chart two pages away is the kind of mistake nobody
+// catches until an interviewer does.
+const best50 = swims.summary["50 Breast"].best.time;
+const best100 = swims.summary["100 Breast"].best.time;
+const raceCount = swims.swims.length;
+
+const sections = [
+  {
+    label: "Objective",
+    entries: [
+      {
+        title: "Summer 2027 aerospace internship",
+        meta: "Design, test, or manufacturing",
+        detail: "",
+        points: [],
+      },
+    ],
+  },
+  {
+    label: "Education",
+    entries: [
+      {
+        title: "BSE Aerospace Engineering, Aeronautics concentration",
+        meta: "Expected May 2030",
+        detail: "Ira A. Fulton Schools of Engineering, Arizona State University",
+        points: ["Entered with 35 AP and dual-enrollment credits"],
+      },
+      {
+        title: "Exeter High School and Seacoast School of Technology",
+        meta: "May 2026",
+        detail: "Exeter, New Hampshire",
+        points: ["Completed the full four-course Project Lead The Way engineering sequence"],
+      },
+    ],
+  },
+  {
+    label: "Experience",
+    entries: [
+      {
+        title: "Lead Lifeguard",
+        meta: "2024 to 2026",
+        detail: "Normandy Park Swim Club, Washington",
+        points: [
+          "Ran deck rotations and opening and closing checks for a seasonal outdoor pool",
+          "Held lifeguard, first aid and CPR certification throughout",
+        ],
+      },
+    ],
+  },
+  {
+    label: "Activities",
+    entries: [
+      {
+        title: "ASU Air Devils",
+        meta: "2026 to now",
+        detail: "Design / Build / Fly",
+        points: [],
+      },
+      {
+        title: "Competitive swimming",
+        meta: "2021 to 2026",
+        detail: "Breaststroke, short course yards",
+        points: [
+          `${raceCount} recorded races. Best times ${best50} in the 50 and ${best100} in the 100`,
+        ],
+      },
+    ],
+  },
+];
+
+const skills = [
+  { label: "CAD", items: ["Fusion 360", "Inventor", "AutoCAD"] },
+  { label: "Fabrication", items: ["FDM printing", "Carbon composite"] },
+  { label: "Systems", items: ["RC flight controllers", "Raspberry Pi", "RTL-SDR"] },
+  { label: "Other", items: ["Lightroom"] },
+];
+---
+
+<BaseLayout
+  title="Resume"
+  description="Resume for Griffin Thomas. Aerospace engineering at Arizona State, seeking a summer 2027 internship in design, test, or manufacturing."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header class="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+      <div>
+        <p class="data">Updated for the 2026 career fair</p>
+        <h1 class="font-display mt-5 text-5xl sm:text-7xl">Resume</h1>
+      </div>
+
+      <a
+        href={RESUME_PDF}
+        download
+        class="border-ink hover:bg-ink hover:text-paper data inline-flex items-center gap-3 border px-5 py-3 transition-colors"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path
+            d="M12 3 L12 16 M7 11 L12 16 L17 11 M4 20 L20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"></path>
+        </svg>
+        Download PDF
+      </a>
+    </header>
+
+    <p class="data border-rule mt-10 border-t pt-6">
+      <span>{SITE.name}</span>
+      <span class="text-rule mx-2">/</span>
+      <a href={`mailto:${SITE.email}`} class="hover:text-signal transition-colors">
+        {SITE.email}
+      </a>
+      <span class="text-rule mx-2">/</span>
+      <span>Tempe, Arizona and Seattle, Washington</span>
+    </p>
+
+    {
+      sections.map((section) => (
+        <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+          <h2 class="data text-signal lg:col-span-2">{section.label}</h2>
+
+          <div class="lg:col-span-10">
+            {section.entries.map((entry, i) => (
+              <div class={i > 0 ? "border-rule mt-8 border-t pt-8" : ""}>
+                <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                  <h3 class="font-display text-2xl">{entry.title}</h3>
+                  <p class="data">{entry.meta}</p>
+                </div>
+
+                {entry.detail && <p class="text-graphite mt-2">{entry.detail}</p>}
+
+                {entry.points.length > 0 && (
+                  <ul class="text-graphite mt-4 space-y-2">
+                    {entry.points.map((point) => (
+                      <li class="flex gap-3 leading-relaxed">
+                        <span class="text-rule select-none" aria-hidden="true">
+                          /
+                        </span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ))
+    }
+
+    <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+      <h2 class="data text-signal lg:col-span-2">Skills</h2>
+      <dl class="grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:col-span-10 lg:grid-cols-4">
+        {
+          skills.map((group) => (
+            <div>
+              <dt class="data border-rule border-b pb-2">{group.label}</dt>
+              <dd class="mt-3 space-y-1 font-mono text-xs leading-relaxed">
+                {group.items.map((item) => (
+                  <div>{item}</div>
+                ))}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+      <h2 class="data text-signal lg:col-span-2">The PDF</h2>
+      <div class="lg:col-span-10">
+        <p class="text-graphite measure">
+          The same document as a file. Browsers on phones tend to download this rather
+          than display it, so the version above is the one that always works.
+        </p>
+
+        {/* `object` degrades to its children when the browser cannot render a
+            PDF inline, which is most mobile browsers. */}
+        <object
+          data={RESUME_PDF}
+          type="application/pdf"
+          class="border-rule mt-6 h-[min(1100px,120vh)] w-full border"
+          aria-label="Resume PDF"
+        >
+          <div class="p-10">
+            <p class="text-graphite">
+              This browser will not display a PDF inline.
+            </p>
+            <a
+              href={RESUME_PDF}
+              download
+              class="border-ink hover:bg-ink hover:text-paper data mt-5 inline-block border px-5 py-3 transition-colors"
+            >
+              Download the PDF
+            </a>
+          </div>
+        </object>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -9,6 +9,7 @@
 // Server-rendered SVG. No chart library, no client JS required to read it;
 // the hover readout is progressive enhancement only.
 import data from "../data/swims.json";
+import { profile } from "../config/site";
 
 interface Swim {
   event: string;
@@ -88,12 +89,28 @@ const panels = ["50 Breast", "100 Breast"].map((event) => {
 });
 
 const years = [2022, 2023, 2024, 2025, 2026];
+
+// The chart is my own rendering of the data, so link the official record it
+// came from. Someone who wants to check a time should be one click away.
+const swimcloud = profile("swimcloud");
 ---
 
 <section class="mt-16" aria-labelledby="swim-heading">
   <div class="border-rule flex items-baseline justify-between border-b pb-2">
     <h2 id="swim-heading" class="font-display text-3xl">Swimming</h2>
-    <p class="data hidden sm:block">{swims.length} swims / 2021-2026</p>
+    <p class="data hidden sm:block">
+      <span>{swims.length} swims / 2021-2026</span>
+      <span class="text-rule mx-2">/</span>
+      <a
+        href={swimcloud.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-signal transition-colors"
+      >
+        SwimCloud
+        <span class="ml-1" aria-hidden="true">&nearr;</span>
+      </a>
+    </p>
   </div>
 
   <p class="measure text-graphite mt-5">

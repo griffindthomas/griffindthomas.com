@@ -1,37 +1,140 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 
-// Phase 0 placeholder. Its job is to prove the whole pipeline end to end -
-// fonts, design tokens, custom @utility rules, nav, footer, build, deploy,
-// DNS, HTTPS - against the real domain before any feature work lands.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SITE } from "../config/site";
+import { galleryStats, loadPhotos } from "../lib/photos";
+
+const photos = await loadPhotos();
+const stats = galleryStats(photos);
+
+// Fall back to the newest frames if nothing has been flagged, so the home page
+// is never empty just because a checkbox was missed in the studio.
+const featured = photos.filter((p) => p.data.featured);
+const showcase = (featured.length >= 3 ? featured : photos).slice(0, 3);
+
+const projects = (await getCollection("projects", ({ data }) => !data.draft))
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 3);
 ---
 
-<BaseLayout
-  title="Griffin Thomas"
-  description="Aerospace engineering student at Arizona State. I build RC aircraft and photograph airliners at Sea-Tac, Boeing Field, and Sky Harbor."
->
-  <section class="mx-auto max-w-[88rem]">
-    <p class="data">
-      <span>Tempe, Arizona</span>
-      <span class="text-rule mx-2">/</span>
-      <span>N33.4342 W112.0116</span>
-    </p>
+<BaseLayout title={SITE.name} description={SITE.tagline}>
+  <div class="mx-auto max-w-[88rem]">
+    <section>
+      <p class="data">
+        <span>{SITE.base.label}</span>
+        <span class="text-rule mx-2">/</span>
+        <span>N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}</span>
+      </p>
 
-    <h1 class="font-display mt-6 text-5xl leading-[0.95] sm:text-7xl lg:text-[7rem]">
-      Griffin Thomas
-    </h1>
+      <h1 class="font-display mt-6 text-5xl leading-[0.95] sm:text-7xl lg:text-[7rem]">
+        Griffin Thomas
+      </h1>
 
-    <p class="measure text-graphite mt-8 text-lg leading-relaxed">
-      Aerospace engineering student at Arizona State. I build RC aircraft and photograph
-      airliners at Sea-Tac, Boeing Field, and Sky Harbor.
-    </p>
+      <p class="measure text-graphite mt-8 text-lg leading-relaxed">
+        Aerospace engineering student at Arizona State. I build RC aircraft and photograph
+        airliners at Sea-Tac, Boeing Field, and Sky Harbor.
+      </p>
+    </section>
 
-    <hr class="rule mt-14" />
+    {
+      showcase.length > 0 && (
+        <section class="mt-20" aria-labelledby="recent-heading">
+          <div class="border-rule flex items-baseline justify-between gap-6 border-b pb-2">
+            <h2 id="recent-heading" class="font-display text-3xl">
+              Recent frames
+            </h2>
+            <a href="/spotting" class="data hover:text-signal transition-colors">
+              All {stats.count}
+              <span class="ml-2" aria-hidden="true">
+                &rarr;
+              </span>
+            </a>
+          </div>
 
-    <p class="data mt-6">
-      <span class="text-signal">Site in progress</span>
-      <span class="text-rule mx-2">/</span>
-      <span>More here shortly</span>
-    </p>
-  </section>
+          <ul class="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-3">
+            {showcase.map((p, i) => (
+              <li>
+                <a href="/spotting" class="group block">
+                  <div class="bg-paper-sunk aspect-[3/2] overflow-hidden">
+                    <Image
+                      src={p.data.image}
+                      alt={`${p.data.operator} ${p.data.aircraft}`}
+                      widths={[400, 800]}
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      loading={i === 0 ? "eager" : "lazy"}
+                      class="h-full w-full object-cover transition-opacity duration-500 group-hover:opacity-90"
+                      style={`background-image:url(${p.data.lqip});background-size:cover;background-position:center`}
+                    />
+                  </div>
+
+                  <p class="border-rule font-display mt-3 border-t pt-3 text-lg">
+                    {p.data.aircraft}
+                  </p>
+                  <p class="data mt-1">
+                    <span>{p.data.operator}</span>
+                    <span class="text-rule mx-2">/</span>
+                    <span>{p.place}</span>
+                  </p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="mt-20" aria-labelledby="build-heading">
+      <div class="border-rule flex items-baseline justify-between gap-6 border-b pb-2">
+        <h2 id="build-heading" class="font-display text-3xl">What I am building</h2>
+        <a href="/projects" class="data hover:text-signal transition-colors">
+          All projects
+          <span class="ml-2" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+
+      <ol class="mt-4">
+        {
+          projects.map((project, i) => (
+            <li class="border-rule border-b">
+              <a
+                href={`/projects/${project.id}`}
+                class="group grid items-baseline gap-x-8 gap-y-2 py-6 lg:grid-cols-12"
+              >
+                <span class="data text-signal lg:col-span-1">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 class="font-display group-hover:text-signal text-2xl transition-colors lg:col-span-4">
+                  {project.data.title}
+                </h3>
+                <p class="text-graphite lg:col-span-6">{project.data.summary}</p>
+                <span class="data lg:col-span-1 lg:text-right">{project.data.period}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="mt-20">
+      <p class="font-display max-w-[24ch] text-3xl sm:text-4xl">
+        Looking for a summer 2027 aerospace internship in design, test, or manufacturing.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a
+          href="/resume"
+          class="border-ink hover:bg-ink hover:text-paper data border px-5 py-3 transition-colors"
+        >
+          Read the resume
+        </a>
+        <a
+          href="/contact"
+          class="border-rule hover:border-ink hover:text-ink data border px-5 py-3 transition-colors"
+        >
+          Get in touch
+        </a>
+      </div>
+    </section>
+  </div>
 </BaseLayout>

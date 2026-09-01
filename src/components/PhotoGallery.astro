@@ -1,0 +1,605 @@
+---
+/**
+ * The gallery.
+ *
+ * Layout is justified rows, done in pure CSS: each photo gets `flex-grow` and
+ * `flex-basis` proportional to its aspect ratio, and an `aspect-ratio` to
+ * match. Because every item in a row ends up with width proportional to its
+ * aspect, they all resolve to the SAME height without any measuring, any
+ * JavaScript, or any cropping. Rows re-justify on resize for free.
+ *
+ * Filtering is client-side and writes to the URL, so a filtered view is
+ * shareable and the back button works. The grid itself renders and reads
+ * perfectly with JavaScript off; only the filter bar needs it, which is why
+ * the bar ships hidden and is revealed by the script.
+ */
+import { Image } from "astro:assets";
+
+import { lightboxSrc, type FilterGroup, type Photo } from "../lib/photos";
+
+interface Props {
+  photos: Photo[];
+  filters: FilterGroup[];
+}
+
+const { photos, filters } = Astro.props;
+
+const alt = (p: Photo) =>
+  [p.data.operator, p.data.aircraft, p.data.registration]
+    .filter(Boolean)
+    .join(" ")
+    .concat(p.placeLong ? ` at ${p.placeLong}` : "");
+
+// Build-time renditions plus the payload the lightbox reads. Serialised as one
+// JSON block rather than a dozen data-attributes per figure.
+const full = await Promise.all(photos.map(lightboxSrc));
+const payload = photos.map((p, i) => ({
+  src: full[i],
+  alt: alt(p),
+  aircraft: p.data.aircraft,
+  operator: p.data.operator,
+  registration: p.data.registration,
+  place: p.placeLong || p.place,
+  date: p.date,
+  time: p.time,
+  caption: p.data.caption,
+  exif: [
+    p.data.exif.focalLength ? `${p.data.exif.focalLength}mm` : "",
+    p.data.exif.aperture ? `f/${p.data.exif.aperture}` : "",
+    p.data.exif.shutter,
+    p.data.exif.iso ? `ISO ${p.data.exif.iso}` : "",
+  ].filter(Boolean),
+  camera: p.data.exif.camera,
+}));
+---
+
+{
+  filters.length > 0 && (
+    <div class="border-rule mt-10 border-t pt-5" data-filters hidden>
+      <div class="border-rule flex items-baseline justify-between gap-6 border-b pb-3">
+        <p class="data" data-count aria-live="polite" />
+        <button type="button" class="data clear-all" data-clear hidden>
+          Clear filters
+        </button>
+      </div>
+
+      {/* One group per row, label in its own column. Run together on a single
+          wrapped line these read as one long string of words and it stops
+          being obvious where a group ends. */}
+      {filters.map((group) => (
+        <div class="border-rule grid gap-x-6 gap-y-1 border-b py-2.5 sm:grid-cols-[7rem_1fr]">
+          <span class="data pt-0.5">{group.label}</span>
+          <div class="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+            {group.options.map((opt) => (
+              <button
+                type="button"
+                class="data filter-chip"
+                data-group={group.id}
+                data-value={opt.value}
+                aria-pressed="false"
+              >
+                {opt.label}
+                <span class="tally">{opt.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+<ul class="gallery mt-10" data-gallery>
+  {
+    photos.map((p, i) => (
+      <li
+        class="shot"
+        style={`--ar:${p.aspect.toFixed(4)}`}
+        data-operator={p.data.operator}
+        data-aircraft={p.data.aircraft}
+        data-place={p.data.airport || p.data.location}
+        data-tag={p.data.tags.join(" ")}
+      >
+        <button type="button" class="frame" data-idx={i} aria-label={`Open ${alt(p)}`}>
+          <Image
+            src={p.data.image}
+            alt={alt(p)}
+            widths={[400, 800, 1200]}
+            sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 33vw"
+            loading={i < 4 ? "eager" : "lazy"}
+            decoding="async"
+            style={`background-image:url(${p.data.lqip});background-size:cover;background-position:center`}
+          />
+        </button>
+
+        <figcaption class="plate">
+          <span class="name">{p.data.aircraft || "Unidentified"}</span>
+          <span class="meta">
+            <span>{p.data.operator}</span>
+            {p.data.registration && <span class="reg">{p.data.registration}</span>}
+            <span class="where">
+              {p.place}
+              <span class="text-rule mx-1.5">/</span>
+              {p.date}
+            </span>
+          </span>
+        </figcaption>
+      </li>
+    ))
+  }
+</ul>
+
+<p class="data mt-10" data-empty hidden>
+  <span class="text-signal">No photos match</span>
+  <span class="text-rule mx-2">/</span>
+  <span>Clear a filter to see the rest</span>
+</p>
+
+<script is:inline type="application/json" data-photos set:html={JSON.stringify(payload)} />
+
+<dialog class="lightbox" data-lightbox aria-label="Photo viewer">
+  <figure class="lb-figure">
+    <img data-lb-img alt="" />
+
+    <figcaption class="lb-plate">
+      <div class="lb-headline">
+        <span class="lb-name" data-lb-aircraft></span>
+        <span class="data" data-lb-index></span>
+      </div>
+      <p class="data lb-line" data-lb-meta></p>
+      <p class="lb-caption" data-lb-caption></p>
+      <p class="data lb-line" data-lb-exif></p>
+    </figcaption>
+  </figure>
+
+  <button type="button" class="lb-btn lb-prev" data-lb-prev aria-label="Previous photo">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="1.25" />
+    </svg>
+  </button>
+  <button type="button" class="lb-btn lb-next" data-lb-next aria-label="Next photo">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="1.25" />
+    </svg>
+  </button>
+  <button type="button" class="lb-btn lb-close" data-lb-close aria-label="Close viewer">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M5 5 L19 19 M19 5 L5 19" fill="none" stroke="currentColor" stroke-width="1.25" />
+    </svg>
+  </button>
+</dialog>
+
+<style>
+  /* --- justified rows ---------------------------------------------------- */
+  .gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.75rem 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shot {
+    /* Width proportional to aspect ratio; combined with the aspect-ratio on
+       the frame below, every item in a row lands on the same height. */
+    flex: var(--ar) 1 calc(var(--ar) * 15rem);
+    min-width: 0;
+  }
+
+  /* Absorbs the slack on the final row so two leftover photos do not stretch
+     to fill the full width at three times the height of the row above. */
+  .gallery::after {
+    content: "";
+    flex-grow: 1e6;
+    flex-basis: 0;
+  }
+
+  @media (max-width: 640px) {
+    .shot {
+      flex-basis: 100%;
+    }
+    .gallery::after {
+      display: none;
+    }
+  }
+
+  .frame {
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--ar);
+    padding: 0;
+    border: 0;
+    background: var(--color-paper-sunk);
+    cursor: zoom-in;
+    overflow: hidden;
+  }
+
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 400ms ease;
+  }
+
+  .frame:hover img {
+    opacity: 0.88;
+  }
+
+  /* --- metadata plate ---------------------------------------------------- */
+  .plate {
+    display: block;
+    padding-top: 0.6rem;
+    border-top: var(--rule-width) solid var(--color-rule);
+    margin-top: 0.6rem;
+  }
+
+  .name {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    line-height: 1.25;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.75rem;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-graphite);
+  }
+
+  .reg {
+    color: var(--color-ink);
+  }
+
+  .where {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* --- filter chips ------------------------------------------------------ */
+  .filter-chip {
+    border: 0;
+    background: none;
+    padding: 0.15rem 0;
+    cursor: pointer;
+    color: var(--color-graphite);
+    border-bottom: var(--rule-width) solid transparent;
+    transition:
+      color 160ms ease,
+      border-color 160ms ease;
+  }
+
+  .filter-chip:hover {
+    color: var(--color-ink);
+  }
+
+  .filter-chip[aria-pressed="true"] {
+    color: var(--color-signal);
+    border-bottom-color: var(--color-signal);
+  }
+
+  .tally {
+    margin-left: 0.4em;
+    color: var(--color-rule);
+  }
+
+  .filter-chip[aria-pressed="true"] .tally {
+    color: var(--color-signal);
+  }
+
+  .clear-all {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--color-signal);
+    padding: 0.15rem 0;
+  }
+
+  /* --- lightbox ---------------------------------------------------------- */
+  .lightbox {
+    width: min(100vw, 100%);
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    border: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .lightbox::backdrop {
+    background: rgb(20 20 20 / 0.82);
+  }
+
+  .lb-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    margin: 0;
+    padding: clamp(1rem, 3vw, 2.5rem);
+    box-sizing: border-box;
+  }
+
+  .lb-figure img {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  .lb-plate {
+    flex: 0 0 auto;
+    max-width: 72ch;
+  }
+
+  .lb-headline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: var(--rule-width) solid var(--color-rule);
+    padding-top: 0.6rem;
+  }
+
+  .lb-name {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  }
+
+  .lb-line {
+    margin: 0.35rem 0 0;
+  }
+
+  .lb-caption {
+    margin: 0.5rem 0 0;
+    max-width: 62ch;
+    color: var(--color-graphite);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .lb-caption:empty {
+    display: none;
+  }
+
+  .lb-btn {
+    position: fixed;
+    border: 0;
+    background: var(--color-paper);
+    color: var(--color-graphite);
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: color 160ms ease;
+  }
+
+  .lb-btn:hover {
+    color: var(--color-signal);
+  }
+
+  .lb-prev {
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .lb-next {
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .lb-close {
+    right: 0.5rem;
+    top: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame img {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  interface Shot {
+    src: string;
+    alt: string;
+    aircraft: string;
+    operator: string;
+    registration: string;
+    place: string;
+    date: string;
+    time: string;
+    caption: string;
+    exif: string[];
+    camera: string;
+  }
+
+  const json = document.querySelector<HTMLScriptElement>("[data-photos]");
+  const gallery = document.querySelector<HTMLElement>("[data-gallery]");
+  if (json && gallery) {
+    const shots: Shot[] = JSON.parse(json.textContent ?? "[]");
+    const items = [...gallery.querySelectorAll<HTMLLIElement>(".shot")];
+
+    // --- filtering -------------------------------------------------------
+    const bar = document.querySelector<HTMLElement>("[data-filters]");
+    const chips = [...document.querySelectorAll<HTMLButtonElement>(".filter-chip")];
+    const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear]");
+    const countEl = document.querySelector<HTMLElement>("[data-count]");
+    const emptyEl = document.querySelector<HTMLElement>("[data-empty]");
+    const GROUPS = ["operator", "aircraft", "place", "tag"] as const;
+
+    /** Nothing in the bar works without this script, so it ships hidden. */
+    if (bar) bar.hidden = false;
+
+    const matches = (li: HTMLLIElement, active: Map<string, string>) =>
+      [...active].every(([group, value]) => {
+        const raw = li.dataset[group] ?? "";
+        // Tags are the one multi-valued attribute, so it is matched by token
+        // rather than by equality.
+        return group === "tag" ? raw.split(" ").includes(value) : raw === value;
+      });
+
+    function apply(push: boolean) {
+      const params = new URLSearchParams(location.search);
+      const active = new Map<string, string>();
+      for (const g of GROUPS) {
+        const v = params.get(g);
+        if (v) active.set(g, v);
+      }
+
+      let shown = 0;
+      const paint = () => {
+        for (const li of items) {
+          const ok = matches(li, active);
+          li.hidden = !ok;
+          if (ok) shown += 1;
+        }
+
+        for (const chip of chips) {
+          const on = active.get(chip.dataset.group!) === chip.dataset.value;
+          chip.setAttribute("aria-pressed", String(on));
+        }
+
+        if (clearBtn) clearBtn.hidden = active.size === 0;
+        if (emptyEl) emptyEl.hidden = shown > 0;
+        if (countEl) {
+          countEl.textContent =
+            active.size === 0
+              ? `Showing all ${items.length}`
+              : `Showing ${shown} of ${items.length}`;
+        }
+      };
+
+      // Applied synchronously and deliberately NOT wrapped in
+      // startViewTransition. That API runs its callback asynchronously, so
+      // clicking a second chip before the first transition settles leaves the
+      // grid showing the previous filter's result: every click lands one step
+      // behind. A crossfade is not worth a filter that lies about its state.
+      paint();
+
+      if (push) {
+        const qs = params.toString();
+        history.pushState({}, "", qs ? `?${qs}` : location.pathname);
+      }
+    }
+
+    for (const chip of chips) {
+      chip.addEventListener("click", () => {
+        const params = new URLSearchParams(location.search);
+        const group = chip.dataset.group!;
+        // Clicking the active chip clears it, so every filter is its own
+        // toggle and there is no need for a per-group "all" option.
+        if (params.get(group) === chip.dataset.value) params.delete(group);
+        else params.set(group, chip.dataset.value!);
+        history.replaceState({}, "", params.toString() ? `?${params}` : location.pathname);
+        apply(false);
+      });
+    }
+
+    clearBtn?.addEventListener("click", () => {
+      history.pushState({}, "", location.pathname);
+      apply(false);
+    });
+
+    window.addEventListener("popstate", () => apply(false));
+    apply(false);
+
+    // --- lightbox --------------------------------------------------------
+    const dlg = document.querySelector<HTMLDialogElement>("[data-lightbox]");
+    const img = dlg?.querySelector<HTMLImageElement>("[data-lb-img]");
+
+    if (dlg && img) {
+      const set = (sel: string, text: string) => {
+        const el = dlg.querySelector<HTMLElement>(sel);
+        if (el) el.textContent = text;
+      };
+
+      let current = 0;
+
+      const show = (i: number) => {
+        // Only step through what is currently visible, so arrow keys respect
+        // an active filter instead of jumping to a hidden photo.
+        const visible = items.filter((li) => !li.hidden);
+        if (visible.length === 0) return;
+        const wrapped = (i + visible.length) % visible.length;
+        const li = visible[wrapped];
+        const idx = items.indexOf(li);
+        const s = shots[idx];
+        current = wrapped;
+
+        img.src = s.src;
+        img.alt = s.alt;
+        set("[data-lb-aircraft]", s.aircraft || "Unidentified");
+        set("[data-lb-index]", `${wrapped + 1} / ${visible.length}`);
+        set(
+          "[data-lb-meta]",
+          [s.operator, s.registration, s.place, `${s.date} ${s.time}`]
+            .filter(Boolean)
+            .join("  /  "),
+        );
+        set("[data-lb-caption]", s.caption);
+        set("[data-lb-exif]", [s.camera, ...s.exif].filter(Boolean).join("  /  "));
+      };
+
+      for (const btn of gallery.querySelectorAll<HTMLButtonElement>(".frame")) {
+        btn.addEventListener("click", () => {
+          const li = btn.closest<HTMLLIElement>(".shot")!;
+          const visible = items.filter((x) => !x.hidden);
+          show(visible.indexOf(li));
+          // showModal gives the focus trap, Esc-to-close and inertness of the
+          // rest of the page for free. Worth using instead of rebuilding.
+          dlg.showModal();
+        });
+      }
+
+      dlg.querySelector("[data-lb-prev]")?.addEventListener("click", () => show(current - 1));
+      dlg.querySelector("[data-lb-next]")?.addEventListener("click", () => show(current + 1));
+      dlg.querySelector("[data-lb-close]")?.addEventListener("click", () => dlg.close());
+
+      dlg.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          show(current - 1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          show(current + 1);
+        }
+      });
+
+      // Click the surround to dismiss, but not the photo or the plate.
+      dlg.addEventListener("click", (e) => {
+        if (e.target === dlg) dlg.close();
+      });
+
+      let startX = 0;
+      dlg.addEventListener(
+        "touchstart",
+        (e) => {
+          startX = e.changedTouches[0].clientX;
+        },
+        { passive: true },
+      );
+      dlg.addEventListener(
+        "touchend",
+        (e) => {
+          const dx = e.changedTouches[0].clientX - startX;
+          if (Math.abs(dx) > 45) show(current + (dx < 0 ? 1 : -1));
+        },
+        { passive: true },
+      );
+    }
+  }
+</script>

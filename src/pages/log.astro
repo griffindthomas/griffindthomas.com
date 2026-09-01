@@ -1,8 +1,42 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import StubSection from "../components/StubSection.astro";
+import { loadLog } from "../lib/log";
+
+const entries = await loadLog();
 ---
 
-<BaseLayout title="Log" description="Notes and writing by Griffin Thomas.">
-  <StubSection title="Log" note="Writing lands in Phase 3." />
+<BaseLayout
+  title="Log"
+  description="Notes on aircraft, builds, and things that did not work the first time, by Griffin Thomas."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">Notes as I go</p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Log</h1>
+    </header>
+
+    {
+      entries.length > 0 ? (
+        <ol class="mt-16">
+          {entries.map((entry) => (
+            <li class="border-rule border-t py-8">
+              <p class="data">
+                {entry.data.date.toISOString().slice(0, 10)}
+              </p>
+              <h2 class="font-display mt-3 text-3xl">{entry.data.title}</h2>
+              <p class="text-graphite measure mt-3 leading-relaxed">
+                {entry.data.description}
+              </p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="data border-rule mt-16 border-t pt-6">
+          <span class="text-signal">Nothing written yet</span>
+          <span class="text-rule mx-2">/</span>
+          <span>This section is hidden from the nav until the first entry</span>
+        </p>
+      )
+    }
+  </div>
 </BaseLayout>

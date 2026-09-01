@@ -1,0 +1,36 @@
+{
+  "aircraft": "Boeing F/A-18E Super Hornet",
+  "typeCode": "F18",
+  "operator": "US Navy Blue Angels",
+  "registration": "",
+  "airport": "",
+  "location": "Seafair, Seattle",
+  "caption": "Vapour coming off the leading edge extensions in a hard turn.",
+  "tags": [
+    "military",
+    "airshow"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-08-02T15:34:07",
+  "timezone": "America/Los_Angeles",
+  "image": "./mg-1264.jpg",
+  "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAwBACdASoYABAAPu1iqU2ppaQiMAgBMB2JZACdAYtAi6Z5qf1G/kpDOAAA/FpqLNACBqtDe5VwZ1qw/Y2ikqDuH6yYxCTrA5dljuT+Rtudn31UdqY3x38wcKcEK2Nl2kQSYmcOI1sHrQnl0jEbRwRQVORrAAAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 130,
+    "aperture": 11,
+    "shutter": "1/400",
+    "iso": 160,
+    "rawDate": "2026:08:02 15:34:07"
+  },
+  "source": {
+    "file": "_MG_1264.jpg",
+    "width": 1280,
+    "height": 853,
+    "bytes": 432816,
+    "originalLongEdge": 1280
+  }
+}

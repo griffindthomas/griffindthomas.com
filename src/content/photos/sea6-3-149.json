@@ -1,0 +1,35 @@
+{
+  "aircraft": "Boeing 787-9 Dreamliner",
+  "typeCode": "B789",
+  "operator": "Alaska Airlines",
+  "registration": "N781HA",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "Built for Hawaiian and repainted into Alaska's widebody livery after the merger. There are four of them and they kept their HA registrations.",
+  "tags": [
+    "airliner"
+  ],
+  "featured": true,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-07-03T16:55:09",
+  "timezone": "America/Los_Angeles",
+  "image": "./sea6-3-149.jpg",
+  "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAABwBACdASoYABEAPuVcpk2pJTAiMAwCAByJZwBWIoeiDwW/hBJ98yNuo6wnAAD+sUUKIFICepHFbA95gLCVbw3QAfpjXQMe6UVc27gT++qowVexMlczri4v7Jszk5o1/408w67br4gH8n848+5eixCqPkLusAAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF-S18-55mm f/3.5-5.6 IS II",
+    "focalLength": 55,
+    "aperture": 11,
+    "shutter": "1/800",
+    "iso": 250,
+    "rawDate": "2026:07:03 16:55:09"
+  },
+  "source": {
+    "file": "SEA6-3_149.jpg",
+    "width": 2800,
+    "height": 2000,
+    "bytes": 4882867,
+    "originalLongEdge": 4012
+  }
+}

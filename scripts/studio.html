@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Photo Studio</title>
+    <style>
+      :root {
+        --paper: #faf8f4;
+        --sunk: #f2eee6;
+        --ink: #141414;
+        --graphite: #5a5a57;
+        --rule: #d8d2c6;
+        --signal: #d6451f;
+        --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        color-scheme: light;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .label {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--graphite);
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgb(250 248 244 / 0.95);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--rule);
+        padding: 14px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+      }
+
+      h1 { font-size: 18px; margin: 0; font-weight: 500; }
+      main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+      button {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: none;
+        border: 1px solid var(--rule);
+        color: var(--ink);
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: all 140ms ease;
+      }
+
+      button:hover:not(:disabled) { border-color: var(--ink); }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+      button.primary:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); }
+
+      #drop {
+        border: 1px dashed var(--rule);
+        padding: 22px;
+        text-align: center;
+        margin-bottom: 24px;
+        transition: all 140ms ease;
+      }
+
+      #drop.over { border-color: var(--signal); background: var(--sunk); }
+
+      .card {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 24px;
+        border-top: 1px solid var(--rule);
+        padding: 22px 0;
+      }
+
+      @media (max-width: 860px) { .card { grid-template-columns: 1fr; } }
+
+      .card img { width: 100%; display: block; background: var(--sunk); }
+
+      .shot-meta { margin-top: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--graphite); line-height: 1.7; }
+
+      .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; align-content: start; }
+      @media (max-width: 620px) { .fields { grid-template-columns: 1fr; } }
+
+      .field.wide { grid-column: 1 / -1; }
+      .field > .label { display: block; margin-bottom: 4px; }
+
+      input[type="text"], input[type="number"], select, textarea {
+        width: 100%;
+        font-family: var(--sans);
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--paper);
+        border: 0;
+        border-bottom: 1px solid var(--rule);
+        padding: 5px 0;
+        border-radius: 0;
+      }
+
+      textarea { resize: vertical; min-height: 54px; line-height: 1.5; }
+
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-bottom-color: var(--signal);
+      }
+
+      .toggles { display: flex; gap: 20px; align-items: center; }
+      .toggles label { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+      .toggles input { accent-color: var(--signal); }
+
+      .status { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; min-height: 16px; }
+      .status.saved { color: var(--signal); }
+      .status.error { color: #b00; text-transform: none; letter-spacing: 0; font-size: 12px; }
+
+      .gap { color: var(--signal); }
+
+      .missing { border-left: 2px solid var(--signal); padding-left: 18px; margin-left: -20px; }
+
+      pre {
+        font-family: var(--mono);
+        font-size: 11px;
+        background: var(--sunk);
+        padding: 14px;
+        overflow: auto;
+        white-space: pre-wrap;
+        margin: 0 0 20px;
+        max-height: 260px;
+      }
+
+      .spacer { flex: 1; }
+      a { color: var(--ink); }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Photo Studio</h1>
+      <span class="label" id="summary">Loading</span>
+      <span class="spacer"></span>
+      <button id="import">Import inbox</button>
+      <button id="publish" class="primary">Publish to site</button>
+    </header>
+
+    <main>
+      <div id="drop">
+        <p class="label" style="margin: 0 0 6px">Drop photos here</p>
+        <p style="margin: 0; color: var(--graphite); font-size: 13px">
+          They land in <code>photos-inbox</code> and are imported straight away. Several
+          exports of the same frame are fine; the sharpest one wins.
+        </p>
+      </div>
+
+      <pre id="log" hidden></pre>
+      <div id="cards"></div>
+    </main>
+
+    <script>
+      const $ = (sel, root = document) => root.querySelector(sel);
+      let AIRPORTS = {};
+
+      const TIMEZONES = [
+        ["America/Los_Angeles", "Pacific (Seattle)"],
+        ["America/Phoenix", "Arizona (no DST)"],
+        ["America/Denver", "Mountain"],
+        ["America/Chicago", "Central"],
+        ["America/New_York", "Eastern"],
+      ];
+
+      const esc = (s) =>
+        String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+      function showLog(lines) {
+        const el = $("#log");
+        el.hidden = false;
+        el.textContent = Array.isArray(lines) ? lines.join("\n") : String(lines);
+      }
+
+      function card(p, gaps) {
+        const missing = gaps.find((g) => g.slug === p.slug)?.missing ?? [];
+        const airportOptions = ['<option value="">Not an airport</option>']
+          .concat(
+            Object.values(AIRPORTS).map(
+              (a) =>
+                `<option value="${a.icao}"${a.icao === p.airport ? " selected" : ""}>${a.icao} / ${esc(a.name)}</option>`,
+            ),
+          )
+          .join("");
+
+        const tzOptions = TIMEZONES.map(
+          ([v, l]) => `<option value="${v}"${v === p.timezone ? " selected" : ""}>${l}</option>`,
+        ).join("");
+
+        const exif = [
+          p.exif?.camera,
+          p.exif?.focalLength ? p.exif.focalLength + "mm" : "",
+          p.exif?.aperture ? "f/" + p.exif.aperture : "",
+          p.exif?.shutter,
+          p.exif?.iso ? "ISO " + p.exif.iso : "",
+        ]
+          .filter(Boolean)
+          .join(" / ");
+
+        return `
+        <section class="card${missing.length ? " missing" : ""}" data-slug="${p.slug}">
+          <div>
+            <img src="/img/${p.slug}.jpg" alt="" loading="lazy" />
+            <div class="shot-meta">
+              <div>${esc(p.slug)}</div>
+              <div>${esc(exif)}</div>
+              <div>${esc(p.source?.file ?? "")} &middot; ${p.source?.originalLongEdge ?? 0}px original</div>
+              ${missing.length ? `<div class="gap">Needs: ${esc(missing.join(", "))}</div>` : ""}
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="field">
+              <span class="label">Aircraft</span>
+              <input type="text" name="aircraft" value="${esc(p.aircraft)}" placeholder="e.g. Boeing 737-8" />
+            </div>
+            <div class="field">
+              <span class="label">Type code</span>
+              <input type="text" name="typeCode" value="${esc(p.typeCode)}" placeholder="e.g. B38M" />
+            </div>
+            <div class="field">
+              <span class="label">Operator</span>
+              <input type="text" name="operator" value="${esc(p.operator)}" placeholder="e.g. Alaska Airlines" />
+            </div>
+            <div class="field">
+              <span class="label">Registration</span>
+              <input type="text" name="registration" value="${esc(p.registration)}" placeholder="e.g. N801AK" />
+            </div>
+            <div class="field">
+              <span class="label">Airport</span>
+              <select name="airport">${airportOptions}</select>
+            </div>
+            <div class="field">
+              <span class="label">Or place</span>
+              <input type="text" name="location" value="${esc(p.location)}" placeholder="e.g. Seafair, Seattle" />
+            </div>
+            <div class="field wide">
+              <span class="label">Caption</span>
+              <textarea name="caption" placeholder="One or two sentences. Concrete beats clever.">${esc(p.caption)}</textarea>
+            </div>
+            <div class="field">
+              <span class="label">Tags, comma separated</span>
+              <input type="text" name="tags" value="${esc((p.tags ?? []).join(", "))}" placeholder="e.g. airliner, military" />
+            </div>
+            <div class="field">
+              <span class="label">Taken</span>
+              <input type="text" name="shotAt" value="${esc(p.shotAt)}" />
+            </div>
+            <div class="field">
+              <span class="label">Timezone</span>
+              <select name="timezone">${tzOptions}</select>
+            </div>
+            <div class="field">
+              <span class="label">Sort order</span>
+              <input type="number" name="order" value="${Number(p.order ?? 0)}" />
+            </div>
+            <div class="field wide toggles">
+              <label><input type="checkbox" name="featured"${p.featured ? " checked" : ""} /> <span class="label">Featured on home</span></label>
+              <label><input type="checkbox" name="draft"${p.draft ? " checked" : ""} /> <span class="label">Hide from site</span></label>
+              <span class="spacer"></span>
+              <span class="status" data-status></span>
+            </div>
+          </div>
+        </section>`;
+      }
+
+      function collect(section) {
+        const val = (n) => $(`[name="${n}"]`, section);
+        return {
+          aircraft: val("aircraft").value.trim(),
+          typeCode: val("typeCode").value.trim(),
+          operator: val("operator").value.trim(),
+          registration: val("registration").value.trim().toUpperCase(),
+          airport: val("airport").value,
+          location: val("location").value.trim(),
+          caption: val("caption").value.trim(),
+          tags: val("tags")
+            .value.split(",")
+            .map((t) => t.trim().toLowerCase())
+            .filter(Boolean),
+          shotAt: val("shotAt").value.trim(),
+          timezone: val("timezone").value,
+          order: Number(val("order").value) || 0,
+          featured: val("featured").checked,
+          draft: val("draft").checked,
+        };
+      }
+
+      async function save(section) {
+        const status = $("[data-status]", section);
+        status.className = "status";
+        status.textContent = "Saving";
+
+        const res = await fetch("/api/save", {
+          method: "POST",
+          body: JSON.stringify({ slug: section.dataset.slug, patch: collect(section) }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Save failed";
+          return;
+        }
+
+        status.className = "status saved";
+        status.textContent = "Saved";
+        setTimeout(() => {
+          status.textContent = "";
+          status.className = "status";
+        }, 1800);
+      }
+
+      async function load() {
+        const state = await (await fetch("/api/state")).json();
+        AIRPORTS = state.airports;
+
+        const pending = state.git.changed.length;
+        $("#summary").textContent =
+          `${state.photos.length} photos / ${state.gaps.length} incomplete / ` +
+          `${pending} unpublished change${pending === 1 ? "" : "s"}`;
+
+        $("#publish").disabled = pending === 0;
+        $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
+
+        // One listener per card, not per input.
+        for (const section of document.querySelectorAll(".card")) {
+          section.addEventListener("change", () => save(section));
+        }
+      }
+
+      // --- drag and drop -----------------------------------------------------
+      const drop = $("#drop");
+
+      for (const ev of ["dragenter", "dragover"]) {
+        drop.addEventListener(ev, (e) => {
+          e.preventDefault();
+          drop.classList.add("over");
+        });
+      }
+      for (const ev of ["dragleave", "drop"]) {
+        drop.addEventListener(ev, () => drop.classList.remove("over"));
+      }
+
+      drop.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        const files = [...e.dataTransfer.files];
+        if (files.length === 0) return;
+
+        const log = [];
+        for (const file of files) {
+          // One request per file with the name in the query string. Avoids
+          // parsing multipart bodies on the server for no benefit.
+          const res = await fetch(`/api/upload?name=${encodeURIComponent(file.name)}`, {
+            method: "POST",
+            body: await file.arrayBuffer(),
+          });
+          const body = await res.json();
+          log.push(res.ok ? `uploaded ${file.name}` : `${file.name}: ${body.error}`);
+          showLog(log);
+        }
+
+        await runImport(log);
+      });
+
+      async function runImport(prefix = []) {
+        showLog([...prefix, "importing..."]);
+        const res = await fetch("/api/import", { method: "POST" });
+        const body = await res.json();
+        showLog([...prefix, ...(body.log ?? []), body.error ?? "done"]);
+        await load();
+      }
+
+      $("#import").addEventListener("click", () => runImport());
+
+      $("#publish").addEventListener("click", async () => {
+        const message = prompt("Describe the change", "Update photos");
+        if (message === null) return;
+
+        $("#publish").disabled = true;
+        showLog(["publishing..."]);
+        const res = await fetch("/api/publish", {
+          method: "POST",
+          body: JSON.stringify({ message }),
+        });
+        const body = await res.json();
+        showLog([...(body.log ?? []), body.error ?? "Pushed. The site rebuilds in about a minute."]);
+        await load();
+      });
+
+      load();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,105 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection, render } from "astro:content";
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export const getStaticPaths = (async () => {
+  const projects = await getCollection("projects", ({ data }) => !data.draft);
+  const ordered = projects.sort((a, b) => a.data.order - b.data.order);
+
+  return ordered.map((project, i) => ({
+    params: { slug: project.id },
+    // Neighbours are resolved here rather than in the page body so the
+    // footer link order matches the index exactly.
+    props: {
+      project,
+      prev: ordered[i - 1] ?? null,
+      next: ordered[i + 1] ?? null,
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { project, prev, next } = Astro.props;
+const { Content } = await render(project);
+---
+
+<BaseLayout title={project.data.title} description={project.data.summary}>
+  <article class="mx-auto max-w-[88rem]">
+    <p class="data">
+      <a href="/projects" class="hover:text-signal transition-colors">Projects</a>
+      <span class="text-rule mx-2">/</span>
+      <span>{project.data.status}</span>
+      <span class="text-rule mx-2">/</span>
+      <span>{project.data.period}</span>
+    </p>
+
+    <h1 class="font-display mt-5 max-w-[18ch] text-4xl sm:text-6xl">
+      {project.data.title}
+    </h1>
+
+    <p class="measure text-graphite mt-6 text-lg leading-relaxed">
+      {project.data.summary}
+    </p>
+
+    <div class="mt-16 grid gap-x-14 gap-y-12 lg:grid-cols-12">
+      <div class="copy lg:col-span-7">
+        <Content />
+      </div>
+
+      <aside class="lg:col-span-4 lg:col-start-9">
+        <h2 class="data border-rule border-b pb-2">Specification</h2>
+        <dl class="mt-4">
+          {
+            project.data.specs.map((spec) => (
+              <div class="border-rule flex items-baseline justify-between gap-4 border-b py-2">
+                <dt class="data">{spec.label}</dt>
+                <dd class="font-mono text-xs tabular-nums">{spec.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+
+        {
+          project.data.stack.length > 0 && (
+            <>
+              <h2 class="data border-rule mt-12 border-b pb-2">Tools</h2>
+              <p class="mt-4 font-mono text-xs leading-loose">
+                {project.data.stack.map((tool, i) => (
+                  <>
+                    {i > 0 && <span class="text-rule mx-2">/</span>}
+                    <span>{tool}</span>
+                  </>
+                ))}
+              </p>
+            </>
+          )
+        }
+      </aside>
+    </div>
+
+    <nav class="border-rule mt-24 flex flex-wrap justify-between gap-6 border-t pt-6">
+      {
+        prev ? (
+          <a href={`/projects/${prev.id}`} class="data hover:text-signal transition-colors">
+            <span aria-hidden="true">&larr;</span>
+            <span class="ml-2">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next && (
+          <a
+            href={`/projects/${next.id}`}
+            class="data hover:text-signal ml-auto transition-colors"
+          >
+            <span class="mr-2">{next.data.title}</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>

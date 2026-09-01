@@ -22,3 +22,10 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# wrangler local state
+.wrangler/
+
+# photo drop folder: originals stay in Lightroom/OneDrive, the processed
+# copies in src/content/photos are what ship
+photos-inbox/

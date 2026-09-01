@@ -1,0 +1,36 @@
+{
+  "aircraft": "Boeing F/A-18E Super Hornet",
+  "typeCode": "F18",
+  "operator": "US Navy Blue Angels",
+  "registration": "",
+  "airport": "KBFI",
+  "location": "",
+  "caption": "On the ramp at Boeing Field an hour before the demo. The canopy rail is painted for Capt. Adam Bryan.",
+  "tags": [
+    "military",
+    "airshow"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-08-02T14:34:51",
+  "timezone": "America/Los_Angeles",
+  "image": "./mg-1141.jpg",
+  "lqip": "data:image/webp;base64,UklGRrIAAABXRUJQVlA4IKYAAABwBACdASoYABAAPu1iqU2ppaOiMAgBMB2JYgCxAQz5/8B4jgyElhzpH0R/AAD3iy4Lynfr2SYuxcZPqlHClL+37nONpRNJ0Jlvdj51nW/d913OuZQUISewKSZj3xAM1q9Lj9o05AjZ/4UhwbP7M3+Py+vPFcCC2fqe0cJWqW4NyZy1s7gNyeKN/83dq9kU046x/c3NJr++S0Irg2KukGMk1JVK46gA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 75,
+    "aperture": 11,
+    "shutter": "1/500",
+    "iso": 250,
+    "rawDate": "2026:08:02 14:34:51"
+  },
+  "source": {
+    "file": "_MG_1141_1.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 7594903,
+    "originalLongEdge": 5850
+  }
+}

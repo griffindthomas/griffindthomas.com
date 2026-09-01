@@ -172,3 +172,71 @@ canvas {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Long-form copy
+   ---------------------------------------------------------------------------
+   Rendered markdown arrives as plain tags with no classes, so this is a real
+   global rule rather than a utility. Scoped to `.copy` so it never leaks into
+   the layout chrome.
+   --------------------------------------------------------------------------- */
+
+.copy {
+  max-width: 68ch;
+  color: var(--color-graphite);
+  line-height: 1.7;
+}
+
+.copy > * + * {
+  margin-top: 1.15em;
+}
+
+.copy h2,
+.copy h3 {
+  color: var(--color-ink);
+  margin-top: 2em;
+}
+
+.copy h2 {
+  font-size: 1.75rem;
+}
+
+.copy h3 {
+  font-size: 1.25rem;
+}
+
+.copy strong {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.copy a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-rule);
+  transition: text-decoration-color 160ms ease;
+}
+
+.copy a:hover {
+  text-decoration-color: var(--color-signal);
+}
+
+/* Inline code is a registration, a callsign or a radar code far more often
+   than it is source, so it is set as data rather than as a code block. */
+.copy code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  letter-spacing: 0.02em;
+  background: var(--color-paper-sunk);
+  padding: 0.1em 0.35em;
+  color: var(--color-ink);
+}
+
+.copy ul,
+.copy ol {
+  padding-left: 1.25em;
+}
+
+.copy li + li {
+  margin-top: 0.4em;
+}

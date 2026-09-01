@@ -1,0 +1,36 @@
+{
+  "aircraft": "Boeing F/A-18E Super Hornet",
+  "typeCode": "F18",
+  "operator": "US Navy Blue Angels",
+  "registration": "",
+  "airport": "",
+  "location": "Seafair, Seattle",
+  "caption": "Six jets in the Delta, smoke on.",
+  "tags": [
+    "military",
+    "airshow"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-08-02T15:33:59",
+  "timezone": "America/Los_Angeles",
+  "image": "./mg-1250.jpg",
+  "lqip": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAABwAwCdASoYABAAPu1iqU2ppaOiMAgBMB2JQBOmUAAwvSNct8AA9wQaznmNyuKbfcDAhRk8zGp8EuUr1NfAEN8cUZac59/dyRYhYAAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 250,
+    "aperture": 11,
+    "shutter": "1/400",
+    "iso": 100,
+    "rawDate": "2026:08:02 15:33:59"
+  },
+  "source": {
+    "file": "_MG_1250.jpg",
+    "width": 1280,
+    "height": 853,
+    "bytes": 448425,
+    "originalLongEdge": 1280
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "aircraft": "Boeing P-8A Poseidon",
+  "typeCode": "P8",
+  "operator": "US Navy",
+  "registration": "",
+  "airport": "KBFI",
+  "location": "",
+  "caption": "VP-4, the Skinny Dragons, out of Whidbey Island. Tail code YD, modex 553. The BuNo reads 16955 and then a digit I cannot make out.",
+  "tags": [
+    "military"
+  ],
+  "featured": true,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-08-02T12:08:24",
+  "timezone": "America/Los_Angeles",
+  "image": "./mg-1080.jpg",
+  "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAADwAwCdASoYABAAPu1iqU2ppaOiMAgBMB2JZwC7AB7GtwZgcbTW0rkAAP3ZbgwCouY4QxlPxnU6nWzGKS0SdJHZZaB24WjleE1y0ibQiA39keuVjmXP6co9DJaZBKK8CEpKtJF1JIzvYEPY3p2gAA==",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 80,
+    "aperture": 11,
+    "shutter": "1/320",
+    "iso": 160,
+    "rawDate": "2026:08:02 12:08:24"
+  },
+  "source": {
+    "file": "_MG_1080.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 3012816,
+    "originalLongEdge": 5707
+  }
+}

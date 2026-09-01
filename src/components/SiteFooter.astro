@@ -1,10 +1,14 @@
 ---
+import { PROFILES, RESUME_PDF, SITE } from "../config/site";
+
 const year = new Date().getFullYear();
 
+// Real profiles, from one config file. These used to be bare platform home
+// pages, which is a broken link with a valid URL.
 const elsewhere = [
-  { href: "https://github.com/", label: "GitHub" },
-  { href: "https://instagram.com/", label: "Instagram" },
-  { href: "/contact", label: "Contact" },
+  ...PROFILES.map((p) => ({ href: p.href, label: p.label, external: true })),
+  { href: "/resume", label: "Resume", external: false },
+  { href: "/contact", label: "Contact", external: false },
 ];
 ---
 
@@ -12,16 +16,16 @@ const elsewhere = [
   <div
     class="mx-auto flex max-w-[88rem] flex-col gap-6 px-5 py-8 sm:px-8 md:flex-row md:items-baseline md:justify-between lg:px-12"
   >
-    <p class="data">&copy; {year} Griffin Thomas</p>
+    <p class="data">&copy; {year} {SITE.name}</p>
 
-    <ul class="flex flex-wrap gap-5">
+    <ul class="flex flex-wrap gap-x-5 gap-y-2">
       {
         elsewhere.map((link) => (
           <li>
             <a
               href={link.href}
               class="data hover:text-signal transition-colors"
-              {...link.href.startsWith("http")
+              {...link.external
                 ? { target: "_blank", rel: "me noopener noreferrer" }
                 : {}}
             >
@@ -30,11 +34,16 @@ const elsewhere = [
           </li>
         ))
       }
+      <li>
+        <a href={RESUME_PDF} download class="data hover:text-signal transition-colors">
+          PDF
+        </a>
+      </li>
     </ul>
 
     {/* Decorative aviation detail: Zulu (UTC) clock over the home field. */}
     <p class="data" aria-hidden="true">
-      <span>N33.4342 W112.0116</span>
+      <span>N{SITE.base.lat.toFixed(4)} W{Math.abs(SITE.base.lon).toFixed(4)}</span>
       <span class="text-rule mx-2">/</span>
       <span data-zulu>--:--:--Z</span>
     </p>
