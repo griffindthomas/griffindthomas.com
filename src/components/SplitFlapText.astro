@@ -71,6 +71,46 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
     // Landing on the real character is the point, so the deck it cycles
     // through is the set actually used plus the alphabet.
     const DECK = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 /-:.".split("");
+    const junk = () => DECK[Math.floor(Math.random() * DECK.length)];
+
+    /**
+     * The real character of every module, stamped onto the module itself.
+     *
+     * Everything below this line displays temporary nonsense at some point,
+     * so there has to be one place that always holds the truth. Reading it
+     * back off the element means a module can be restored from any state by
+     * anything, without a variable somewhere having to still be correct.
+     * The server-rendered text is that truth.
+     */
+    const modules = new Map<HTMLElement, HTMLElement[]>();
+    for (const group of groups) {
+      const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
+      for (const el of flaps) {
+        // Trimmed, because the character sits on its own line in the markup
+        // and the raw text node carries the indentation with it. A padding
+        // module normalises to a single space rather than to nothing.
+        const ch = (el.textContent ?? "").trim();
+        el.dataset.ch = ch === "" ? " " : ch;
+      }
+      modules.set(group, flaps);
+    }
+
+    function reset(el: HTMLElement) {
+      el.textContent = el.dataset.ch ?? "";
+      el.removeAttribute("data-flipping");
+    }
+
+    /** Modules the shuffle currently owns, so the rattle leaves them alone. */
+    const shuffling = new Set<HTMLElement>();
+    /** Modules showing junk because the page is moving. */
+    const rattled = new Set<HTMLElement>();
+    /** Groups on screen. Scrambling one nobody can see is a wasted write. */
+    const onscreen = new Set<HTMLElement>();
+
+    function unrattle() {
+      for (const el of rattled) reset(el);
+      rattled.clear();
+    }
 
     interface Cell {
       el: HTMLElement;
@@ -94,6 +134,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
     function finish(cell: Cell) {
       cell.el.textContent = cell.target;
       cell.el.removeAttribute("data-flipping");
+      shuffling.delete(cell.el);
       const left = (busy.get(cell.owner) ?? 1) - 1;
       if (left <= 0) busy.delete(cell.owner);
       else busy.set(cell.owner, left);
@@ -124,7 +165,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           if (cell.remaining <= 0) {
             finish(cell);
           } else {
-            cell.el.textContent = DECK[Math.floor(Math.random() * DECK.length)];
+            cell.el.textContent = junk();
             cell.el.setAttribute("data-flipping", "");
           }
         }
@@ -148,23 +189,28 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
         cell.remaining = 0;
         finish(cell);
       }
+      unrattle();
     }
 
     function enqueue(group: HTMLElement) {
       const order = Number(group.dataset.groupOrder ?? 0);
-      const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
+      const flaps = modules.get(group) ?? [];
 
       busy.set(group, flaps.length);
 
       flaps.forEach((el, i) => {
+        // The rattle hands the module over rather than fighting the shuffle
+        // for it. Whichever finishes last would otherwise decide the text.
+        rattled.delete(el);
+        shuffling.add(el);
+
         cells.push({
           el,
           owner: group,
-          // Read the SETTLED text, never a character mid-flip. A group is
-          // only ever enqueued when it is not already busy, which is what
-          // guarantees this is the real value and not a random letter that
-          // would then get baked in as the target.
-          target: el.textContent ?? "",
+          // The stamped character, not whatever is on screen. On screen it
+          // may well be junk from the rattle or from a flip still in flight,
+          // and reading that would bake the junk in as the target.
+          target: el.dataset.ch ?? "",
           remaining: 6 + Math.floor(Math.random() * 10),
           // Left to right within a group, and later groups start later, so a
           // grid of these cascades in reading order.
@@ -221,6 +267,49 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       let tilt = 0;
       let settling = false;
 
+      /**
+       * Characters shaken loose while the page moves.
+       *
+       * A module that only tilts is a box that tilts. A module that tilts and
+       * shows the wrong character is a flap that has been knocked off its
+       * detent, which is the thing being imitated. The junk is never allowed
+       * to outlive the movement: one step's worth is on screen at a time, and
+       * everything goes back to the stamped character as the page settles.
+       */
+      const SCRAMBLE_SHARE = 0.12;
+      // Below this the page has all but stopped, so the text is readable
+      // again before the tilt has finished easing out.
+      const SCRAMBLE_FLOOR = MIN_TILT * 0.4;
+      let rattleFrame = 0;
+
+      function scramble() {
+        // Only what is on screen. On the gallery there are several hundred
+        // modules and a handful of them are in view.
+        const pool: HTMLElement[] = [];
+        for (const group of onscreen) {
+          const flaps = modules.get(group);
+          if (flaps) pool.push(...flaps);
+        }
+
+        // Put the previous step back first. Nothing accumulates, so no module
+        // can be left holding a random letter once scrolling stops.
+        unrattle();
+        if (pool.length === 0) return;
+
+        const strength = Math.min(1, Math.abs(tilt) / MAX_TILT);
+        const count = Math.max(1, Math.round(pool.length * SCRAMBLE_SHARE * strength));
+
+        for (let i = 0; i < count; i += 1) {
+          const el = pool[Math.floor(Math.random() * pool.length)];
+          // Blank padding modules have nothing to disturb, and anything the
+          // shuffle is holding belongs to the shuffle.
+          if (!el || shuffling.has(el) || rattled.has(el) || el.dataset.ch === " ") continue;
+          el.textContent = junk();
+          el.setAttribute("data-flipping", "");
+          rattled.add(el);
+        }
+      }
+
       const settle = () => {
         // Ease back to flat, and stop asking for frames once it is there.
         tilt *= 0.88;
@@ -229,6 +318,11 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           settling = false;
         }
         document.documentElement.style.setProperty("--jig", tilt.toFixed(2));
+
+        rattleFrame += 1;
+        if (Math.abs(tilt) < SCRAMBLE_FLOOR) unrattle();
+        else if (rattleFrame % 4 === 0) scramble();
+
         if (settling) requestAnimationFrame(settle);
       };
 
@@ -265,6 +359,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
             tilt = 0;
             settling = false;
             document.documentElement.style.setProperty("--jig", "0");
+            unrattle();
           }, 500);
 
           if (!settling) {
@@ -290,8 +385,15 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (!entry.isIntersecting) continue;
             const group = entry.target as HTMLElement;
+            // Doubles as the register of what is on screen, which is what
+            // keeps the scroll rattle from scrambling modules nobody is
+            // looking at.
+            if (!entry.isIntersecting) {
+              onscreen.delete(group);
+              continue;
+            }
+            onscreen.add(group);
             if (busy.has(group)) continue;
             enqueue(group);
           }
