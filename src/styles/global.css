@@ -259,14 +259,19 @@ canvas {
    --------------------------------------------------------------------------- */
 
 .sf {
-  --flap-w: 0.95rem;
-  --flap-h: 1.45rem;
-  --flap-fs: 0.75rem;
-  --flap-gap: 2px;
+  --flap-w: 1rem;
+  --flap-h: 1.5rem;
+  --flap-fs: 0.8125rem;
+  /* 1px, not 2. Wider gaps push the modules apart until the eye reads a row
+     of boxes instead of a word, which is most of what made this hard to
+     read at small sizes. */
+  --flap-gap: 1px;
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--flap-gap);
   vertical-align: baseline;
+  /* Gives the flaps somewhere to hinge towards when they rattle. */
+  perspective: 260px;
 }
 
 /* Words are kept whole so a wrapping line never splits one mid-way. A board
@@ -300,6 +305,18 @@ canvas {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   border-radius: 1px;
+  /* Two independent motions on one transform: `--jig` is the loose rattle
+     driven by scrolling, `--squash` is the flip itself. Keeping them as
+     separate custom properties means neither one clobbers the other. */
+  transform: rotateX(calc(var(--jig, 0) * 1deg)) scaleY(var(--squash, 1));
+  transition: transform 170ms ease-out;
+  will-change: transform;
+}
+
+/* Alternate the hinge direction along a word so the row rattles rather than
+   tilting as one rigid block. */
+.sf-word .flap:nth-child(even) {
+  transform: rotateX(calc(var(--jig, 0) * -1deg)) scaleY(var(--squash, 1));
 }
 
 /* The seam. This one line is most of what makes it read as a split-flap
@@ -312,19 +329,26 @@ canvas {
   top: 50%;
   height: 1px;
   background: var(--color-paper);
-  opacity: 0.9;
+  /* Suggested, not drawn through the glyph. At full strength this line cuts
+     small letters in half and is the other half of the legibility problem. */
+  opacity: 0.45;
 }
 
 /* Held mid-flip. Squashing about the seam is what a falling flap looks like,
    and it costs one transform. */
 .flap[data-flipping] {
-  transform: scaleY(0.55);
+  --squash: 0.6;
   color: var(--color-graphite);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flap[data-flipping] {
+  .flap,
+  .sf-word .flap:nth-child(even) {
     transform: none;
+    transition: none;
+  }
+
+  .flap[data-flipping] {
     color: var(--color-ink);
   }
 }
@@ -332,7 +356,7 @@ canvas {
 /* Smaller modules for a photo card, where an aircraft name has to sit inside
    a third of the page rather than across a departure board. */
 .sf-card {
-  --flap-w: 0.72rem;
-  --flap-h: 1.1rem;
-  --flap-fs: 0.5625rem;
+  --flap-w: 0.83rem;
+  --flap-h: 1.25rem;
+  --flap-fs: 0.6875rem;
 }

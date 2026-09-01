@@ -25,10 +25,10 @@ const { title, description, image, bare = false, noindex = false } = Astro.props
 // Astro.site is set in astro.config.mjs, so these resolve to absolute URLs -
 // required for OG tags, which reject relative paths.
 const canonical = new URL(Astro.url.pathname, Astro.site);
-// Only advertise a preview image once one actually exists: pointing og:image
-// at a missing file makes every share render a broken thumbnail, which is
-// worse than shipping no image at all. Generated in Phase 5.
-const ogImage = image ? new URL(image, Astro.site) : null;
+// The card that renders when the site is pasted into LinkedIn, a message or
+// Slack. Pages may override it; everything else falls back to the griffin
+// card. Regenerate with `node scripts/make-og.mjs`.
+const ogImage = new URL(image ?? "/og.png", Astro.site);
 
 const SITE_NAME = "Griffin Thomas";
 const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
@@ -66,8 +66,11 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE_NAME}, ${description}`} />
+    <meta name="twitter:card" content="summary_large_image" />
 
     <meta name="generator" content={Astro.generator} />
     <link rel="sitemap" href="/sitemap-index.xml" />

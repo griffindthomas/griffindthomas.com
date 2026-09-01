@@ -120,6 +120,24 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       requestAnimationFrame(tick);
     };
 
+    /**
+     * Force every module to its real character, whatever state it is in.
+     *
+     * This matters more than it looks. While a module is flipping it is
+     * displaying a RANDOM letter, so anything that stops the loop leaves the
+     * reader looking at gibberish where a caption should be. The animation
+     * runs on requestAnimationFrame, which browsers suspend for background
+     * tabs, so that is not hypothetical.
+     */
+    function settleAll() {
+      for (const cell of cells) {
+        if (cell.remaining <= 0) continue;
+        cell.remaining = 0;
+        cell.el.textContent = cell.target;
+        cell.el.removeAttribute("data-flipping");
+      }
+    }
+
     function enqueue(group: HTMLElement) {
       const order = Number(group.dataset.groupOrder ?? 0);
       const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
@@ -135,10 +153,88 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
         });
       });
 
+      // Backstop on a timer rather than a frame, because timers still fire
+      // when frames do not. A settled board that never animated is fine; a
+      // board frozen mid-flip showing nonsense is not.
+      window.setTimeout(settleAll, 4000);
+
       if (!running) {
         running = true;
         requestAnimationFrame(tick);
       }
+    }
+
+    // Leaving the tab suspends the frame loop, so snap to the real text on
+    // the way out rather than coming back to a half-scrambled page.
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) settleAll();
+    });
+
+    /**
+     * Loose-flap rattle while the page scrolls.
+     *
+     * Driven by scroll VELOCITY, not position, so the modules only stir when
+     * the page is actually moving and settle the moment it stops. The angle
+     * is written to one custom property on the root element, and every module
+     * reads it from CSS: one style write per frame regardless of how many
+     * flaps are on the page, and the transforms themselves are composited.
+     * Setting a transform on each of several hundred modules individually
+     * would be an obvious way to make scrolling stutter.
+     */
+    if (!calm) {
+      const MAX_TILT = 9;
+      let lastY = window.scrollY;
+      let lastT = performance.now();
+      let tilt = 0;
+      let settling = false;
+
+      const settle = () => {
+        // Ease back to flat, and stop asking for frames once it is there.
+        tilt *= 0.82;
+        if (Math.abs(tilt) < 0.05) {
+          tilt = 0;
+          settling = false;
+        }
+        document.documentElement.style.setProperty("--jig", tilt.toFixed(2));
+        if (settling) requestAnimationFrame(settle);
+      };
+
+      let flatten = 0;
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          const now = performance.now();
+          const dt = now - lastT;
+          if (dt < 8) return;
+
+          const dy = window.scrollY - lastY;
+          lastY = window.scrollY;
+          lastT = now;
+
+          // Pixels per millisecond, scaled into degrees and clamped so a
+          // flung scroll does not fold the modules flat.
+          const velocity = dy / dt;
+          tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, velocity * 6));
+          document.documentElement.style.setProperty("--jig", tilt.toFixed(2));
+
+          // Same reasoning as the flip backstop: the easing runs on frames,
+          // so if frames stop the modules would stay permanently tilted. A
+          // timer guarantees they end up flat.
+          window.clearTimeout(flatten);
+          flatten = window.setTimeout(() => {
+            tilt = 0;
+            settling = false;
+            document.documentElement.style.setProperty("--jig", "0");
+          }, 500);
+
+          if (!settling) {
+            settling = true;
+            requestAnimationFrame(settle);
+          }
+        },
+        { passive: true },
+      );
     }
 
     if (!calm) {
