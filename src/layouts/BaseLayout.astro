@@ -6,6 +6,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "../styles/global.css";
 
+import AltimeterTape from "../components/AltimeterTape.astro";
 import MetarStrip from "../components/MetarStrip.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
@@ -104,5 +105,7 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
     </main>
 
     <SiteFooter />
+
+    <AltimeterTape />
   </body>
 </html>

@@ -1,0 +1,247 @@
+---
+/**
+ * Scroll position, read as an altitude tape.
+ *
+ * The tape on the right of a primary flight display: a scale that slides past
+ * a fixed pointer, ticks every hundred feet, and the ground hatched in below
+ * zero. Here the top of a page is ten thousand feet and the bottom is on the
+ * runway, so reading a page is a descent and the bottom of it is a landing.
+ *
+ * It is a scroll bar with a story, and the numbers are honest about that:
+ * the same ten thousand feet on every page, however long the page is.
+ *
+ * Fixed to the right gutter, and only where there is a gutter to be in. On a
+ * narrow window it is not drawn at all rather than laid over the text.
+ */
+
+/** Feet at the top of every page. */
+const CEILING = 10000;
+/** Pixels per foot on the tape. 100 ft between ticks lands at 30px. */
+const SCALE = 0.3;
+/** Feet between ticks, and between the ticks that carry a number. */
+const TICK = 100;
+const LABEL = 500;
+
+const ticks: Array<{ ft: number; labelled: boolean }> = [];
+for (let ft = 0; ft <= CEILING; ft += TICK) {
+  ticks.push({ ft, labelled: ft % LABEL === 0 });
+}
+---
+
+<div class="tape" data-tape aria-hidden="true" hidden>
+  <div class="window">
+    <div
+      class="ladder"
+      data-ladder
+      style={`--scale:${SCALE};--ceiling:${CEILING};height:${CEILING * SCALE}px`}
+    >
+      {
+        ticks.map((tick) => (
+          <span
+            class:list={["tick", tick.labelled && "major"]}
+            style={`top:${(CEILING - tick.ft) * SCALE}px`}
+          >
+            {tick.labelled && <i>{tick.ft.toLocaleString("en-US")}</i>}
+          </span>
+        ))
+      }
+
+      {/* Below the bottom of the scale, which is the ground. */}
+      <span class="terrain" style={`top:${CEILING * SCALE}px`}></span>
+    </div>
+  </div>
+
+  <div class="pointer">
+    <span class="readout" data-readout>10,000</span>
+  </div>
+</div>
+
+<style>
+  .tape {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Ticks only by default. The numbers need a gutter of their own and
+       there is not one until the window is wider than the content. */
+    width: 0.9rem;
+    height: min(58vh, 30rem);
+    z-index: 30;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.04em;
+    color: var(--color-rule);
+    /* Only where the page has a gutter to spare. Narrower than this and it
+       would sit on top of the text, which is a worse trade than not having
+       it. */
+    display: none;
+  }
+
+  @media (min-width: 1280px) {
+    .tape {
+      display: block;
+    }
+  }
+
+  /* The content stops widening at 88rem, so past about this point there is
+     real empty gutter on each side and the scale can carry its numbers
+     without sitting on top of anything. */
+  @media (min-width: 1520px) {
+    .tape {
+      width: 2.75rem;
+    }
+  }
+
+  .tick i,
+  .readout {
+    display: none;
+  }
+
+  @media (min-width: 1520px) {
+    .tick i {
+      display: inline;
+    }
+    .readout {
+      display: inline-block;
+    }
+  }
+
+  .window {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Fades out top and bottom rather than being cut off square, so the scale
+     reads as continuing past the ends. */
+  @supports (mask-image: linear-gradient(black, black)) or
+    (-webkit-mask-image: linear-gradient(black, black)) {
+    .window {
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 14%,
+        #000 86%,
+        transparent
+      );
+      mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+    }
+  }
+
+  .ladder {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    will-change: transform;
+  }
+
+  .tick {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    width: 100%;
+    height: 0;
+  }
+
+  /* The tick itself. A short rule for every hundred feet, a longer one for
+     every five hundred, which is the pattern on the instrument. */
+  .tick::after {
+    content: "";
+    width: 0.3rem;
+    height: 1px;
+    background: var(--color-rule);
+  }
+
+  .tick.major::after {
+    width: 0.55rem;
+  }
+
+  .tick i {
+    font-style: normal;
+    color: var(--color-graphite);
+    opacity: 0.65;
+  }
+
+  /* Hatched, the way terrain is hatched on the instrument. */
+  .terrain {
+    position: absolute;
+    right: 0;
+    width: 100%;
+    height: 40rem;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-signal-soft) 0 3px,
+      transparent 3px 7px
+    );
+    border-top: 1px solid var(--color-signal);
+  }
+
+  .pointer {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 100%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .readout {
+    background: var(--color-paper);
+    border: 1px solid var(--color-rule);
+    border-right: 0;
+    color: var(--color-ink);
+    padding: 0.15rem 0.3rem;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<script>
+  const tape = document.querySelector<HTMLElement>("[data-tape]");
+  const ladder = tape?.querySelector<HTMLElement>("[data-ladder]");
+  const readout = tape?.querySelector<HTMLElement>("[data-readout]");
+
+  if (tape && ladder && readout) {
+    const CEILING = Number(ladder.style.getPropertyValue("--ceiling")) || 10000;
+    const SCALE = Number(ladder.style.getPropertyValue("--scale")) || 0.3;
+
+    /** A page with nothing to scroll has no descent to show. */
+    const scrollable = () => document.documentElement.scrollHeight - window.innerHeight;
+
+    let queued = false;
+
+    function draw() {
+      queued = false;
+      const range = scrollable();
+      if (range < 200) {
+        tape!.hidden = true;
+        return;
+      }
+      tape!.hidden = false;
+
+      const progress = Math.min(1, Math.max(0, window.scrollY / range));
+      const feet = Math.round(((1 - progress) * CEILING) / 10) * 10;
+
+      // Line the current altitude up with the pointer, which sits at the
+      // middle of the window.
+      const offset = tape!.clientHeight / 2 - (CEILING - feet) * SCALE;
+      ladder!.style.transform = `translateY(${offset.toFixed(1)}px)`;
+      readout!.textContent = feet.toLocaleString("en-US");
+    }
+
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(draw);
+    };
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    draw();
+  }
+</script>
