@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import PhotoGallery from "../components/PhotoGallery.astro";
 import SplitFlapBoard from "../components/SplitFlapBoard.astro";
 import TypeBoard from "../components/TypeBoard.astro";
+import AltimeterTape from "../components/AltimeterTape.astro";
 import { buildFilters, galleryStats, loadPhotos } from "../lib/photos";
 
 const photos = await loadPhotos();
@@ -84,4 +85,8 @@ const readout = [
       )
     }
   </div>
+
+  {/* Only here. It is a scroll indicator dressed as an instrument, which suits
+      the page full of aeroplanes and would be a costume anywhere else. */}
+  <AltimeterTape />
 </BaseLayout>

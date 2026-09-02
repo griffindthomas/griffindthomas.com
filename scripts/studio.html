@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Photo Studio</title>
+    <title>Studio</title>
     <style>
       :root {
         --paper: #faf8f4;
@@ -150,12 +150,61 @@
 
       .spacer { flex: 1; }
       a { color: var(--ink); }
+
+      .tabs { display: flex; gap: 4px; margin-left: 4px; }
+      .tab {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border: 0;
+        background: none;
+        color: var(--graphite);
+        padding: 6px 10px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+      .tab[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--signal); }
+
+      #new-project { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+      #new-project input { flex: 1; min-width: 240px; }
+      #new-project .label { flex-basis: 100%; }
+
+      /* A project card is all fields, so it does not need the photo column. */
+      .card.project { grid-template-columns: 1fr; }
+      .project-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+      .project-head .slug { font-family: var(--mono); font-size: 10.5px; color: var(--graphite); }
+
+      .specs { display: grid; gap: 6px; }
+      .spec-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; gap: 8px; }
+      .spec-row button {
+        border: 0;
+        background: none;
+        color: var(--graphite);
+        cursor: pointer;
+        font-size: 15px;
+        line-height: 1;
+        padding: 0 6px;
+      }
+      .spec-row button:hover { color: var(--signal); }
+      .add-spec { align-self: start; margin-top: 4px; }
+
+      textarea.body {
+        min-height: 320px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.65;
+      }
     </style>
   </head>
 
   <body>
     <header>
-      <h1>Photo Studio</h1>
+      <h1>Studio</h1>
+      <nav class="tabs">
+        <button class="tab" data-tab="photos" aria-pressed="true">Photos</button>
+        <button class="tab" data-tab="projects" aria-pressed="false">Projects</button>
+      </nav>
       <span class="label" id="summary">Loading</span>
       <span class="spacer"></span>
       <button id="import">Import inbox</button>
@@ -163,6 +212,7 @@
     </header>
 
     <main>
+      <div id="panel-photos">
       <div id="drop">
         <p class="label" style="margin: 0 0 6px">Drop photos here</p>
         <p style="margin: 0; color: var(--graphite); font-size: 13px">
@@ -176,6 +226,18 @@
 
       <!-- Every type code the site knows, so the box offers real ones. -->
       <datalist id="type-codes"></datalist>
+      </div>
+
+      <div id="panel-projects" hidden>
+        <div id="new-project">
+          <input type="text" id="new-title" placeholder="Title of the new project" />
+          <button id="add-project">Start it</button>
+          <p class="label" style="margin: 8px 0 0">
+            It starts hidden from the site. Untick "Hide from site" when it is ready.
+          </p>
+        </div>
+        <div id="project-cards"></div>
+      </div>
     </main>
 
     <script>
@@ -293,6 +355,163 @@
         </section>`;
       }
 
+      // --- projects ---------------------------------------------------------
+
+      function specRow(label, value) {
+        return `
+          <div class="spec-row">
+            <input type="text" class="spec-label" value="${esc(label)}" placeholder="Label" />
+            <input type="text" class="spec-value" value="${esc(value)}" placeholder="Value" />
+            <button type="button" class="drop-spec" title="Remove this row">&times;</button>
+          </div>`;
+      }
+
+      /**
+       * The list, or a reason there is not one.
+       *
+       * `projects` missing entirely means the running studio process is older
+       * than this page: the page is read from disk on every request, the
+       * server is not. Saying so beats an empty panel that looks broken.
+       */
+      function projectList(projects) {
+        if (!projects) {
+          return `
+          <section class="card project missing">
+            <p style="margin: 0">
+              This studio is still running an older version of itself.
+              Close the black window and open the studio again.
+            </p>
+          </section>`;
+        }
+        if (!projects.length) {
+          return `
+          <section class="card project">
+            <p style="margin: 0; color: var(--graphite)">
+              No projects yet. Start one with the box above.
+            </p>
+          </section>`;
+        }
+        return projects.map(projectCard).join("");
+      }
+
+      function projectCard(p) {
+        if (p.unreadable) {
+          return `
+          <section class="card project missing">
+            <div class="project-head">
+              <strong>${esc(p.slug)}</strong>
+              <span class="slug">cannot be read: ${esc(p.unreadable)}</span>
+            </div>
+            <p style="margin: 0; color: var(--graphite); font-size: 13px">
+              This file is left alone rather than rewritten into something else.
+              Open it in an editor to fix the frontmatter.
+            </p>
+          </section>`;
+        }
+
+        const d = p.data ?? {};
+        const specs = Array.isArray(d.specs) ? d.specs : [];
+
+        return `
+        <section class="card project" data-project="${esc(p.slug)}">
+          <div class="project-head">
+            <strong>${esc(d.title ?? p.slug)}</strong>
+            <span class="slug">/projects/${esc(p.slug)}</span>
+            <span class="spacer"></span>
+            <span class="status" data-status></span>
+          </div>
+
+          <div class="fields">
+            <div class="field wide">
+              <span class="label">Title</span>
+              <input type="text" name="title" value="${esc(d.title ?? "")}" />
+            </div>
+            <div class="field wide">
+              <span class="label">Summary</span>
+              <input type="text" name="summary" value="${esc(d.summary ?? "")}" placeholder="One line, shown in the index. No full stop." />
+            </div>
+            <div class="field">
+              <span class="label">Status</span>
+              <input type="text" name="status" value="${esc(d.status ?? "")}" placeholder="e.g. Running, Unflown, Fixed" />
+            </div>
+            <div class="field">
+              <span class="label">Period</span>
+              <input type="text" name="period" value="${esc(d.period ?? "")}" placeholder="e.g. 2026 or 2024-2026" />
+            </div>
+            <div class="field">
+              <span class="label">Order on the page</span>
+              <input type="number" name="order" value="${Number(d.order ?? 0)}" />
+            </div>
+            <div class="field">
+              <span class="label">Tools, comma separated</span>
+              <input type="text" name="stack" value="${esc((d.stack ?? []).join(", "))}" />
+            </div>
+
+            <div class="field wide">
+              <span class="label">Specification rows</span>
+              <div class="specs" data-specs>${specs.map((r) => specRow(r?.label ?? "", r?.value ?? "")).join("")}</div>
+              <button type="button" class="add-spec">Add a row</button>
+            </div>
+
+            <div class="field wide">
+              <span class="label">Write-up, markdown</span>
+              <textarea class="body" name="body" spellcheck="true">${esc(p.body ?? "")}</textarea>
+            </div>
+
+            <div class="field wide toggles">
+              <label><input type="checkbox" name="draft"${d.draft ? " checked" : ""} /> <span class="label">Hide from site</span></label>
+            </div>
+          </div>
+        </section>`;
+      }
+
+      function collectProject(section) {
+        const val = (n) => $(`[name="${n}"]`, section);
+        const specs = [...section.querySelectorAll(".spec-row")].map((row) => ({
+          label: $(".spec-label", row).value,
+          value: $(".spec-value", row).value,
+        }));
+        return {
+          data: {
+            title: val("title").value,
+            summary: val("summary").value,
+            status: val("status").value,
+            period: val("period").value,
+            order: Number(val("order").value) || 0,
+            stack: val("stack").value.split(",").map((t) => t.trim()).filter(Boolean),
+            specs,
+            draft: val("draft").checked,
+          },
+          body: val("body").value,
+        };
+      }
+
+      async function saveProject(section) {
+        const status = $("[data-status]", section);
+        status.className = "status";
+        status.textContent = "Saving";
+
+        const res = await fetch("/api/project", {
+          method: "POST",
+          body: JSON.stringify({ slug: section.dataset.project, ...collectProject(section) }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Save failed";
+          return;
+        }
+
+        status.className = "status saved";
+        status.textContent = "Saved";
+        setTimeout(() => {
+          status.textContent = "";
+          status.className = "status";
+        }, 1800);
+        refreshStatus();
+      }
+
       function collect(section) {
         const val = (n) => $(`[name="${n}"]`, section);
         return {
@@ -376,9 +595,30 @@
         ).join("");
 
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
+        $("#project-cards").innerHTML = projectList(state.projects);
 
-        // One listener per card, not per input.
-        for (const section of document.querySelectorAll(".card")) {
+        // One listener per project card. Spec rows come and go inside it, so
+        // the listener sits on the card rather than on the inputs.
+        for (const section of document.querySelectorAll(".card.project[data-project]")) {
+          section.addEventListener("change", () => saveProject(section));
+
+          section.addEventListener("click", (event) => {
+            const row = event.target.closest(".drop-spec");
+            if (row) {
+              row.parentElement.remove();
+              saveProject(section);
+              return;
+            }
+            if (event.target.closest(".add-spec")) {
+              $("[data-specs]", section).insertAdjacentHTML("beforeend", specRow("", ""));
+              // Not saved yet: an empty row is dropped on the way in, so it
+              // would come straight back out again. It saves with its content.
+            }
+          });
+        }
+
+        // One listener per photo card, not per input.
+        for (const section of document.querySelectorAll(".card:not(.project)")) {
           section.addEventListener("change", () => save(section));
           // Live, because the point is to catch a code that lands nowhere
           // BEFORE it is saved and quietly missing from the type board.
@@ -415,6 +655,39 @@
           note.setAttribute("data-unknown", "");
         }
       }
+
+      // --- tabs ---------------------------------------------------------------
+      for (const tab of document.querySelectorAll(".tab")) {
+        tab.addEventListener("click", () => {
+          for (const other of document.querySelectorAll(".tab")) {
+            const on = other === tab;
+            other.setAttribute("aria-pressed", String(on));
+            $(`#panel-${other.dataset.tab}`).hidden = !on;
+          }
+        });
+      }
+
+      // --- new project ---------------------------------------------------------
+      $("#add-project").addEventListener("click", async () => {
+        const input = $("#new-title");
+        const title = input.value.trim();
+        if (!title) {
+          input.focus();
+          return;
+        }
+        const res = await fetch("/api/project/new", {
+          method: "POST",
+          body: JSON.stringify({ title }),
+        });
+        const body = await res.json();
+        if (!res.ok) return showLog(body.error ?? "Could not start it");
+        input.value = "";
+        await load();
+        // Straight to the thing that was just made, rather than hunting for it.
+        const made = document.querySelector(`[data-project="${body.slug}"]`);
+        made?.scrollIntoView({ block: "center" });
+        made?.querySelector('[name="summary"]')?.focus();
+      });
 
       // --- drag and drop -----------------------------------------------------
       const drop = $("#drop");

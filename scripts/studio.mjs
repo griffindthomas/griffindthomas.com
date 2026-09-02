@@ -28,6 +28,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import YAML from 'yaml';
+
 import { INBOX, LIBRARY, findGaps, runImport } from './photos.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -74,6 +76,102 @@ const typeCodes = aircraftTypes
   .sort((a, b) => a.code.localeCompare(b.code));
 
 const sidecarPath = (slug) => path.join(LIBRARY, `${slug}.json`);
+
+// --- projects ---------------------------------------------------------------
+
+const PROJECTS = path.join(ROOT, 'src', 'content', 'projects');
+
+const projectPath = (slug) => path.join(PROJECTS, `${slug}.md`);
+
+/**
+ * Split a markdown file into its frontmatter and its body.
+ *
+ * Returns null rather than guessing when the file does not open with a
+ * frontmatter block, so a file this tool cannot read is shown as unreadable
+ * instead of being silently rewritten into something else.
+ */
+function splitFrontmatter(raw) {
+  const lines = raw.split(/\r?\n/);
+  if (lines[0]?.trim() !== '---') return null;
+  const end = lines.indexOf('---', 1);
+  if (end === -1) return null;
+  return {
+    frontmatter: lines.slice(1, end).join('\n'),
+    body: lines
+      .slice(end + 1)
+      .join('\n')
+      .replace(/^\n+/, ''),
+  };
+}
+
+function readProjects() {
+  if (!fs.existsSync(PROJECTS)) return [];
+  return fs
+    .readdirSync(PROJECTS)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => {
+      const slug = f.replace(/\.md$/, '');
+      const raw = fs.readFileSync(path.join(PROJECTS, f), 'utf8');
+      const parts = splitFrontmatter(raw);
+      if (!parts) return { slug, unreadable: 'No frontmatter block' };
+      try {
+        return { slug, data: YAML.parse(parts.frontmatter) ?? {}, body: parts.body };
+      } catch (err) {
+        return { slug, unreadable: String(err?.message ?? err) };
+      }
+    })
+    .sort((a, b) => (a.data?.order ?? 999) - (b.data?.order ?? 999));
+}
+
+/**
+ * What the content schema insists on. Checking here means a missing title is
+ * a message next to the field rather than a failed build ten minutes later,
+ * with the site still serving the last good version in the meantime.
+ */
+function validateProject(data) {
+  for (const key of ['title', 'summary', 'period']) {
+    if (!String(data[key] ?? '').trim()) return `${key} cannot be empty`;
+  }
+  if (!Number.isFinite(data.order)) return 'order has to be a number';
+  return null;
+}
+
+/** Only the keys the form owns, cleaned up, in a stable order. */
+function cleanProject(input) {
+  const data = {
+    title: String(input.title ?? '').trim(),
+    summary: String(input.summary ?? '').trim(),
+    status: String(input.status ?? '').trim() || 'Active',
+    period: String(input.period ?? '').trim(),
+    order: Number(input.order ?? 0),
+    // Rows with nothing in them are how a spec table ends up with holes.
+    specs: (Array.isArray(input.specs) ? input.specs : [])
+      .map((row) => ({
+        label: String(row?.label ?? '').trim(),
+        value: String(row?.value ?? '').trim(),
+      }))
+      .filter((row) => row.label || row.value),
+    stack: (Array.isArray(input.stack) ? input.stack : [])
+      .map((tool) => String(tool ?? '').trim())
+      .filter(Boolean),
+    draft: Boolean(input.draft),
+  };
+  return data;
+}
+
+function writeProject(slug, data, body) {
+  const frontmatter = YAML.stringify(data, { lineWidth: 0 }).trimEnd();
+  fs.writeFileSync(projectPath(slug), `---\n${frontmatter}\n---\n\n${String(body).trim()}\n`);
+}
+
+/** Filename from the title: lowercase, words joined by hyphens, nothing else. */
+function slugify(title) {
+  return String(title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
 
 function readLibrary() {
   if (!fs.existsSync(LIBRARY)) return [];
@@ -158,6 +256,7 @@ const server = http.createServer(async (req, res) => {
       const changed = status.ok ? status.out.split('\n').filter(Boolean) : [];
       return json(res, 200, {
         photos: readLibrary(),
+        projects: readProjects(),
         gaps: findGaps(),
         airports,
         typeCodes,
@@ -201,6 +300,56 @@ const server = http.createServer(async (req, res) => {
 
       fs.writeFileSync(file, `${JSON.stringify(entry, null, 2)}\n`);
       return json(res, 200, { ok: true, entry });
+    }
+
+    // --- save one project ------------------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/project') {
+      const { slug, data, body } = JSON.parse((await readBody(req)).toString('utf8'));
+      if (!/^[a-z0-9-]+$/.test(String(slug))) return json(res, 400, { error: 'bad slug' });
+      if (!fs.existsSync(projectPath(slug))) return json(res, 404, { error: 'no such project' });
+
+      const clean = cleanProject(data);
+      const problem = validateProject(clean);
+      if (problem) return json(res, 400, { error: problem });
+
+      // Anything in the file that this form does not know about is kept. The
+      // schema can grow a key, or Griffin can add one by hand, and saving a
+      // title from here must not quietly delete it. Same rule as the photo
+      // sidecars: the editor owns its fields and nothing else.
+      const existing = readProjects().find((p) => p.slug === slug);
+      if (existing?.unreadable) return json(res, 400, { error: existing.unreadable });
+      const merged = { ...(existing?.data ?? {}), ...clean };
+
+      writeProject(slug, merged, body ?? '');
+      return json(res, 200, { ok: true, data: merged });
+    }
+
+    // --- start a new project ----------------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/project/new') {
+      const { title } = JSON.parse((await readBody(req)).toString('utf8'));
+      const base = slugify(title || 'new-project') || 'new-project';
+
+      // Never overwrite an existing write-up because two of them happen to
+      // start with the same word.
+      let slug = base;
+      let n = 2;
+      while (fs.existsSync(projectPath(slug))) slug = `${base}-${n++}`;
+
+      const order = Math.max(0, ...readProjects().map((p) => Number(p.data?.order ?? 0))) + 1;
+      const data = cleanProject({
+        title: String(title || '').trim() || 'Untitled project',
+        // Placeholders the schema will accept, so the site keeps building
+        // while this is half written. It is a draft until it is not.
+        summary: 'One line about what this is',
+        status: 'Active',
+        period: String(new Date().getFullYear()),
+        order,
+        specs: [],
+        stack: [],
+        draft: true,
+      });
+      writeProject(slug, data, 'Write-up goes here.');
+      return json(res, 200, { ok: true, slug });
     }
 
     // --- accept a dropped file ------------------------------------------
@@ -248,15 +397,40 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  const url = `http://localhost:${PORT}`;
-  console.log(`\n  Photo studio  ${url}\n`);
-  console.log(`  Library  ${path.relative(ROOT, LIBRARY)}`);
-  console.log(`  Inbox    ${path.relative(ROOT, INBOX)}`);
-  console.log('\n  Ctrl+C to stop.\n');
+const address = `http://localhost:${PORT}`;
 
-  // Best effort. If it fails the URL is printed above anyway.
-  if (!process.argv.includes('--no-open')) {
-    execFile('cmd', ['/c', 'start', '', url], () => {});
+/** Best effort. If it fails the URL is printed in the console anyway. */
+function openBrowser() {
+  if (process.argv.includes('--no-open')) return;
+  if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', address], () => {});
+  else if (process.platform === 'darwin') execFile('open', [address], () => {});
+  else execFile('xdg-open', [address], () => {});
+}
+
+/**
+ * A second copy is not an error worth a stack trace.
+ *
+ * Double clicking the launcher twice is the most likely way to get here, and
+ * the first copy is already serving the page. Open that instead of printing
+ * an EADDRINUSE trace at someone who only wanted to edit a caption.
+ */
+server.on('error', (err) => {
+  if (err?.code === 'EADDRINUSE') {
+    console.log(`\n  Studio is already open at ${address}\n`);
+    openBrowser();
+    setTimeout(() => process.exit(0), 500);
+    return;
   }
+  console.error(err);
+  process.exit(1);
+});
+
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`\n  Studio  ${address}\n`);
+  console.log(`  Photos    ${path.relative(ROOT, LIBRARY)}`);
+  console.log(`  Inbox     ${path.relative(ROOT, INBOX)}`);
+  console.log(`  Projects  ${path.relative(ROOT, PROJECTS)}`);
+  console.log('\n  Close this window to stop.\n');
+
+  openBrowser();
 });

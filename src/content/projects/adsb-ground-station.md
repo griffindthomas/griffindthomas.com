@@ -22,6 +22,7 @@ stack:
   - RTL-SDR
   - dump1090
   - Linux
+draft: false
 ---
 
 Aircraft broadcast their position, altitude and callsign in the clear on

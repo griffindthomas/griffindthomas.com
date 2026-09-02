@@ -5,24 +5,45 @@ site automatically, which takes about a minute.
 
 ---
 
-## Adding photos, on your own
+## The studio
 
-You do not need to touch code or ask anyone. Open a terminal in this folder and
-run:
+Double click **Griffin studio** on your desktop, or `studio.cmd` in this folder.
+A black window opens and the editor opens in your browser on its own. Keep that
+window open while you work; closing it stops the studio. Nothing here is on the
+internet, it only runs on this machine.
 
-```bash
-npm run studio
-```
+It has two tabs.
 
-A page opens in your browser. From there you can:
+### Photos
 
 - **Drag photos onto the drop zone.** They import straight away.
 - **Edit any field** on any photo. It saves the moment you click out of the box.
-- **Click Publish to site** when you are happy. That commits and pushes, and the
-  live site updates about a minute later.
+- The **type code** box offers every code the site knows and names the family
+  underneath as you type. If it says *Not on the type board*, that photo will
+  show in the gallery and never on the type board, so fix it before publishing.
 
 Photos with something missing get an orange bar down the left and a line saying
 what they still need.
+
+### Projects
+
+Every project write-up, with its fields and its text. You can:
+
+- **Edit anything**, including the write-up itself, which is markdown: a blank
+  line starts a new paragraph and `## Something` is a heading.
+- **Add or remove specification rows** with the buttons under that table.
+- **Start a new project** with the box at the top. It begins hidden from the
+  site, so you can leave it half written. Untick *Hide from site* when it is
+  ready.
+
+To delete a project, tick *Hide from site* and it disappears from the site while
+the file stays put. Actually deleting the file is a thing to do in Explorer.
+
+### Publishing
+
+**Click Publish to site** when you are happy. That commits and pushes everything
+you have changed, photos and projects together, and the live site updates about
+a minute later. The button stays greyed out when there is nothing to publish.
 
 ### About duplicates
 
@@ -60,7 +81,7 @@ producing a broken filter. To use a new one, add it to
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Local site at <http://localhost:4321> |
-| `npm run studio` | Photo editor at <http://localhost:4322> |
+| `npm run studio` | The editor at <http://localhost:4322>. Same as double clicking `studio.cmd` |
 | `npm run photos` | Import from `photos-inbox/` without opening the studio |
 | `npm run build` | Production build |
 | `npm run check` | Typecheck. Run before pushing |

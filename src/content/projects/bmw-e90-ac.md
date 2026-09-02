@@ -23,6 +23,7 @@ stack:
   - Firmware flashing
   - Dash teardown
   - Parts sourcing
+draft: false
 ---
 
 The blower motor died at the start of the summer. No air out of any vent at

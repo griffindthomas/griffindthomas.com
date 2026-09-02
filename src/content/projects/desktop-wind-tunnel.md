@@ -17,6 +17,7 @@ stack:
   - Fusion 360
   - FDM printing
   - Flow visualisation
+draft: false
 ---
 
 Built as a senior honours project. The tunnel is open-circuit, which is the

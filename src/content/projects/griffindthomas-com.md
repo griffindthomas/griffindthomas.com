@@ -24,6 +24,7 @@ stack:
   - Cloudflare Workers
   - sharp
   - exifr
+draft: false
 ---
 
 Every page here is built into a static file and served from Cloudflare's edge.
