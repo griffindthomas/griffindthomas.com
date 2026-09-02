@@ -314,6 +314,124 @@ const PLAIN: Record<string, string> = {
   WSHFT: 'Wind shift',
 };
 
+/**
+ * Things a remark can put in the sky, somewhere other than overhead.
+ *
+ * These arrive as several groups in a row: "CB DSNT N" is cumulonimbus, in
+ * the distance, to the north. Read one group at a time they say nothing, so
+ * the run is put back together before anything reads it, the same treatment
+ * visibility gets.
+ */
+const REMARK_FEATURES: Record<string, string> = {
+  CB: 'Cumulonimbus',
+  CBMAM: 'Cumulonimbus with a ragged base',
+  TCU: 'Towering cumulus',
+  ACSL: 'Standing lenticular altocumulus',
+  CCSL: 'Standing lenticular cirrocumulus',
+  SCSL: 'Standing lenticular stratocumulus',
+  VIRGA: 'Virga',
+  ROTOR: 'Rotor cloud',
+};
+
+/** Lightning, which is written as LTG plus what kind, if they know. */
+const LIGHTNING: Record<string, string> = {
+  IC: 'inside the cloud',
+  CC: 'cloud to cloud',
+  CG: 'cloud to ground',
+  CA: 'cloud to air',
+};
+
+/** How often it is happening, when a remark bothers to say. */
+const FREQUENCY: Record<string, string> = {
+  OCNL: 'Occasional',
+  FRQ: 'Frequent',
+  CONS: 'Continuous',
+  CONT: 'Continuous',
+};
+
+const HOW_FAR: Record<string, string> = {
+  DSNT: 'in the distance',
+  VC: 'nearby',
+  OHD: 'overhead',
+};
+
+const COMPASS: Record<string, string> = {
+  N: 'north',
+  NE: 'north east',
+  E: 'east',
+  SE: 'south east',
+  S: 'south',
+  SW: 'south west',
+  W: 'west',
+  NW: 'north west',
+};
+
+/** For the ones whose name means nothing to anyone who is not a pilot. */
+const FEATURE_GLOSS: Record<string, string> = {
+  VIRGA: 'rain that evaporates before it lands',
+  ACSL: 'the lens shaped cloud that sits still over a mountain',
+  CCSL: 'the lens shaped cloud that sits still over a mountain',
+  SCSL: 'the lens shaped cloud that sits still over a mountain',
+};
+
+const isFeature = (t: string) => t in REMARK_FEATURES || /^LTG[A-Z]*$/.test(t);
+const isDirection = (t: string) =>
+  t === 'ALQDS' || t.split('-').every((part) => part in COMPASS);
+const isTail = (t: string) =>
+  t in HOW_FAR || t === 'MOV' || t === 'AND' || t === 'ALQDS' || isDirection(t);
+
+/** "LTGICCG" is lightning, in cloud and cloud to ground. */
+function lightningName(token: string): string {
+  const kinds = (token.slice(3).match(/.{2}/g) ?? [])
+    .map((k) => LIGHTNING[k])
+    .filter(Boolean);
+  return kinds.length ? `Lightning ${kinds.join(' and ')}` : 'Lightning';
+}
+
+/**
+ * One of those runs, in plain English.
+ *
+ * Shapes it is built for, all of them real: "CB DSNT N", "TCU DSNT S",
+ * "OCNL LTGICCG DSNT NW", "CB DSNT NE-SE MOV E", "CB OHD".
+ */
+function decodeFeatureRun(token: string): string {
+  const parts = token.split(' ');
+  let i = 0;
+
+  const frequency = FREQUENCY[parts[i]] ? FREQUENCY[parts[i++]] : '';
+  const head = parts[i++];
+  if (!head) return '';
+
+  let name = head in REMARK_FEATURES ? REMARK_FEATURES[head] : lightningName(head);
+  if (frequency) name = `${frequency} ${name.charAt(0).toLowerCase()}${name.slice(1)}`;
+
+  const where: string[] = [];
+  let moving = '';
+
+  for (; i < parts.length; i += 1) {
+    const part = parts[i];
+    if (HOW_FAR[part]) where.push(HOW_FAR[part]);
+    else if (part === 'MOV') {
+      const dir = parts[i + 1];
+      if (dir && isDirection(dir)) {
+        moving = `, moving ${COMPASS[dir] ?? dir.toLowerCase()}`;
+        i += 1;
+      }
+    } else if (part === 'ALQDS') where.push('all around');
+    else if (isDirection(part)) {
+      const ends = part.split('-').map((d) => COMPASS[d]);
+      where.push(
+        ends.length > 1 ? `from the ${ends[0]} to the ${ends[ends.length - 1]}` : `to the ${ends[0]}`,
+      );
+    }
+  }
+
+  // The explanation trails the whole thing rather than sitting inside the
+  // name, so "Virga in the distance to the south west" stays a sentence.
+  const gloss = FEATURE_GLOSS[head] ? `, which is ${FEATURE_GLOSS[head]}` : '';
+  return `${name}${where.length ? ' ' + where.join(' ') : ''}${moving}${gloss}`;
+}
+
 const ordinal = (n: number): string => {
   const teen = n % 100;
   if (teen >= 11 && teen <= 13) return `${n}th`;
@@ -399,6 +517,24 @@ function decodeToken(token: string, station: string, inRemarks: boolean): string
     return `Sky obscured, vertical visibility ${feet(m[1])} ft`;
   }
 
+  // A descriptor on its own, which is how a thunderstorm with nothing falling
+  // out of it yet gets reported. The map above reads "thunderstorm with " for
+  // the case where something does follow it, so the bare wording lives here.
+  if ((m = /^(-|\+|VC)?(TS|SH|FZ|BL|DR|MI|BC|PR)$/.exec(token))) {
+    const bare: Record<string, string> = {
+      TS: 'thunderstorm',
+      SH: 'showers',
+      FZ: 'freezing',
+      BL: 'blowing',
+      DR: 'low drifting',
+      MI: 'shallow',
+      BC: 'patches',
+      PR: 'partial',
+    };
+    const phrase = `${INTENSITY[m[1] ?? ''] ?? ''}${bare[m[2]]}`;
+    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  }
+
   // Present weather. Several phenomena can be strung into one group.
   if (
     (m =
@@ -432,6 +568,10 @@ function decodeToken(token: string, station: string, inRemarks: boolean): string
   // Remarks. Only the groups worth reading are decoded; the rest are for
   // forecasters and automated systems, and saying so is better than guessing.
   if (inRemarks) {
+    if (token.includes(' ') || isFeature(token)) {
+      const run = decodeFeatureRun(token);
+      if (run) return run;
+    }
     if ((m = /^SLP(\d{3})$/.exec(token))) {
       const raw = Number(m[1]);
       const hpa = (raw >= 500 ? 900 + raw / 10 : 1000 + raw / 10).toFixed(1);
@@ -473,14 +613,25 @@ export function tokenise(raw: string, station: string): MetarToken[] {
   // apart it decodes as half a mile, which is the difference between a normal
   // day and a diversion, so it is put back together before anything reads it.
   const split = raw.trim().split(/\s+/).filter(Boolean);
+  let remarks = false;
   for (let i = 0; i < split.length; i += 1) {
+    const token = split[i];
     const next = split[i + 1];
-    if (/^\d{1,2}$/.test(split[i]) && next && /^\d\/\dSM$/.test(next)) {
-      groups.push(`${split[i]} ${next}`);
+
+    if (/^\d{1,2}$/.test(token) && next && /^\d\/\dSM$/.test(next)) {
+      groups.push(`${token} ${next}`);
       i += 1;
+    } else if (remarks && (isFeature(token) || (FREQUENCY[token] && next && isFeature(next)))) {
+      // A cloud or a lightning remark and everything that says where it is.
+      const run = [token];
+      if (FREQUENCY[token]) run.push(split[++i]);
+      while (i + 1 < split.length && isTail(split[i + 1])) run.push(split[++i]);
+      groups.push(run.join(' '));
     } else {
-      groups.push(split[i]);
+      groups.push(token);
     }
+
+    if (token === 'RMK') remarks = true;
   }
 
   return groups.map((t) => {
