@@ -23,6 +23,7 @@ stack:
   - Carbon composite
   - RC flight controllers
 draft: false
+photos: []
 ---
 
 It never flew. That is the honest headline, and it is worth putting first

@@ -1,5 +1,6 @@
 ---
 import type { GetStaticPaths } from "astro";
+import { Image } from "astro:assets";
 import { getCollection, render } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -78,6 +79,28 @@ const { Content } = await render(project);
       </aside>
     </div>
 
+    {
+      project.data.photos.length > 0 && (
+        <section class="mt-20" aria-label="Photographs">
+          <ul class:list={["figures", project.data.photos.length === 1 && "single"]}>
+            {project.data.photos.map((photo, i) => (
+              <li>
+                <Image
+                  src={photo.src}
+                  alt={photo.alt || photo.caption || `${project.data.title}, photograph ${i + 1}`}
+                  widths={[600, 1000, 1600]}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 45vw"
+                  loading="lazy"
+                  decoding="async"
+                />
+                {photo.caption && <p class="data caption">{photo.caption}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
     <nav class="border-rule mt-24 flex flex-wrap justify-between gap-6 border-t pt-6">
       {
         prev ? (
@@ -103,3 +126,35 @@ const { Content } = await render(project);
     </nav>
   </article>
 </BaseLayout>
+
+<style>
+  .figures {
+    display: grid;
+    gap: 2.5rem 1.5rem;
+    list-style: none;
+    padding: 0;
+  }
+
+  @media (min-width: 768px) {
+    .figures {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    /* One photograph gets the room rather than half the row. */
+    .figures.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .figures img {
+    width: 100%;
+    height: auto;
+    background: var(--color-paper-sunk);
+  }
+
+  .caption {
+    margin-top: 0.6rem;
+    color: var(--color-graphite);
+    /* Captions run under the frame, not across the page. */
+    max-width: 52ch;
+  }
+</style>

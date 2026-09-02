@@ -189,6 +189,47 @@
       .spec-row button:hover { color: var(--signal); }
       .add-spec { align-self: start; margin-top: 4px; }
 
+      .photos { display: grid; gap: 10px; }
+      .photo-row {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+      .photo-row img {
+        width: 92px;
+        height: 62px;
+        object-fit: cover;
+        background: var(--sunk);
+        display: block;
+      }
+      .photo-fields { display: grid; gap: 6px; }
+      .photo-buttons { display: flex; gap: 2px; }
+      .photo-buttons button {
+        border: 0;
+        background: none;
+        color: var(--graphite);
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 4px 6px;
+      }
+      .photo-buttons button:hover { color: var(--signal); }
+
+      .add-photos {
+        display: inline-block;
+        margin-top: 10px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border: 1px solid var(--rule);
+        padding: 7px 12px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .add-photos:hover { border-color: var(--ink); }
+
       textarea.body {
         min-height: 320px;
         font-family: var(--mono);
@@ -394,6 +435,23 @@
         return projects.map(projectCard).join("");
       }
 
+      function photoRow(photo) {
+        const file = String(photo?.src ?? "").split("/").pop();
+        return `
+          <div class="photo-row" data-src="${esc(photo?.src ?? "")}">
+            <img src="/project-img/${esc(file)}" alt="" loading="lazy" />
+            <div class="photo-fields">
+              <input type="text" class="photo-caption" value="${esc(photo?.caption ?? "")}" placeholder="Caption, printed under the photo" />
+              <input type="text" class="photo-alt" value="${esc(photo?.alt ?? "")}" placeholder="What is in the frame, for anyone who cannot see it" />
+            </div>
+            <div class="photo-buttons">
+              <button type="button" class="photo-up" title="Move up">&uarr;</button>
+              <button type="button" class="photo-down" title="Move down">&darr;</button>
+              <button type="button" class="photo-drop" title="Remove from this project">&times;</button>
+            </div>
+          </div>`;
+      }
+
       function projectCard(p) {
         if (p.unreadable) {
           return `
@@ -454,6 +512,15 @@
             </div>
 
             <div class="field wide">
+              <span class="label">Photos</span>
+              <div class="photos" data-photos>${(d.photos ?? []).map(photoRow).join("")}</div>
+              <label class="add-photos">
+                Add photos
+                <input type="file" accept="image/*" multiple hidden />
+              </label>
+            </div>
+
+            <div class="field wide">
               <span class="label">Write-up, markdown</span>
               <textarea class="body" name="body" spellcheck="true">${esc(p.body ?? "")}</textarea>
             </div>
@@ -471,8 +538,14 @@
           label: $(".spec-label", row).value,
           value: $(".spec-value", row).value,
         }));
+        const photos = [...section.querySelectorAll(".photo-row")].map((row) => ({
+          src: row.dataset.src,
+          caption: $(".photo-caption", row).value,
+          alt: $(".photo-alt", row).value,
+        }));
         return {
           data: {
+            photos,
             title: val("title").value,
             summary: val("summary").value,
             status: val("status").value,
@@ -613,7 +686,52 @@
               $("[data-specs]", section).insertAdjacentHTML("beforeend", specRow("", ""));
               // Not saved yet: an empty row is dropped on the way in, so it
               // would come straight back out again. It saves with its content.
+              return;
             }
+
+            const photo = event.target.closest(".photo-row");
+            if (!photo) return;
+
+            // The file on disk is left alone. Taking a photograph off a
+            // write-up is not the same as wanting it deleted, and it is easy
+            // to put back.
+            if (event.target.closest(".photo-drop")) photo.remove();
+            else if (event.target.closest(".photo-up")) {
+              photo.previousElementSibling?.before(photo);
+            } else if (event.target.closest(".photo-down")) {
+              photo.nextElementSibling?.after(photo);
+            } else return;
+
+            saveProject(section);
+          });
+
+          // Uploading is one request per file, then a reload, because the
+          // server is what decides the filename and it has to come back.
+          const picker = $(".add-photos input", section);
+          picker?.addEventListener("change", async () => {
+            const files = [...picker.files];
+            if (!files.length) return;
+            const status = $("[data-status]", section);
+            status.className = "status";
+
+            for (const [i, file] of files.entries()) {
+              status.textContent = `Adding ${i + 1} of ${files.length}`;
+              const res = await fetch(
+                `/api/project/photo?slug=${encodeURIComponent(section.dataset.project)}` +
+                  `&name=${encodeURIComponent(file.name)}`,
+                { method: "POST", body: file },
+              );
+              if (!res.ok) {
+                status.className = "status error";
+                status.textContent = (await res.json()).error ?? "Upload failed";
+                return;
+              }
+            }
+
+            picker.value = "";
+            await load();
+            document.querySelector(`[data-project="${section.dataset.project}"]`)
+              ?.scrollIntoView({ block: "center" });
           });
         }
 

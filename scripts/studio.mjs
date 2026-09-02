@@ -28,6 +28,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import sharp from 'sharp';
 import YAML from 'yaml';
 
 import { INBOX, LIBRARY, findGaps, runImport } from './photos.mjs';
@@ -136,6 +137,35 @@ function validateProject(data) {
   return null;
 }
 
+/** Where project photographs live, next to the write-ups that reference them. */
+const PROJECT_IMAGES = path.join(PROJECTS, 'images');
+
+/**
+ * Store a dropped photograph beside the write-ups and return the path the
+ * frontmatter should carry.
+ *
+ * Resized on the way in for the same reason the gallery does it: a 20 MP
+ * original in the repository is bytes nobody ever downloads, since the build
+ * generates its own sizes from whatever is here. Big enough that a full width
+ * figure still has detail, and no bigger.
+ */
+async function storeProjectImage(slug, buffer) {
+  fs.mkdirSync(PROJECT_IMAGES, { recursive: true });
+
+  // Never overwrite: two photographs of the same thing are the normal case.
+  let n = 1;
+  let name = `${slug}-${n}.jpg`;
+  while (fs.existsSync(path.join(PROJECT_IMAGES, name))) name = `${slug}-${++n}.jpg`;
+
+  await sharp(buffer)
+    .rotate() // honour the EXIF orientation flag before it is stripped
+    .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 82, mozjpeg: true })
+    .toFile(path.join(PROJECT_IMAGES, name));
+
+  return `./images/${name}`;
+}
+
 /** Only the keys the form owns, cleaned up, in a stable order. */
 function cleanProject(input) {
   const data = {
@@ -154,6 +184,15 @@ function cleanProject(input) {
     stack: (Array.isArray(input.stack) ? input.stack : [])
       .map((tool) => String(tool ?? '').trim())
       .filter(Boolean),
+    // Kept in the order they arrive. A photograph with no path is not a
+    // photograph, and the build would fail on it.
+    photos: (Array.isArray(input.photos) ? input.photos : [])
+      .map((photo) => ({
+        src: String(photo?.src ?? '').trim(),
+        alt: String(photo?.alt ?? '').trim(),
+        caption: String(photo?.caption ?? '').trim(),
+      }))
+      .filter((photo) => photo.src),
     draft: Boolean(input.draft),
   };
   return data;
@@ -242,6 +281,18 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname.startsWith('/img/')) {
       // basename() so a crafted path cannot climb out of the library folder.
       const file = path.join(LIBRARY, path.basename(url.pathname.slice(5)));
+      if (!fs.existsSync(file)) {
+        res.writeHead(404);
+        return res.end('not found');
+      }
+      res.writeHead(200, { 'content-type': 'image/jpeg', 'cache-control': 'no-store' });
+      return res.end(fs.readFileSync(file));
+    }
+
+    // --- a project photograph, for the thumbnails in the editor -----------
+    if (req.method === 'GET' && url.pathname.startsWith('/project-img/')) {
+      // basename() so a crafted path cannot climb out of the images folder.
+      const file = path.join(PROJECT_IMAGES, path.basename(url.pathname.slice(13)));
       if (!fs.existsSync(file)) {
         res.writeHead(404);
         return res.end('not found');
@@ -350,6 +401,29 @@ const server = http.createServer(async (req, res) => {
       });
       writeProject(slug, data, 'Write-up goes here.');
       return json(res, 200, { ok: true, slug });
+    }
+
+    // --- add a photograph to a project ------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/project/photo') {
+      const slug = url.searchParams.get('slug') ?? '';
+      if (!/^[a-z0-9-]+$/.test(slug)) return json(res, 400, { error: 'bad slug' });
+
+      const project = readProjects().find((p) => p.slug === slug);
+      if (!project) return json(res, 404, { error: 'no such project' });
+      if (project.unreadable) return json(res, 400, { error: project.unreadable });
+
+      const name = path.basename(url.searchParams.get('name') ?? '');
+      if (!/\.(jpe?g|png|tiff?|webp|heic)$/i.test(name)) {
+        return json(res, 400, { error: `Not an image: ${name}` });
+      }
+
+      const src = await storeProjectImage(slug, await readBody(req));
+      const data = cleanProject({
+        ...project.data,
+        photos: [...(project.data.photos ?? []), { src, alt: '', caption: '' }],
+      });
+      writeProject(slug, { ...project.data, ...data }, project.body);
+      return json(res, 200, { ok: true, src });
     }
 
     // --- accept a dropped file ------------------------------------------

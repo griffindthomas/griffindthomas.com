@@ -103,22 +103,42 @@ const photos = defineCollection({
  */
 const projects = defineCollection({
   loader: glob({ base: "./src/content/projects", pattern: "**/*.{md,mdx}" }),
-  schema: z.object({
-    title: z.string(),
-    /** One line, shown in the index. No trailing full stop. */
-    summary: z.string(),
-    /** "Active", "Shelved", "Complete" - shown as status in the plate. */
-    status: z.string().default("Active"),
-    /** Year or range, e.g. "2025" or "2024-2026". */
-    period: z.string(),
-    /** Ordered spec rows. Mono table, tabular figures. */
-    specs: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
-    /** Tools and materials. Rendered as a rule-separated run, not chips. */
-    stack: z.array(z.string()).default([]),
-    /** Lower sorts first on the index. */
-    order: z.number().default(0),
-    draft: z.boolean().default(false),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      /** One line, shown in the index. No trailing full stop. */
+      summary: z.string(),
+      /** "Active", "Shelved", "Complete" - shown as status in the plate. */
+      status: z.string().default("Active"),
+      /** Year or range, e.g. "2025" or "2024-2026". */
+      period: z.string(),
+      /** Ordered spec rows. Mono table, tabular figures. */
+      specs: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+      /** Tools and materials. Rendered as a rule-separated run, not chips. */
+      stack: z.array(z.string()).default([]),
+      /** Lower sorts first on the index. */
+      order: z.number().default(0),
+      draft: z.boolean().default(false),
+      /**
+       * Photographs of the thing itself, in order, shown under the write-up.
+       *
+       * `src` is a path relative to this markdown file, so the files live in
+       * `src/content/projects/images/` and go through the same build-time
+       * optimisation as the gallery rather than being served untouched out of
+       * `public/`. A path that does not resolve fails the build.
+       */
+      photos: z
+        .array(
+          z.object({
+            src: image(),
+            /** What is in the frame, for anyone who cannot see it. */
+            alt: z.string().default(""),
+            /** Printed under the photograph. Optional. */
+            caption: z.string().default(""),
+          }),
+        )
+        .default([]),
+    }),
 });
 
 /**

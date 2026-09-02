@@ -32,6 +32,12 @@ Every project write-up, with its fields and its text. You can:
 - **Edit anything**, including the write-up itself, which is markdown: a blank
   line starts a new paragraph and `## Something` is a heading.
 - **Add or remove specification rows** with the buttons under that table.
+- **Add photos**, with a caption for each one. They appear under the write-up
+  on that project's page. The second box on each photo says what is in the
+  frame, for anyone who cannot see it, and is worth filling in.
+- **Reorder photos** with the arrows, or take one off with the &times;. That
+  only removes it from the write-up; the file stays where it is, so putting it
+  back is a matter of adding it again.
 - **Start a new project** with the box at the top. It begins hidden from the
   site, so you can leave it half written. Untick *Hide from site* when it is
   ready.
@@ -99,6 +105,7 @@ producing a broken filter. To use a new one, add it to
 | --- | --- |
 | Links, email address, site name | `src/config/site.ts` |
 | Projects | `src/content/projects/*.md` |
+| Project photos | `src/content/projects/images/` |
 | Resume | `src/pages/resume.astro`, and `public/griffin-thomas-resume.pdf` |
 | Swim times | `data/swims-raw.tsv` (short course) and `data/swims-raw-lcm.tsv` (long course), then `node scripts/import-swims.mjs` |
 | Log posts | `src/content/log/*.md`. The nav link appears on its own once one exists |
