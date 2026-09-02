@@ -90,12 +90,7 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
   </head>
 
   <body class="bg-paper text-ink flex min-h-svh flex-col">
-    <a
-      href="#main"
-      class="bg-ink text-paper sr-only px-4 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
-    >
-      Skip to content
-    </a>
+    <a href="#main" class="skip-link">Skip to content</a>
 
     <MetarStrip />
     <SiteNav />

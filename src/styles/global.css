@@ -62,74 +62,113 @@
   color-scheme: light;
 }
 
-html {
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
+/* ---------------------------------------------------------------------------
+   Element defaults
+   ---------------------------------------------------------------------------
+   In `@layer base` on purpose, and it has to stay there. Tailwind puts its
+   utilities in `@layer utilities`, and UNLAYERED css beats every layer no
+   matter how weak its selector is. While these rules sat outside a layer,
+   `a { color: inherit }` quietly beat every `text-*` utility on every anchor
+   on the site: the active nav link never went chestnut, the inactive ones
+   never went graphite, and the skip link rendered ink on ink, which is
+   invisible. Nothing about the specificity looked wrong, because specificity
+   was never what decided it.
+   --------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Very fine paper grain. Sits under content, costs one tiny inline SVG, and
+     is what stops large flat areas of off-white looking like plain #FFF. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background-color: var(--color-signal);
+    color: var(--color-paper);
+  }
+
+  /* Visible, on-brand focus ring. Never remove without replacing. */
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: from-font;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    display: block;
+    max-width: 100%;
+  }
 }
 
-body {
-  margin: 0;
-  min-height: 100svh;
-  font-size: 1rem;
-  line-height: 1.6;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Very fine paper grain. Sits under content, costs one tiny inline SVG, and
-   is what stops large flat areas of off-white looking like plain #FFF. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-::selection {
-  background-color: var(--color-signal);
+/* Skip link.
+   Written out rather than assembled from `sr-only` and `focus:not-sr-only`,
+   because that pair depends on utility ordering to work and it did not: the
+   link stayed a clipped 1px box when focused, so a keyboard user got an
+   invisible control. This is the one piece of chrome that only exists for
+   people who cannot see the page, so it does not get to be subtle. */
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: -100vw;
+  z-index: 50;
+  background-color: var(--color-ink);
   color: var(--color-paper);
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Visible, on-brand focus ring. Never remove without replacing. */
-:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
-  border-radius: 1px;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
-}
-
-a {
-  color: inherit;
-  text-underline-offset: 0.2em;
-  text-decoration-thickness: from-font;
-}
-
-img,
-svg,
-video,
-canvas {
-  display: block;
-  max-width: 100%;
+.skip-link:focus {
+  left: 0.5rem;
 }
 
 /* ---------------------------------------------------------------------------

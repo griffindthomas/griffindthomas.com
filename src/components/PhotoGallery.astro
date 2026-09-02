@@ -179,8 +179,11 @@ const payload = photos.map((p, i) => ({
     flex-wrap: wrap;
     gap: 1.75rem 1.25rem;
     list-style: none;
-    margin: 0;
     padding: 0;
+    /* No `margin: 0` here. A scoped rule outranks a utility class, so it beat
+       the `mt-10` on the element and the first row of photographs sat hard
+       against the rule under the filter bar with no gap at all. The reset
+       already zeroes list margins. */
   }
 
   .shot {
@@ -291,7 +294,9 @@ const payload = photos.map((p, i) => ({
 
   .tally {
     margin-left: 0.4em;
-    color: var(--color-rule);
+    /* Graphite, not rule. These are counts, so they are information, and the
+       rule colour measures 1.4:1 against paper. */
+    color: var(--color-graphite);
   }
 
   .filter-chip[aria-pressed="true"] .tally {

@@ -19,12 +19,19 @@
  */
 ---
 
-<div class="metar border-rule border-b" data-metar hidden>
+{/* Rendered at full height from the first paint, with the report dropped in
+    afterwards. Revealing the strip once the fetch returned pushed the whole
+    page down 32px a moment after it appeared, which is the largest avoidable
+    layout shift on the site. Nothing to reveal now: the space is already
+    taken, and only a failed fetch removes it. */}
+<div class="metar border-rule border-b" data-metar>
   <div
     class="mx-auto flex max-w-[88rem] items-center gap-x-4 px-5 py-1.5 sm:px-8 lg:px-12"
   >
     <div class="scroller">
-      <span class="raw" data-metar-raw></span>
+      {/* A zero width space, so the row has its final height before there is
+          anything in it to give it one. */}
+      <span class="raw" data-metar-raw>&#8203;</span>
     </div>
 
     {/* Reads the hovered group, and the field name otherwise. A slot at the
@@ -33,6 +40,16 @@
     <span class="slot" data-metar-slot aria-live="polite"></span>
   </div>
 </div>
+
+{/* Nothing fills the strip without the script, and an empty bar under the
+    header would just look like a stray rule. */}
+<noscript>
+  <style>
+    [data-metar] {
+      display: none;
+    }
+  </style>
+</noscript>
 
 <style>
   .metar {
@@ -214,18 +231,24 @@
       fallbackText = data.name;
       showDefault();
 
-      strip!.removeAttribute("hidden");
+      strip!.hidden = false;
+    }
+
+    /** Only on the way out: an empty strip is worse than no strip. */
+    function giveUp() {
+      if (!rawEl!.textContent?.trim()) strip!.hidden = true;
     }
 
     async function load() {
       try {
         const res = await fetch(`/api/metar.json?station=${encodeURIComponent(station())}`);
-        if (!res.ok) return;
+        if (!res.ok) return giveUp();
         const data = (await res.json()) as MetarPayload;
-        if (data.status !== "ok" || data.tokens.length === 0) return;
+        if (data.status !== "ok" || data.tokens.length === 0) return giveUp();
         render(data);
       } catch {
         // A field with no observation is not worth a message on the page.
+        giveUp();
       }
     }
 
