@@ -70,10 +70,14 @@
     display: none;
   }
 
+  /* Sized to whatever it is holding, and pinned to the right gutter. The
+     scroller beside it gives up the width instead, because the report can be
+     scrolled and a decode that runs off the edge of the page cannot be read
+     at all. The cap is a backstop for a decode far longer than any real one. */
   .slot {
     display: none;
     flex-shrink: 0;
-    max-width: 30ch;
+    max-width: 55%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
