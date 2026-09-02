@@ -1,4 +1,5 @@
-import type { Planform } from '../lib/planform';
+import type { Family, Planform, TipDevice } from '../lib/planform';
+import data from './aircraft-types.json';
 
 /**
  * The type board's catalogue, kept by family rather than by variant.
@@ -9,10 +10,17 @@ import type { Planform } from '../lib/planform';
  * spotter collects in, so a 737 MAX is one plate however many sub-variants
  * exist, and the drawing is of the variant named in `drawn`.
  *
+ * The records live in `aircraft-types.json` rather than in this file, for the
+ * same reason the airports do: the studio editor is plain Node with no
+ * TypeScript, and it has to offer exactly the codes the site counts. A second
+ * copy of this list is a typo waiting to happen, and the typo would be silent
+ * because a photo with an unknown code still shows in the gallery and simply
+ * never reaches the board.
+ *
  * `codes` are the ICAO type codes that count as that family, and they have to
  * agree with the `typeCode` field in the photo sidecars. A photo whose code is
  * in this list moves its family from the wanted grid to the caught one, with
- * nothing here to edit.
+ * nothing to edit here.
  *
  * Span and length are published figures for the drawn variant, in feet. They
  * set the size of the drawing, and every type on the board is drawn to one
@@ -33,345 +41,41 @@ export interface AircraftFamily {
   shape: Planform;
 }
 
-const AIRLINER: Pick<Planform, 'family' | 'engines' | 'fins'> = {
-  family: 'jet',
-  engines: 2,
-  fins: 1,
-};
+const FAMILIES: Family[] = ['jet', 'fighter'];
+const TIPS: TipDevice[] = ['plain', 'raked'];
 
-const FIGHTER: Pick<Planform, 'family' | 'engines' | 'fins' | 'strake' | 'tip'> = {
-  family: 'fighter',
-  engines: 0,
-  fins: 2,
-  strake: true,
-  tip: 'plain',
-};
+/**
+ * Checked on the way in, because the catalogue is now plain JSON and nothing
+ * else would catch a bad value. A misspelled `family` would otherwise draw an
+ * airliner where a fighter belongs, which is the kind of wrong that looks
+ * deliberate. Throwing here fails the build instead.
+ */
+function validate(entries: unknown): AircraftFamily[] {
+  const list = entries as AircraftFamily[];
+  const seen = new Map<string, string>();
 
-export const AIRCRAFT_TYPES: AircraftFamily[] = [
-  {
-    id: 'b737max',
-    codes: ['B37M', 'B38M', 'B39M', 'B3XM'],
-    name: '737 MAX',
-    drawn: '737-8',
-    span: 117.8,
-    length: 129.7,
-    shape: {
-      ...AIRLINER,
-      sweep: 25.5,
-      wingAt: 0.42,
-      rootChord: 0.2,
-      taper: 0.28,
-      waist: 0.095,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'b737ng',
-    codes: ['B733', 'B734', 'B735', 'B736', 'B737', 'B738', 'B739'],
-    name: '737NG',
-    drawn: '737-800',
-    span: 117.4,
-    length: 129.5,
-    shape: {
-      ...AIRLINER,
-      sweep: 25.5,
-      wingAt: 0.42,
-      rootChord: 0.2,
-      taper: 0.28,
-      waist: 0.095,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'b787',
-    codes: ['B788', 'B789', 'B78X'],
-    name: '787',
-    drawn: '787-9',
-    span: 197.2,
-    length: 206.1,
-    shape: {
-      ...AIRLINER,
-      sweep: 32,
-      wingAt: 0.4,
-      rootChord: 0.21,
-      taper: 0.22,
-      waist: 0.093,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'b777',
-    codes: ['B772', 'B773', 'B77L', 'B77W'],
-    name: '777',
-    drawn: '777-300ER',
-    span: 212.6,
-    length: 242.3,
-    shape: {
-      ...AIRLINER,
-      sweep: 31.6,
-      wingAt: 0.38,
-      rootChord: 0.2,
-      taper: 0.22,
-      waist: 0.087,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'b777x',
-    codes: ['B778', 'B779'],
-    name: '777X',
-    drawn: '777-9',
-    span: 235.4,
-    length: 251.7,
-    shape: {
-      ...AIRLINER,
-      sweep: 32.5,
-      wingAt: 0.38,
-      rootChord: 0.2,
-      taper: 0.21,
-      waist: 0.086,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'b747',
-    codes: ['B741', 'B742', 'B743', 'B744', 'B748', 'B74F'],
-    name: '747',
-    drawn: '747-8',
-    span: 224.4,
-    length: 250.3,
-    shape: {
-      family: 'jet',
-      fins: 1,
-      engines: 4,
-      sweep: 37.5,
-      wingAt: 0.36,
-      rootChord: 0.22,
-      taper: 0.2,
-      waist: 0.085,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'b767',
-    codes: ['B762', 'B763', 'B764'],
-    name: '767',
-    drawn: '767-300',
-    span: 156.1,
-    length: 180.2,
-    shape: {
-      ...AIRLINER,
-      sweep: 31.5,
-      wingAt: 0.39,
-      rootChord: 0.19,
-      taper: 0.25,
-      waist: 0.088,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'b757',
-    codes: ['B752', 'B753'],
-    name: '757',
-    drawn: '757-200',
-    span: 124.8,
-    length: 155.3,
-    shape: {
-      ...AIRLINER,
-      sweep: 25,
-      wingAt: 0.4,
-      rootChord: 0.17,
-      taper: 0.26,
-      waist: 0.08,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'a320ceo',
-    codes: ['A318', 'A319', 'A320', 'A321'],
-    name: 'A320 family',
-    drawn: 'A320',
-    span: 111.9,
-    length: 123.3,
-    shape: {
-      ...AIRLINER,
-      sweep: 25,
-      wingAt: 0.4,
-      rootChord: 0.19,
-      taper: 0.26,
-      waist: 0.095,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'a320neo',
-    codes: ['A19N', 'A20N', 'A21N'],
-    name: 'A320neo family',
-    drawn: 'A320neo',
-    span: 117.5,
-    length: 123.3,
-    shape: {
-      ...AIRLINER,
-      sweep: 25,
-      wingAt: 0.4,
-      rootChord: 0.19,
-      taper: 0.26,
-      waist: 0.095,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'a220',
-    codes: ['BCS1', 'BCS3'],
-    name: 'A220',
-    drawn: 'A220-300',
-    span: 115.2,
-    length: 127,
-    shape: {
-      ...AIRLINER,
-      sweep: 27,
-      wingAt: 0.42,
-      rootChord: 0.19,
-      taper: 0.26,
-      waist: 0.09,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'a330',
-    codes: ['A332', 'A333', 'A338', 'A339'],
-    name: 'A330',
-    drawn: 'A330-900',
-    span: 210,
-    length: 208.9,
-    shape: {
-      ...AIRLINER,
-      sweep: 30,
-      wingAt: 0.38,
-      rootChord: 0.2,
-      taper: 0.24,
-      waist: 0.09,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'a350',
-    codes: ['A359', 'A35K'],
-    name: 'A350',
-    drawn: 'A350-900',
-    span: 212.4,
-    length: 219.2,
-    shape: {
-      ...AIRLINER,
-      sweep: 31.9,
-      wingAt: 0.39,
-      rootChord: 0.2,
-      taper: 0.22,
-      waist: 0.088,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'ejet',
-    codes: ['E170', 'E75S', 'E75L', 'E190', 'E195', 'E290', 'E29X'],
-    name: 'E-Jet',
-    drawn: 'E175',
-    span: 94,
-    length: 103.9,
-    shape: {
-      ...AIRLINER,
-      sweep: 24,
-      wingAt: 0.42,
-      rootChord: 0.18,
-      taper: 0.28,
-      waist: 0.1,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'p8',
-    codes: ['P8'],
-    name: 'P-8 Poseidon',
-    drawn: 'P-8A',
-    span: 123.5,
-    length: 129.5,
-    shape: {
-      ...AIRLINER,
-      sweep: 25.5,
-      wingAt: 0.44,
-      rootChord: 0.2,
-      taper: 0.26,
-      waist: 0.095,
-      tip: 'raked',
-    },
-  },
-  {
-    id: 'c17',
-    codes: ['C17'],
-    name: 'C-17',
-    drawn: 'C-17A',
-    span: 169.8,
-    length: 174,
-    shape: {
-      family: 'jet',
-      fins: 1,
-      engines: 4,
-      highWing: true,
-      sweep: 25,
-      wingAt: 0.33,
-      rootChord: 0.21,
-      taper: 0.3,
-      waist: 0.13,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'kc135',
-    codes: ['K35R', 'K35E'],
-    name: 'KC-135',
-    drawn: 'KC-135R',
-    span: 130.8,
-    length: 136.3,
-    shape: {
-      family: 'jet',
-      fins: 1,
-      engines: 4,
-      sweep: 35,
-      wingAt: 0.4,
-      rootChord: 0.2,
-      taper: 0.25,
-      waist: 0.098,
-      tip: 'plain',
-    },
-  },
-  {
-    id: 'fa18',
-    codes: ['F18', 'FA18', 'F18E'],
-    name: 'F/A-18',
-    drawn: 'F/A-18E',
-    span: 44.7,
-    length: 60.1,
-    shape: { ...FIGHTER, sweep: 27, wingAt: 0.5, rootChord: 0.26, taper: 0.3, waist: 0.155 },
-  },
-  {
-    id: 'f22',
-    codes: ['F22'],
-    name: 'F-22',
-    drawn: 'F-22A',
-    span: 44.5,
-    length: 62.1,
-    shape: { ...FIGHTER, sweep: 42, wingAt: 0.44, rootChord: 0.34, taper: 0.14, waist: 0.165 },
-  },
-  {
-    id: 'f35',
-    codes: ['F35', 'F35A', 'F35B', 'F35C'],
-    name: 'F-35',
-    drawn: 'F-35A',
-    span: 35,
-    length: 51.4,
-    shape: { ...FIGHTER, sweep: 34, wingAt: 0.46, rootChord: 0.32, taper: 0.18, waist: 0.185 },
-  },
-];
+  for (const entry of list) {
+    if (!FAMILIES.includes(entry.shape.family)) {
+      throw new Error(`${entry.id}: shape.family must be one of ${FAMILIES.join(', ')}`);
+    }
+    if (!TIPS.includes(entry.shape.tip)) {
+      throw new Error(`${entry.id}: shape.tip must be one of ${TIPS.join(', ')}`);
+    }
+    if (!(entry.span > 0) || !(entry.length > 0)) {
+      throw new Error(`${entry.id}: span and length are what size the drawing`);
+    }
+    for (const code of entry.codes) {
+      const owner = seen.get(code);
+      // One code cannot belong to two families, or a photo would count twice.
+      if (owner) throw new Error(`type code ${code} is in both ${owner} and ${entry.id}`);
+      seen.set(code, entry.id);
+    }
+  }
+
+  return list;
+}
+
+export const AIRCRAFT_TYPES: AircraftFamily[] = validate(data);
 
 /**
  * Every drawing is scaled against the largest aeroplane on the board, so the

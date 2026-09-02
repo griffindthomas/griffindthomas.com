@@ -101,6 +101,11 @@
       .field.wide { grid-column: 1 / -1; }
       .field > .label { display: block; margin-bottom: 4px; }
 
+      /* Which family the type code lands in, under the box. Empty until there
+         is something to say. */
+      .type-family { display: block; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--graphite); }
+      .type-family[data-unknown] { color: var(--signal); }
+
       input[type="text"], input[type="number"], select, textarea {
         width: 100%;
         font-family: var(--sans);
@@ -168,11 +173,15 @@
 
       <pre id="log" hidden></pre>
       <div id="cards"></div>
+
+      <!-- Every type code the site knows, so the box offers real ones. -->
+      <datalist id="type-codes"></datalist>
     </main>
 
     <script>
       const $ = (sel, root = document) => root.querySelector(sel);
       let AIRPORTS = {};
+      let TYPE_CODES = [];
 
       const TIMEZONES = [
         ["America/Los_Angeles", "Pacific (Seattle)"],
@@ -235,7 +244,8 @@
             </div>
             <div class="field">
               <span class="label">Type code</span>
-              <input type="text" name="typeCode" value="${esc(p.typeCode)}" placeholder="e.g. B38M" />
+              <input type="text" name="typeCode" value="${esc(p.typeCode)}" placeholder="e.g. B38M" list="type-codes" autocomplete="off" />
+              <span class="type-family" data-type-family></span>
             </div>
             <div class="field">
               <span class="label">Operator</span>
@@ -354,17 +364,55 @@
       async function load() {
         const state = await (await fetch("/api/state")).json();
         AIRPORTS = state.airports;
+        TYPE_CODES = state.typeCodes || [];
 
         applyStatus({
           photoCount: state.photos.length,
           gaps: state.gaps,
           changed: state.git.changed,
         });
+        $("#type-codes").innerHTML = TYPE_CODES.map(
+          (t) => `<option value="${esc(t.code)}">${esc(t.family)}</option>`,
+        ).join("");
+
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
 
         // One listener per card, not per input.
         for (const section of document.querySelectorAll(".card")) {
           section.addEventListener("change", () => save(section));
+          // Live, because the point is to catch a code that lands nowhere
+          // BEFORE it is saved and quietly missing from the type board.
+          const code = section.querySelector('[name="typeCode"]');
+          if (code) {
+            code.addEventListener("input", () => showFamily(code));
+            showFamily(code);
+          }
+        }
+      }
+
+      /**
+       * Says which family a type code belongs to, or that it belongs to none.
+       *
+       * The type board counts photographs by their code, so a code that is not
+       * in the catalogue means the photo shows up in the gallery and never on
+       * the board. Nothing else on the site would ever mention it.
+       */
+      function showFamily(input) {
+        const note = input.parentElement.querySelector("[data-type-family]");
+        if (!note) return;
+        const value = input.value.trim().toUpperCase();
+        if (!value) {
+          note.textContent = "";
+          note.removeAttribute("data-unknown");
+          return;
+        }
+        const hit = TYPE_CODES.find((t) => t.code === value);
+        if (hit) {
+          note.textContent = hit.family;
+          note.removeAttribute("data-unknown");
+        } else {
+          note.textContent = "Not on the type board";
+          note.setAttribute("data-unknown", "");
         }
       }
 

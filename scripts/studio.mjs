@@ -51,6 +51,22 @@ const airports = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'src', 'data', 'airports.json'), 'utf8'),
 );
 
+/**
+ * The same catalogue the type board is built from, read straight from the
+ * file the site reads. The board counts a photo by its type code, so a code
+ * that is not in here means the photo shows in the gallery and never appears
+ * on the board, with nothing to say so. The editor offers the real codes and
+ * names the family, which is the only place that mistake can be caught.
+ */
+const aircraftTypes = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'src', 'data', 'aircraft-types.json'), 'utf8'),
+);
+
+/** Flat list of every known code, with the family it belongs to. */
+const typeCodes = aircraftTypes
+  .flatMap((family) => family.codes.map((code) => ({ code, family: family.name })))
+  .sort((a, b) => a.code.localeCompare(b.code));
+
 const sidecarPath = (slug) => path.join(LIBRARY, `${slug}.json`);
 
 function readLibrary() {
@@ -138,6 +154,7 @@ const server = http.createServer(async (req, res) => {
         photos: readLibrary(),
         gaps: findGaps(),
         airports,
+        typeCodes,
         inbox: fs.existsSync(INBOX)
           ? fs.readdirSync(INBOX).filter((f) => /\.(jpe?g|png|tiff?|webp)$/i.test(f))
           : [],
