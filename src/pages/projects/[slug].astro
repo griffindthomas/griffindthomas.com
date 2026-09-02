@@ -3,6 +3,7 @@ import type { GetStaticPaths } from "astro";
 import { getCollection, render } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import UavExploded from "../../components/UavExploded.astro";
 
 export const getStaticPaths = (async () => {
   const projects = await getCollection("projects", ({ data }) => !data.draft);
@@ -41,6 +42,8 @@ const { Content } = await render(project);
     <p class="measure text-graphite mt-6 text-lg leading-relaxed">
       {project.data.summary}
     </p>
+
+    {project.data.diagram === "uav-exploded" && <UavExploded />}
 
     <div class="mt-16 grid gap-x-14 gap-y-12 lg:grid-cols-12">
       <div class="copy lg:col-span-7">

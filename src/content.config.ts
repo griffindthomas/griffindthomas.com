@@ -118,6 +118,12 @@ const projects = defineCollection({
     /** Lower sorts first on the index. */
     order: z.number().default(0),
     draft: z.boolean().default(false),
+    /**
+     * Opts this project into a bespoke drawing on its page. One value per
+     * component, so a typo fails the build rather than silently rendering
+     * nothing. Kept as an enum rather than a free string for that reason.
+     */
+    diagram: z.enum(["uav-exploded"]).optional(),
   }),
 });
 

@@ -4,6 +4,7 @@ summary: A 59-inch MQ-9-style airframe printed in sections, built almost to comp
 status: Unflown
 period: "2026"
 order: 1
+diagram: uav-exploded
 specs:
   - label: Wingspan
     value: 59 in / 1500 mm
