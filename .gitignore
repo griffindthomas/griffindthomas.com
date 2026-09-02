@@ -35,3 +35,9 @@ photos-inbox/
 # cannot sweep it into a push by accident. Remove this line only when he
 # asks for it specifically.
 src/components/FlightPath.astro
+
+# Exploded UAV view: a test concept, not for the site. Same rule as the flight
+# path above, and for the same reason: ignored rather than merely uncommitted
+# so that `git add -A` cannot sweep it into a push. Remove this line only when
+# Griffin asks for it specifically.
+src/components/UavExploded.astro
