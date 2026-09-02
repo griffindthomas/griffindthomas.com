@@ -23,17 +23,13 @@
   <div
     class="mx-auto flex max-w-[88rem] items-center gap-x-4 px-5 py-1.5 sm:px-8 lg:px-12"
   >
-    {/* Flight category rather than a "METAR" label: the report already says
-        the word, and this is the one part of it a non-pilot can act on. */}
-    <span class="tag" data-metar-cat aria-hidden="true"></span>
-
     <div class="scroller">
       <span class="raw" data-metar-raw></span>
     </div>
 
-    {/* Reads the hovered group, and the field and flight category otherwise.
-        A fixed slot rather than a tooltip, so nothing on the page moves when
-        the pointer crosses the strip. */}
+    {/* Reads the hovered group, and the field name otherwise. A slot at the
+        end of the row rather than a tooltip, so nothing on the page moves
+        when the pointer crosses the strip. */}
     <span class="slot" data-metar-slot aria-live="polite"></span>
   </div>
 </div>
@@ -44,16 +40,6 @@
     font-size: 0.6875rem;
     letter-spacing: 0.04em;
     color: var(--color-graphite);
-  }
-
-  .tag {
-    flex-shrink: 0;
-    color: var(--color-graphite);
-  }
-
-  /* Anything worse than marginal VFR is worth noticing on the way past. */
-  .tag.low {
-    color: var(--color-signal);
   }
 
   /* The report is about 80 characters. It fits on a laptop and it does not
@@ -178,9 +164,8 @@
   const strip = document.querySelector<HTMLElement>("[data-metar]");
   const rawEl = strip?.querySelector<HTMLElement>("[data-metar-raw]");
   const slotEl = strip?.querySelector<HTMLElement>("[data-metar-slot]");
-  const catEl = strip?.querySelector<HTMLElement>("[data-metar-cat]");
 
-  if (strip && rawEl && slotEl && catEl) {
+  if (strip && rawEl && slotEl) {
     /** Anything further west than the mountain states, and anything east of
      *  the country entirely, lands on the nearest of the three. */
     function station(): string {
@@ -225,9 +210,6 @@
         nodes.push(button);
       });
       rawEl!.replaceChildren(...nodes);
-
-      catEl!.textContent = data.category || data.station;
-      catEl!.classList.toggle("low", data.category === "IFR" || data.category === "LIFR");
 
       fallbackText = data.name;
       showDefault();
