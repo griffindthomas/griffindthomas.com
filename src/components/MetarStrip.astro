@@ -1,0 +1,265 @@
+---
+/**
+ * The current observation at one field, printed the way it is transmitted.
+ *
+ * A METAR is the actual document pilots read before flying, in the actual
+ * encoding, which is the whole point: it is real operational data rather than
+ * a weather widget with an icon of a cloud. Every group can be hovered for
+ * what it means, so it is readable by anyone and still correct for anyone who
+ * already reads them.
+ *
+ * The field follows the reader rather than the site: east coast gets Boston,
+ * the middle of the country and the mountain states get Sky Harbor, the west
+ * coast gets Sea-Tac. Chosen from the browser's own time zone, so there is no
+ * location permission prompt and nothing to consent to.
+ *
+ * Fetched at runtime because every page here is a static file. If the fetch
+ * fails the strip stays hidden and the page above it is unchanged, which is
+ * why it renders empty and reveals itself rather than the other way round.
+ */
+---
+
+<div class="metar border-rule border-b" data-metar hidden>
+  <div
+    class="mx-auto flex max-w-[88rem] items-center gap-x-4 px-5 py-1.5 sm:px-8 lg:px-12"
+  >
+    {/* Flight category rather than a "METAR" label: the report already says
+        the word, and this is the one part of it a non-pilot can act on. */}
+    <span class="tag" data-metar-cat aria-hidden="true"></span>
+
+    <div class="scroller">
+      <span class="raw" data-metar-raw></span>
+    </div>
+
+    {/* Reads the hovered group, and the field and flight category otherwise.
+        A fixed slot rather than a tooltip, so nothing on the page moves when
+        the pointer crosses the strip. */}
+    <span class="slot" data-metar-slot aria-live="polite"></span>
+  </div>
+</div>
+
+<style>
+  .metar {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-graphite);
+  }
+
+  .tag {
+    flex-shrink: 0;
+    color: var(--color-graphite);
+  }
+
+  /* Anything worse than marginal VFR is worth noticing on the way past. */
+  .tag.low {
+    color: var(--color-signal);
+  }
+
+  /* The report is about 80 characters. It fits on a laptop and it does not
+     fit on a phone, so it scrolls inside its own box rather than making the
+     page scroll sideways or wrapping into a second line of header. */
+  .scroller {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .slot {
+    display: none;
+    flex-shrink: 0;
+    max-width: 30ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  @media (min-width: 1024px) {
+    .slot {
+      display: block;
+    }
+  }
+
+  /* Groups the parser understands are buttons, so they are reachable by tab
+     and announced with their meaning rather than as five loose characters.
+     Everything else stays inert text. */
+  .raw :global(button.tok) {
+    font: inherit;
+    letter-spacing: inherit;
+    color: var(--color-graphite);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: help;
+    border-bottom: 1px dotted var(--color-rule);
+  }
+
+  .raw :global(button.tok:hover),
+  .raw :global(button.tok:focus-visible) {
+    color: var(--color-signal);
+    border-bottom-color: var(--color-signal);
+    outline: none;
+  }
+
+  /* The decode lands here, so it has to be readable rather than decorative. */
+  .slot {
+    color: var(--color-graphite);
+  }
+</style>
+
+<script>
+  /**
+   * Which field a reader gets, by their own clock.
+   *
+   * Zone names first because they are unambiguous. A UTC offset is not: in
+   * summer, Phoenix and Los Angeles are both seven hours behind, and Chicago
+   * and New York are both five behind at different times of year.
+   */
+  const ZONES: Record<string, string> = {
+    "America/New_York": "KBOS",
+    "America/Detroit": "KBOS",
+    "America/Toronto": "KBOS",
+    "America/Montreal": "KBOS",
+    "America/Halifax": "KBOS",
+    "America/Nassau": "KBOS",
+    "America/Havana": "KBOS",
+    "America/Puerto_Rico": "KBOS",
+    "America/Indiana/Indianapolis": "KBOS",
+    "America/Kentucky/Louisville": "KBOS",
+    "America/Chicago": "KPHX",
+    "America/Winnipeg": "KPHX",
+    "America/Regina": "KPHX",
+    "America/Mexico_City": "KPHX",
+    "America/Monterrey": "KPHX",
+    "America/Menominee": "KPHX",
+    "America/North_Dakota/Center": "KPHX",
+    "America/Denver": "KPHX",
+    "America/Phoenix": "KPHX",
+    "America/Boise": "KPHX",
+    "America/Edmonton": "KPHX",
+    "America/Chihuahua": "KPHX",
+    "America/Mazatlan": "KPHX",
+    "America/Los_Angeles": "KSEA",
+    "America/Vancouver": "KSEA",
+    "America/Tijuana": "KSEA",
+    "America/Whitehorse": "KSEA",
+    "America/Anchorage": "KSEA",
+    "America/Juneau": "KSEA",
+    "America/Sitka": "KSEA",
+    "America/Nome": "KSEA",
+    "Pacific/Honolulu": "KSEA",
+  };
+
+  interface MetarToken {
+    t: string;
+    d: string;
+  }
+
+  interface MetarPayload {
+    status: "ok" | "unavailable";
+    station: string;
+    name: string;
+    raw: string;
+    observed: string | null;
+    category: string;
+    tokens: MetarToken[];
+  }
+
+  const strip = document.querySelector<HTMLElement>("[data-metar]");
+  const rawEl = strip?.querySelector<HTMLElement>("[data-metar-raw]");
+  const slotEl = strip?.querySelector<HTMLElement>("[data-metar-slot]");
+  const catEl = strip?.querySelector<HTMLElement>("[data-metar-cat]");
+
+  if (strip && rawEl && slotEl && catEl) {
+    /** Anything further west than the mountain states, and anything east of
+     *  the country entirely, lands on the nearest of the three. */
+    function station(): string {
+      const forced = new URLSearchParams(location.search).get("wx");
+      if (forced) return forced.toUpperCase();
+
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+      if (ZONES[zone]) return ZONES[zone];
+
+      const hours = -new Date().getTimezoneOffset() / 60;
+      if (hours >= -5) return "KBOS";
+      if (hours >= -7) return "KPHX";
+      return "KSEA";
+    }
+
+    let fallbackText = "";
+
+    function showDefault() {
+      slotEl!.textContent = fallbackText;
+    }
+
+    function render(data: MetarPayload) {
+      const nodes: Node[] = [];
+      data.tokens.forEach((token, i) => {
+        if (i > 0) nodes.push(document.createTextNode(" "));
+
+        if (!token.d) {
+          const span = document.createElement("span");
+          span.textContent = token.t;
+          nodes.push(span);
+          return;
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "tok";
+        button.textContent = token.t;
+        button.dataset.decode = token.d;
+        // The group on its own means nothing read aloud, so the decode is the
+        // accessible name and the raw characters are what is drawn.
+        button.setAttribute("aria-label", `${token.t}, ${token.d}`);
+        nodes.push(button);
+      });
+      rawEl!.replaceChildren(...nodes);
+
+      catEl!.textContent = data.category || data.station;
+      catEl!.classList.toggle("low", data.category === "IFR" || data.category === "LIFR");
+
+      fallbackText = data.name;
+      showDefault();
+
+      strip!.removeAttribute("hidden");
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(`/api/metar.json?station=${encodeURIComponent(station())}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as MetarPayload;
+        if (data.status !== "ok" || data.tokens.length === 0) return;
+        render(data);
+      } catch {
+        // A field with no observation is not worth a message on the page.
+      }
+    }
+
+    const decodeFrom = (target: EventTarget | null) => {
+      const el = target instanceof HTMLElement ? target.closest<HTMLElement>("[data-decode]") : null;
+      if (el?.dataset.decode) slotEl.textContent = el.dataset.decode;
+    };
+
+    rawEl.addEventListener("pointerover", (e) => decodeFrom(e.target));
+    rawEl.addEventListener("focusin", (e) => decodeFrom(e.target));
+    rawEl.addEventListener("pointerleave", showDefault);
+    rawEl.addEventListener("focusout", showDefault);
+
+    load();
+
+    // Observations are hourly, so this is about being current after a tab has
+    // been left open rather than about a live feed. Nothing is fetched while
+    // the tab is in the background.
+    window.setInterval(() => {
+      if (!document.hidden) load();
+    }, 10 * 60_000);
+  }
+</script>

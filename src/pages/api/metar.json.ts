@@ -1,0 +1,404 @@
+import type { APIRoute } from 'astro';
+
+/**
+ * Current observation for one field, decoded group by group.
+ *
+ * Source is NOAA's Aviation Weather Center, which is public, keyless and the
+ * same feed the FAA publishes to. No account, no attribution requirement, and
+ * no rate limit worth worrying about at this site's traffic.
+ *
+ * The decode happens here rather than in the browser for three reasons: the
+ * parser is the bulk of the code and never has to be downloaded, the strip
+ * stays a few lines of DOM, and a station that answers with something this
+ * route cannot read fails on the server where it can be seen.
+ *
+ * Runs on demand. Everything else on the site is prerendered.
+ */
+export const prerender = false;
+
+/** METARs are issued hourly near :53, with specials in between. */
+const CACHE_SECONDS = 180;
+
+/**
+ * The only stations this route will fetch.
+ *
+ * An open passthrough would let anyone use the site as a general weather
+ * proxy, and the strip only ever asks for one of these.
+ */
+const STATIONS = ['KPHX', 'KSEA', 'KBFI', 'KBOS'] as const;
+type Station = (typeof STATIONS)[number];
+
+const DEFAULT_STATION: Station = 'KPHX';
+
+const USER_AGENT = 'griffindthomas.com (personal aviation site)';
+
+export interface MetarToken {
+  /** The group as it appears in the report. */
+  t: string;
+  /** Plain English, or an empty string for a group this parser cannot read. */
+  d: string;
+}
+
+export interface MetarPayload {
+  status: 'ok' | 'unavailable';
+  station: string;
+  /** Field name, short form. */
+  name: string;
+  raw: string;
+  /** ISO timestamp of the observation, for a relative age in the UI. */
+  observed: string | null;
+  /** VFR, MVFR, IFR or LIFR. Empty when the feed does not say. */
+  category: string;
+  tokens: MetarToken[];
+}
+
+// --- decoding ---------------------------------------------------------------
+
+const SKY: Record<string, string> = {
+  SKC: 'Sky clear',
+  CLR: 'No cloud below 12,000 ft',
+  NCD: 'No cloud detected',
+  NSC: 'No significant cloud',
+  FEW: 'Few',
+  SCT: 'Scattered',
+  BKN: 'Broken',
+  OVC: 'Overcast',
+};
+
+const INTENSITY: Record<string, string> = {
+  '-': 'Light ',
+  '+': 'Heavy ',
+  VC: 'In the vicinity, ',
+};
+
+const DESCRIPTOR: Record<string, string> = {
+  MI: 'shallow ',
+  PR: 'partial ',
+  BC: 'patches of ',
+  DR: 'low drifting ',
+  BL: 'blowing ',
+  SH: 'showers of ',
+  TS: 'thunderstorm with ',
+  FZ: 'freezing ',
+};
+
+const PHENOMENA: Record<string, string> = {
+  DZ: 'drizzle',
+  RA: 'rain',
+  SN: 'snow',
+  SG: 'snow grains',
+  IC: 'ice crystals',
+  PL: 'ice pellets',
+  GR: 'hail',
+  GS: 'small hail',
+  UP: 'unknown precipitation',
+  BR: 'mist',
+  FG: 'fog',
+  FU: 'smoke',
+  VA: 'volcanic ash',
+  DU: 'widespread dust',
+  SA: 'sand',
+  HZ: 'haze',
+  PY: 'spray',
+  PO: 'dust whirls',
+  SQ: 'squalls',
+  FC: 'funnel cloud',
+  SS: 'sandstorm',
+  DS: 'duststorm',
+};
+
+const PLAIN: Record<string, string> = {
+  METAR: 'Routine hourly observation',
+  SPECI: 'Special observation, issued because something changed',
+  AUTO: 'Fully automated, nobody looked out of the window',
+  COR: 'Corrected report',
+  NOSIG: 'No significant change expected',
+  RMK: 'Remarks follow, mostly for other machines',
+  AO1: 'Automated station without a precipitation discriminator',
+  AO2: 'Automated station that can tell rain from snow',
+  $: 'The station is flagging itself for maintenance',
+  PNO: 'Rain gauge not working',
+  RVRNO: 'Runway visual range not available',
+  TSNO: 'Thunderstorm detector not working',
+  FZRANO: 'Freezing rain sensor not working',
+  WSHFT: 'Wind shift',
+};
+
+const ordinal = (n: number): string => {
+  const teen = n % 100;
+  if (teen >= 11 && teen <= 13) return `${n}th`;
+  return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+};
+
+const feet = (hundreds: string): string => (Number(hundreds) * 100).toLocaleString('en-US');
+
+/** METAR writes a leading M for negative, so -5 is M05. */
+const signed = (v: string): number => (v.startsWith('M') ? -Number(v.slice(1)) : Number(v));
+
+const toF = (c: number): number => Math.round((c * 9) / 5 + 32);
+
+/** Remarks carry temperatures to a tenth, with 1 as the minus sign. */
+const signedTenths = (sign: string, digits: string): string =>
+  ((sign === '1' ? -1 : 1) * (Number(digits) / 10)).toFixed(1);
+
+/**
+ * One group, decoded.
+ *
+ * Order matters: the patterns overlap, and a temperature group would be read
+ * as a fraction of visibility if visibility were tried first.
+ */
+function decodeToken(token: string, station: string, inRemarks: boolean): string {
+  if (!inRemarks && token === station) return 'Station identifier';
+  if (PLAIN[token]) return PLAIN[token];
+
+  let m: RegExpExecArray | null;
+
+  // Day and time of the observation, always Zulu.
+  if ((m = /^(\d{2})(\d{2})(\d{2})Z$/.exec(token))) {
+    return `Taken on the ${ordinal(Number(m[1]))} at ${m[2]}:${m[3]} Zulu`;
+  }
+
+  // Wind. Calm is written as five zeros rather than as a direction.
+  if ((m = /^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/.exec(token))) {
+    const unit = m[4] === 'KT' ? 'knots' : 'metres per second';
+    const speed = Number(m[2]);
+    if (speed === 0) return 'Wind calm';
+    const from = m[1] === 'VRB' ? 'Wind variable' : `Wind from ${Number(m[1])} degrees`;
+    const gust = m[3] ? `, gusting ${Number(m[3])}` : '';
+    return `${from} at ${speed} ${unit}${gust}`;
+  }
+
+  // Direction is reported as a range when it will not sit still.
+  if ((m = /^(\d{3})V(\d{3})$/.exec(token))) {
+    return `Wind varying between ${Number(m[1])} and ${Number(m[2])} degrees`;
+  }
+
+  // Visibility in statute miles, with M for "less than". A value above one
+  // mile with a fraction is transmitted with a space in it, which `tokenise`
+  // has already put back together into one group.
+  if ((m = /^(M)?(\d{1,2})?\s?(\d\/\d)?SM$/.exec(token)) && (m[2] || m[3])) {
+    const whole = m[2] ?? '';
+    const fraction = m[3] ? `${whole ? ' ' : ''}${m[3]}` : '';
+    const less = m[1] ? 'less than ' : '';
+    // Anything of a mile or under is one mile, not miles.
+    const plural = Number(whole || 0) > 1 || (whole === '1' && m[3]) ? 'miles' : 'mile';
+    return `Visibility ${less}${whole}${fraction} statute ${plural}`;
+  }
+
+  // Runway visual range, only reported when it is low enough to matter.
+  if ((m = /^R(\d{2}[LCR]?)\/([MP]?\d{4})(?:V([MP]?\d{4}))?FT$/.exec(token))) {
+    const range = m[3] ? `${m[2]} to ${m[3]}` : m[2];
+    return `Runway ${m[1]} visual range ${range.replace(/[MP]/g, '')} ft`;
+  }
+
+  // Cloud layer, height in hundreds of feet above the field.
+  if ((m = /^(FEW|SCT|BKN|OVC)(\d{3})(CB|TCU)?$/.exec(token))) {
+    const kind = m[3] === 'CB' ? ', cumulonimbus' : m[3] === 'TCU' ? ', towering cumulus' : '';
+    return `${SKY[m[1]]} cloud at ${feet(m[2])} ft${kind}`;
+  }
+  if (SKY[token]) return SKY[token];
+  if ((m = /^VV(\d{3})$/.exec(token))) {
+    return `Sky obscured, vertical visibility ${feet(m[1])} ft`;
+  }
+
+  // Present weather. Several phenomena can be strung into one group.
+  if (
+    (m =
+      /^(-|\+|VC)?(MI|PR|BC|DR|BL|SH|TS|FZ)?((?:DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS)+)$/.exec(
+        token,
+      ))
+  ) {
+    const parts = m[3].match(/.{2}/g) ?? [];
+    const words = parts.map((p) => PHENOMENA[p] ?? p).join(' and ');
+    const phrase = `${INTENSITY[m[1] ?? ''] ?? ''}${DESCRIPTOR[m[2] ?? ''] ?? ''}${words}`;
+    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  }
+
+  // Temperature and dew point, in whole degrees C.
+  if (!inRemarks && (m = /^(M?\d{2})\/(M?\d{2})?$/.exec(token))) {
+    const t = signed(m[1]);
+    const parts = [`Temperature ${t}C (${toF(t)}F)`];
+    if (m[2]) {
+      const d = signed(m[2]);
+      parts.push(`dew point ${d}C (${toF(d)}F)`);
+    }
+    return parts.join(', ');
+  }
+
+  // Altimeter setting. Inches of mercury in the US, hectopascals elsewhere.
+  if ((m = /^A(\d{4})$/.exec(token))) {
+    return `Altimeter ${m[1].slice(0, 2)}.${m[1].slice(2)} inHg`;
+  }
+  if ((m = /^Q(\d{4})$/.exec(token))) return `Altimeter ${Number(m[1])} hPa`;
+
+  // Remarks. Only the groups worth reading are decoded; the rest are for
+  // forecasters and automated systems, and saying so is better than guessing.
+  if (inRemarks) {
+    if ((m = /^SLP(\d{3})$/.exec(token))) {
+      const raw = Number(m[1]);
+      const hpa = (raw >= 500 ? 900 + raw / 10 : 1000 + raw / 10).toFixed(1);
+      return `Sea level pressure ${hpa} hPa`;
+    }
+    if ((m = /^T([01])(\d{3})([01])(\d{3})$/.exec(token))) {
+      const t = (m[1] === '1' ? -1 : 1) * (Number(m[2]) / 10);
+      const d = (m[3] === '1' ? -1 : 1) * (Number(m[4]) / 10);
+      return `Temperature ${t.toFixed(1)}C and dew point ${d.toFixed(1)}C, to a tenth`;
+    }
+    if ((m = /^P(\d{4})$/.exec(token))) {
+      return `${(Number(m[1]) / 100).toFixed(2)} in of rain in the last hour`;
+    }
+    if ((m = /^1([01])(\d{3})$/.exec(token))) {
+      return `Six hour maximum temperature ${signedTenths(m[1], m[2])}C`;
+    }
+    if ((m = /^2([01])(\d{3})$/.exec(token))) {
+      return `Six hour minimum temperature ${signedTenths(m[1], m[2])}C`;
+    }
+    if ((m = /^4([01])(\d{3})([01])(\d{3})$/.exec(token))) {
+      return `Day's high ${signedTenths(m[1], m[2])}C, low ${signedTenths(m[3], m[4])}C`;
+    }
+    if ((m = /^5([0-8])(\d{3})$/.exec(token))) {
+      const dir = Number(m[1]) < 4 ? 'rising' : Number(m[1]) === 4 ? 'steady' : 'falling';
+      return `Pressure ${dir}, ${(Number(m[2]) / 10).toFixed(1)} hPa over three hours`;
+    }
+    return '';
+  }
+
+  return '';
+}
+
+export function tokenise(raw: string, station: string): MetarToken[] {
+  const groups: string[] = [];
+  let inRemarks = false;
+
+  // Visibility of more than a mile with a fraction is the one group in a
+  // METAR that contains a space, so "2 1/2SM" arrives as two groups. Split
+  // apart it decodes as half a mile, which is the difference between a normal
+  // day and a diversion, so it is put back together before anything reads it.
+  const split = raw.trim().split(/\s+/).filter(Boolean);
+  for (let i = 0; i < split.length; i += 1) {
+    const next = split[i + 1];
+    if (/^\d{1,2}$/.test(split[i]) && next && /^\d\/\dSM$/.test(next)) {
+      groups.push(`${split[i]} ${next}`);
+      i += 1;
+    } else {
+      groups.push(split[i]);
+    }
+  }
+
+  return groups.map((t) => {
+    const decoded = decodeToken(t, station, inRemarks);
+    if (t === 'RMK') inRemarks = true;
+    return { t, d: decoded };
+  });
+}
+
+// --- route ------------------------------------------------------------------
+
+interface Observation {
+  icaoId?: string;
+  name?: string;
+  rawOb?: string;
+  reportTime?: string;
+  fltCat?: string;
+}
+
+function station(url: URL): Station {
+  const asked = (url.searchParams.get('station') ?? '').toUpperCase();
+  return (STATIONS as readonly string[]).includes(asked) ? (asked as Station) : DEFAULT_STATION;
+}
+
+/**
+ * "Seattle/Boeing Fld, WA, US" is how the feed writes a field name. The strip
+ * has room for the field, not for the state and the country.
+ */
+const shortName = (name: string): string => name.split(',')[0]?.trim() ?? '';
+
+export const GET: APIRoute = async ({ url, locals }) => {
+  const id = station(url);
+  const debug = url.searchParams.get('debug') === '1';
+
+  const cacheStore =
+    typeof caches !== 'undefined' ? (caches as unknown as { default?: Cache }).default : undefined;
+  // Astro v6 moved the Workers ExecutionContext to `locals.cfContext`. The old
+  // `locals.runtime.ctx` path still exists as a getter that throws, so it must
+  // not be probed with optional chaining.
+  const cfContext = (locals as { cfContext?: { waitUntil?: (p: Promise<unknown>) => void } })
+    ?.cfContext;
+
+  const cacheKey = new Request(`https://metar-cache.internal/v1?station=${id}`, { method: 'GET' });
+
+  if (cacheStore && !debug) {
+    const hit = await cacheStore.match(cacheKey);
+    if (hit) return hit;
+  }
+
+  let payload: MetarPayload = {
+    status: 'unavailable',
+    station: id,
+    name: '',
+    raw: '',
+    observed: null,
+    category: '',
+    tokens: [],
+  };
+  let failure: string | null = null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(
+      `https://aviationweather.gov/api/data/metar?ids=${id}&format=json`,
+      {
+        signal: controller.signal,
+        headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
+      },
+    );
+    if (!res.ok) {
+      failure = `HTTP ${res.status}`;
+    } else {
+      const list = (await res.json()) as Observation[];
+      const ob = Array.isArray(list) ? list.find((o) => o?.rawOb) : undefined;
+      if (!ob?.rawOb) {
+        failure = 'no observation in response';
+      } else {
+        // The feed prefixes some reports with METAR and some not. Keeping it
+        // as sent is the honest thing: it is the actual report.
+        const raw = ob.rawOb.trim();
+        payload = {
+          status: 'ok',
+          station: ob.icaoId ?? id,
+          name: shortName(ob.name ?? ''),
+          raw,
+          observed: ob.reportTime ? new Date(ob.reportTime).toISOString() : null,
+          category: ob.fltCat ?? '',
+          tokens: tokenise(raw, ob.icaoId ?? id),
+        };
+      }
+    }
+  } catch (err) {
+    failure = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const body = debug ? { ...payload, debug: { failure } } : payload;
+
+  const response = new Response(JSON.stringify(body), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control':
+        payload.status === 'ok' && !debug
+          ? `public, max-age=${CACHE_SECONDS}, stale-while-revalidate=600`
+          : 'no-store',
+    },
+  });
+
+  if (cacheStore && payload.status === 'ok' && !debug) {
+    const put = cacheStore.put(cacheKey, response.clone());
+    if (cfContext?.waitUntil) cfContext.waitUntil(put);
+    else await put;
+  }
+
+  return response;
+};

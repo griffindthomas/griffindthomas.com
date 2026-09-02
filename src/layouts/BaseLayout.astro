@@ -6,6 +6,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "../styles/global.css";
 
+import MetarStrip from "../components/MetarStrip.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 
@@ -84,6 +85,7 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
       Skip to content
     </a>
 
+    <MetarStrip />
     <SiteNav />
 
     <main id="main" class={bare ? "flex-1" : "flex-1 px-5 py-12 sm:px-8 lg:px-12"}>
