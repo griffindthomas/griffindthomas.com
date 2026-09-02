@@ -36,6 +36,18 @@ const upper = text.toUpperCase();
  * but a photo caption in a grid column has to.
  */
 const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) : [upper.padEnd(width, " ")];
+
+/**
+ * What an empty module holds. A non-breaking space, and not for typography.
+ *
+ * A module whose text is an ordinary space has no rendered content, so the
+ * flex box synthesises a baseline from its own box instead of taking one from
+ * a glyph, and it sits two pixels off from a module holding a letter. Every
+ * module that cycles through a blank while flipping therefore nudges the line
+ * it is on, and everything below it on the page moves. A non-breaking space
+ * is content, so the baseline never changes and the line stays put.
+ */
+const BLANK = "\u00A0";
 ---
 
 <span class:list={["sf", className]} data-flap-group data-group-order={group}>
@@ -46,7 +58,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
         <span class="sf-word">
           {run.split("").map((ch) => (
             <span class="flap" data-flap>
-              {ch === " " ? " " : ch}
+              {ch === " " ? BLANK : ch}
             </span>
           ))}
         </span>
@@ -70,8 +82,12 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
 
     // Landing on the real character is the point, so the deck it cycles
     // through is the set actually used plus the alphabet.
-    const DECK = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 /-:.".split("");
+    // No blank in the deck. A module that lands on one mid-flip moves the
+    // line it sits on, for the reason described above the markup.
+    const DECK = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/-:.".split("");
     const junk = () => DECK[Math.floor(Math.random() * DECK.length)];
+    /** Matches the BLANK the server rendered into empty modules. */
+    const BLANK = "\u00A0";
 
     /**
      * The real character of every module, stamped onto the module itself.
@@ -87,10 +103,11 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
       const flaps = [...group.querySelectorAll<HTMLElement>("[data-flap]")];
       for (const el of flaps) {
         // Trimmed, because the character sits on its own line in the markup
-        // and the raw text node carries the indentation with it. A padding
-        // module normalises to a single space rather than to nothing.
+        // and the raw text node carries the indentation with it. `trim` also
+        // eats the non-breaking space a padding module holds, so a blank
+        // normalises back to one rather than to nothing.
         const ch = (el.textContent ?? "").trim();
-        el.dataset.ch = ch === "" ? " " : ch;
+        el.dataset.ch = ch === "" ? BLANK : ch;
       }
       modules.set(group, flaps);
     }
@@ -303,7 +320,7 @@ const runs: string[] = width === undefined ? upper.split(/\s+/).filter(Boolean) 
           const el = pool[Math.floor(Math.random() * pool.length)];
           // Blank padding modules have nothing to disturb, and anything the
           // shuffle is holding belongs to the shuffle.
-          if (!el || shuffling.has(el) || rattled.has(el) || el.dataset.ch === " ") continue;
+          if (!el || shuffling.has(el) || rattled.has(el) || el.dataset.ch === BLANK) continue;
           el.textContent = junk();
           el.setAttribute("data-flipping", "");
           rattled.add(el);

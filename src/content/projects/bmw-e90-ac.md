@@ -1,6 +1,6 @@
 ---
-title: BMW E90 A/C Fiasco
-summary: A dead blower motor, a $2,500 dealer quote, two bricked cars, and the $100 plug-in part that turned out to be the fault
+title: BMW E90 A/C Troubleshooting
+summary: A dead blower motor, a $2,500 dealer quote, two bricked cars, and the $100 part that turned out to be the fault
 status: Fixed
 period: "2024"
 order: 4
@@ -30,8 +30,8 @@ any speed, with a drive from Seattle to New Hampshire booked for the end of
 August. If it was not fixed by then the trip happened in a different car, so
 there was a date on it.
 
-I started with the blower motor, on the grounds that it was the thing not
-blowing. A replacement off Amazon went in and changed nothing.
+I started with the blower motor itself. A replacement off Amazon went in and
+changed nothing.
 
 The dealership diagnosed the Junction Box Unit and quoted $2,500 to replace
 it. I took the dash apart myself, pulled the JBU, wrote down the part number
@@ -60,8 +60,8 @@ mentioned it.
 
 That was four or five hours a day after practice, most of a summer, while I
 was swimming for two teams. It was done a few days before we left. The
-dealership was wrong about which module, and I stayed wrong about it for
-weeks after they were.
+dealership got the module wrong, and I kept going down the same path for
+weeks after they did.
 
 ## The raccoon weekend
 

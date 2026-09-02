@@ -32,10 +32,10 @@ const readout = [
       <p class="data">Canon EOS Rebel T7 / EF 75-300mm</p>
       <h1 class="font-display mt-5 text-5xl sm:text-7xl">Spotting</h1>
       <p class="measure text-graphite mt-6 text-lg leading-relaxed">
-        Airliners and whatever the Navy brings to Seafair. Shot from the fences at Sea-Tac
-        and Boeing Field, and from Sky Harbor once I am back in Tempe. Everything here is
-        my own frame, with the type and registration read off the airframe rather than
-        guessed at afterwards.
+        Mostly airliners, and the Blue Angels at Seafair. Shot from the fences at Sea-Tac
+        and Boeing Field, and from Sky Harbor once I am back in Tempe. Every frame here is
+        mine, and the type and registration are read off the airframe rather than guessed
+        at afterwards.
       </p>
     </header>
 
@@ -67,11 +67,14 @@ const readout = [
       )
     }
 
-    {photos.length > 0 && <TypeBoard photos={photos} />}
+    {photos.length > 0 && <TypeBoard photos={photos} mode="caught" />}
 
     {
       photos.length > 0 ? (
-        <PhotoGallery photos={photos} filters={filters} />
+        <>
+          <PhotoGallery photos={photos} filters={filters} />
+          <TypeBoard photos={photos} mode="wanted" />
+        </>
       ) : (
         <p class="data mt-16">
           <span class="text-signal">Empty</span>

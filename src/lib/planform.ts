@@ -16,7 +16,7 @@
  */
 
 export type Family = 'jet' | 'fighter';
-export type TipDevice = 'plain' | 'winglet' | 'raked';
+export type TipDevice = 'plain' | 'raked';
 
 export interface Planform {
   family: Family;
@@ -109,8 +109,9 @@ function fuselage(cx: number, top: number, len: number, width: number): string {
  *
  * Raked tips are a planform feature and are drawn as one: the outer eighth of
  * the span carries much more sweep, which is what makes a 787 and a P-8
- * recognisable from above. A winglet is vertical and would be invisible in a
- * top view, so it is drawn as the short chordwise tick it casts.
+ * recognisable from above. Winglets are not drawn at all. They stand straight
+ * up, so from above there is nothing of them to see, and the little chordwise
+ * mark that stood in for one only read as a bar stuck on the wing.
  */
 function panel(
   cx: number,
@@ -146,23 +147,7 @@ function panel(
 
   points.push([rootX, rootY + chord]);
 
-  const shapes = [mirrored(cx, points)];
-
-  // The tick a winglet casts on the ground. Small on purpose: this is the one
-  // part of the drawing that is standing up rather than lying flat.
-  if (tip === 'winglet') {
-    const tipX = rootX + semi;
-    shapes.push(
-      mirrored(cx, [
-        [tipX - chord * taper * 0.1, kinkY - chord * 0.14],
-        [tipX + chord * taper * 0.16, kinkY - chord * 0.06],
-        [tipX + chord * taper * 0.16, kinkY + kinkChord * 0.55],
-        [tipX - chord * taper * 0.1, kinkY + kinkChord * 0.5],
-      ]),
-    );
-  }
-
-  return shapes;
+  return [mirrored(cx, points)];
 }
 
 /** A nacelle, drawn as a plain rounded box hanging ahead of the wing. */
@@ -186,8 +171,13 @@ function nacelle(x: number, y: number, len: number, width: number): string {
  * shape recognisable from above. Running those through the airliner builder
  * produced a fuselage with three triangles stacked down it.
  */
-function fighter(spanFt: number, lengthFt: number, shape: Planform): Drawing {
-  const k = FIT / Math.max(spanFt, lengthFt);
+function fighter(
+  spanFt: number,
+  lengthFt: number,
+  shape: Planform,
+  reference: number,
+): Drawing {
+  const k = FIT / reference;
   const len = lengthFt * k;
   const semi = (spanFt * k) / 2;
   const cx = BOX / 2;
@@ -266,12 +256,21 @@ function fighter(spanFt: number, lengthFt: number, shape: Planform): Drawing {
   return { paths, viewBox: `0 0 ${BOX} ${BOX}` };
 }
 
-export function planform(spanFt: number, lengthFt: number, shape: Planform): Drawing {
-  if (shape.family === 'fighter') return fighter(spanFt, lengthFt, shape);
+/**
+ * @param reference The size that fills the box, in feet. Pass the same value
+ * for every drawing in a set and they come out to one scale, which is the only
+ * way a 747 next to an F-35 says anything. Defaults to this aeroplane's own
+ * largest dimension, which fills the box with it.
+ */
+export function planform(
+  spanFt: number,
+  lengthFt: number,
+  shape: Planform,
+  reference: number = Math.max(spanFt, lengthFt),
+): Drawing {
+  if (shape.family === 'fighter') return fighter(spanFt, lengthFt, shape, reference);
 
-  // Both dimensions are real, so the drawing is scaled by whichever of them
-  // binds. A 747 and a Hornet then differ in proportion, not just in size.
-  const k = FIT / Math.max(spanFt, lengthFt);
+  const k = FIT / reference;
   const len = lengthFt * k;
   const semi = (spanFt * k) / 2;
   const cx = BOX / 2;

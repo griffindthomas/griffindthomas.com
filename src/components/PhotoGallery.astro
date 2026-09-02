@@ -15,6 +15,7 @@
  */
 import { Image } from "astro:assets";
 
+import { familyForCode } from "../data/aircraft-types";
 import { lightboxSrc, type FilterGroup, type Photo } from "../lib/photos";
 
 interface Props {
@@ -98,6 +99,7 @@ const payload = photos.map((p, i) => ({
         data-slug={p.slug}
         data-operator={p.data.operator}
         data-aircraft={p.data.aircraft}
+        data-family={familyForCode(p.data.typeCode)?.id ?? ""}
         data-place={p.data.airport || p.data.location}
         data-tag={p.data.tags.join(" ")}
       >
@@ -440,7 +442,9 @@ const payload = photos.map((p, i) => ({
     const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear]");
     const countEl = document.querySelector<HTMLElement>("[data-count]");
     const emptyEl = document.querySelector<HTMLElement>("[data-empty]");
-    const GROUPS = ["operator", "aircraft", "place", "tag"] as const;
+    // `family` has no chips in the bar. It is driven by the type board, which
+    // is the type filter on this page.
+    const GROUPS = ["operator", "aircraft", "family", "place", "tag"] as const;
 
     /** Nothing in the bar works without this script, so it ships hidden. */
     if (bar) bar.hidden = false;

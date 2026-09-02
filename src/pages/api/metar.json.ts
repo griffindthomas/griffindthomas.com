@@ -110,10 +110,10 @@ const PHENOMENA: Record<string, string> = {
 const PLAIN: Record<string, string> = {
   METAR: 'Routine hourly observation',
   SPECI: 'Special observation, issued because something changed',
-  AUTO: 'Fully automated, nobody looked out of the window',
+  AUTO: 'Automated report, no human observer',
   COR: 'Corrected report',
   NOSIG: 'No significant change expected',
-  RMK: 'Remarks follow, mostly for other machines',
+  RMK: 'Remarks follow',
   AO1: 'Automated station without a precipitation discriminator',
   AO2: 'Automated station that can tell rain from snow',
   $: 'The station is flagging itself for maintenance',

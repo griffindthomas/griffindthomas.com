@@ -30,7 +30,7 @@ Every page here is built into a static file and served from Cloudflare's edge.
 A push to the main branch is live in about fifty seconds. There is no database
 and nothing on the internet that can be logged into.
 
-## The photos are content, not code
+## The photo pipeline
 
 A new frame goes into an inbox folder and one command imports it. The importer
 reads the EXIF the camera wrote, so the body, the lens, the focal length, the
