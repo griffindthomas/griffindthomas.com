@@ -44,7 +44,7 @@ const sections = [
       },
       {
         title: "Exeter High School and Seacoast School of Technology",
-        meta: "May 2026",
+        meta: "2024 to 2026",
         detail: "Exeter, New Hampshire",
         points: ["Completed the full four-course Project Lead The Way engineering sequence"],
       },
@@ -190,17 +190,12 @@ const skills = [
     >
       <h2 class="data text-signal lg:col-span-2">The PDF</h2>
       <div class="lg:col-span-10">
-        <p class="text-graphite measure">
-          The same document as a file. Browsers on phones tend to download this rather
-          than display it, so the version above is the one that always works.
-        </p>
-
         {/* `object` degrades to its children when the browser cannot render a
             PDF inline, which is most mobile browsers. */}
         <object
           data={RESUME_PDF}
           type="application/pdf"
-          class="border-rule mt-6 h-[min(1100px,120vh)] w-full border"
+          class="border-rule h-[min(1100px,120vh)] w-full border"
           aria-label="Resume PDF"
         >
           <div class="p-10">
