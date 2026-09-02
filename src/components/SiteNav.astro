@@ -9,12 +9,12 @@ import { loadLog } from "../lib/log";
 const hasLog = (await loadLog()).length > 0;
 
 const links = [
+  { href: "/resume", label: "Resume" },
   { href: "/spotting", label: "Spotting" },
   { href: "/projects", label: "Projects" },
   ...(hasLog ? [{ href: "/log", label: "Log" }] : []),
-  { href: "/about", label: "About" },
-  { href: "/resume", label: "Resume" },
   { href: "/contact", label: "Contact" },
+  { href: "/about", label: "About" },
 ];
 
 const path = Astro.url.pathname;

@@ -19,16 +19,203 @@ export const prerender = false;
 /** METARs are issued hourly near :53, with specials in between. */
 const CACHE_SECONDS = 180;
 
+interface Field {
+  icao: string;
+  lat: number;
+  lon: number;
+}
+
 /**
- * The only stations this route will fetch.
+ * The busiest twenty fields in the United States, by passengers.
+ *
+ * Twenty is enough that everyone in the country is within a few hundred miles
+ * of one, and small enough that the answer is always somewhere a reader has
+ * heard of. Indianapolis gets Chicago rather than Cincinnati because
+ * Cincinnati is not on this list, which is the point of keeping it to hubs.
+ */
+const US_FIELDS: Field[] = [
+  { icao: 'KATL', lat: 33.6367, lon: -84.4281 },
+  { icao: 'KDFW', lat: 32.8968, lon: -97.038 },
+  { icao: 'KDEN', lat: 39.8617, lon: -104.6732 },
+  { icao: 'KORD', lat: 41.9786, lon: -87.9048 },
+  { icao: 'KLAX', lat: 33.9425, lon: -118.4081 },
+  { icao: 'KCLT', lat: 35.214, lon: -80.9431 },
+  { icao: 'KMCO', lat: 28.4294, lon: -81.3089 },
+  { icao: 'KLAS', lat: 36.084, lon: -115.1537 },
+  { icao: 'KPHX', lat: 33.4343, lon: -112.0116 },
+  { icao: 'KMIA', lat: 25.7932, lon: -80.2906 },
+  { icao: 'KSEA', lat: 47.4502, lon: -122.3088 },
+  { icao: 'KIAH', lat: 29.9844, lon: -95.3414 },
+  { icao: 'KJFK', lat: 40.6398, lon: -73.7789 },
+  { icao: 'KEWR', lat: 40.6925, lon: -74.1687 },
+  { icao: 'KSFO', lat: 37.6189, lon: -122.375 },
+  { icao: 'KFLL', lat: 26.0726, lon: -80.1527 },
+  { icao: 'KMSP', lat: 44.882, lon: -93.2218 },
+  { icao: 'KDTW', lat: 42.2124, lon: -83.3534 },
+  { icao: 'KBOS', lat: 42.3643, lon: -71.0052 },
+  { icao: 'KPHL', lat: 39.8721, lon: -75.2411 },
+];
+
+/** Canada gets whichever of the two is closer, east or west. */
+const CANADA_FIELDS: Field[] = [
+  { icao: 'CYYZ', lat: 43.6772, lon: -79.6306 },
+  { icao: 'CYVR', lat: 49.1939, lon: -123.1844 },
+];
+
+/**
+ * Everywhere else gets the busiest field on its continent. A reader in Lisbon
+ * does not need the nearest airfield to Lisbon, they need something the strip
+ * can be about, and Heathrow is a place they have heard of.
+ */
+const CONTINENT_FIELDS: Record<string, Field> = {
+  EU: { icao: 'EGLL', lat: 51.4706, lon: -0.4619 },
+  AS: { icao: 'OMDB', lat: 25.2528, lon: 55.3644 },
+  SA: { icao: 'SBGR', lat: -23.4356, lon: -46.4731 },
+  AF: { icao: 'FAOR', lat: -26.1337, lon: 28.242 },
+  OC: { icao: 'YSSY', lat: -33.9461, lon: 151.1772 },
+  // North America, for the part of it that is neither the US nor Canada.
+  NA: { icao: 'MMMX', lat: 19.4363, lon: -99.0721 },
+};
+
+/**
+ * Coarse fallback for when there is no position at all, which is local
+ * development and not much else. Deliberately short: it only has to be less
+ * wrong than picking Phoenix for everyone.
+ */
+const ZONE_FIELDS: Record<string, string> = {
+  'America/New_York': 'KJFK',
+  'America/Detroit': 'KDTW',
+  'America/Toronto': 'CYYZ',
+  'America/Vancouver': 'CYVR',
+  'America/Chicago': 'KORD',
+  'America/Denver': 'KDEN',
+  'America/Phoenix': 'KPHX',
+  'America/Los_Angeles': 'KLAX',
+  'Europe/London': 'EGLL',
+  'Australia/Sydney': 'YSSY',
+};
+
+/**
+ * Every field this route will fetch, plus Boeing Field, which is not a hub and
+ * is never chosen automatically but is worth being able to ask for by name.
  *
  * An open passthrough would let anyone use the site as a general weather
- * proxy, and the strip only ever asks for one of these.
+ * proxy, so nothing outside this list is fetched whatever the query says.
  */
-const STATIONS = ['KPHX', 'KSEA', 'KBFI', 'KBOS'] as const;
-type Station = (typeof STATIONS)[number];
+const STATIONS: string[] = [
+  ...US_FIELDS.map((f) => f.icao),
+  ...CANADA_FIELDS.map((f) => f.icao),
+  ...Object.values(CONTINENT_FIELDS).map((f) => f.icao),
+  'KBFI',
+];
 
-const DEFAULT_STATION: Station = 'KPHX';
+/** Sky Harbor: his own field, and the answer when nothing else is known. */
+const DEFAULT_STATION = 'KPHX';
+
+/** Great circle distance, kilometres. Only ever used to rank, never shown. */
+function distance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(a));
+}
+
+const nearest = (fields: Field[], lat: number, lon: number): string =>
+  fields.reduce((best, f) =>
+    distance(lat, lon, f.lat, f.lon) < distance(lat, lon, best.lat, best.lon) ? f : best,
+  ).icao;
+
+interface Geo {
+  lat: number | null;
+  lon: number | null;
+  country: string | null;
+  continent: string | null;
+  timezone: string | null;
+  /** Where the numbers came from, for `?debug=1`. */
+  source: string;
+}
+
+/**
+ * Position of the reader, from Cloudflare rather than from the browser.
+ *
+ * The edge already knows roughly where the request came from, so there is no
+ * permission prompt, nothing to consent to and nothing for the client to get
+ * wrong. The paths are tried in order and each one is wrapped, because the
+ * adapter has moved these between releases and at least one old path is a
+ * getter that throws rather than returning undefined.
+ */
+function readGeo(locals: unknown, request: Request): Geo {
+  const empty: Geo = { lat: null, lon: null, country: null, continent: null, timezone: null, source: 'none' };
+  const candidates: Array<[string, () => unknown]> = [
+    ['locals.runtime.cf', () => (locals as { runtime?: { cf?: unknown } })?.runtime?.cf],
+    ['locals.cf', () => (locals as { cf?: unknown })?.cf],
+    ['request.cf', () => (request as unknown as { cf?: unknown })?.cf],
+  ];
+
+  for (const [source, get] of candidates) {
+    let cf: Record<string, unknown> | undefined;
+    try {
+      cf = get() as Record<string, unknown> | undefined;
+    } catch {
+      continue;
+    }
+    if (!cf || typeof cf !== 'object') continue;
+
+    const num = (v: unknown) => {
+      const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : NaN;
+      return Number.isFinite(n) ? n : null;
+    };
+    const str = (v: unknown) => (typeof v === 'string' && v ? v : null);
+
+    const geo: Geo = {
+      lat: num(cf.latitude),
+      lon: num(cf.longitude),
+      country: str(cf.country),
+      continent: str(cf.continent),
+      timezone: str(cf.timezone),
+      source,
+    };
+    if (geo.lat !== null || geo.country || geo.timezone) return geo;
+  }
+
+  return empty;
+}
+
+/**
+ * Which field this reader gets.
+ *
+ * The country decides the rule and the position decides the answer within it,
+ * which is what makes New Hampshire land on Boston and Spokane on Sea-Tac
+ * rather than both landing on whatever is biggest.
+ *
+ * Exported so the choice can be checked against known places without needing
+ * a request from each of them.
+ */
+export function chooseStation(geo: Geo, tzHint: string | null): string {
+  const { lat, lon, country, continent } = geo;
+
+  if (lat !== null && lon !== null) {
+    if (country === 'US') return nearest(US_FIELDS, lat, lon);
+    if (country === 'CA') return nearest(CANADA_FIELDS, lat, lon);
+    if (country && continent && CONTINENT_FIELDS[continent]) {
+      return CONTINENT_FIELDS[continent].icao;
+    }
+    // Position but no country worth trusting: nearest of everything.
+    return nearest([...US_FIELDS, ...CANADA_FIELDS, ...Object.values(CONTINENT_FIELDS)], lat, lon);
+  }
+
+  if (country && country !== 'US' && country !== 'CA' && continent && CONTINENT_FIELDS[continent]) {
+    return CONTINENT_FIELDS[continent].icao;
+  }
+
+  const zone = geo.timezone ?? tzHint;
+  if (zone && ZONE_FIELDS[zone]) return ZONE_FIELDS[zone];
+
+  return DEFAULT_STATION;
+}
 
 const USER_AGENT = 'griffindthomas.com (personal aviation site)';
 
@@ -113,6 +300,9 @@ const PLAIN: Record<string, string> = {
   AUTO: 'Automated report, no human observer',
   COR: 'Corrected report',
   NOSIG: 'No significant change expected',
+  CAVOK: 'Nothing below 5,000 ft, 10 km or more, and no weather worth reporting',
+  '//': 'Not reported',
+  NDV: 'No directional variation given',
   RMK: 'Remarks follow',
   AO1: 'Automated station without a precipitation discriminator',
   AO2: 'Automated station that can tell rain from snow',
@@ -183,6 +373,14 @@ function decodeToken(token: string, station: string, inRemarks: boolean): string
     // Anything of a mile or under is one mile, not miles.
     const plural = Number(whole || 0) > 1 || (whole === '1' && m[3]) ? 'miles' : 'mile';
     return `Visibility ${less}${whole}${fraction} statute ${plural}`;
+  }
+
+  // Visibility in metres, which is how everywhere outside the US reports it.
+  // 9999 is the code for ten kilometres or more rather than a measurement.
+  if (!inRemarks && (m = /^(\d{4})(NDV)?$/.exec(token))) {
+    const metres = Number(m[1]);
+    if (metres === 9999) return 'Visibility 10 km or more';
+    return `Visibility ${metres.toLocaleString('en-US')} metres`;
   }
 
   // Runway visual range, only reported when it is low enough to matter.
@@ -302,9 +500,10 @@ interface Observation {
   fltCat?: string;
 }
 
-function station(url: URL): Station {
+/** An explicit `?station=` wins, if it is one this route will fetch. */
+function askedFor(url: URL): string | null {
   const asked = (url.searchParams.get('station') ?? '').toUpperCase();
-  return (STATIONS as readonly string[]).includes(asked) ? (asked as Station) : DEFAULT_STATION;
+  return STATIONS.includes(asked) ? asked : null;
 }
 
 /**
@@ -313,9 +512,12 @@ function station(url: URL): Station {
  */
 const shortName = (name: string): string => name.split(',')[0]?.trim() ?? '';
 
-export const GET: APIRoute = async ({ url, locals }) => {
-  const id = station(url);
+export const GET: APIRoute = async ({ url, locals, request }) => {
   const debug = url.searchParams.get('debug') === '1';
+
+  const explicit = askedFor(url);
+  const geo = readGeo(locals, request);
+  const id = explicit ?? chooseStation(geo, url.searchParams.get('tz'));
 
   const cacheStore =
     typeof caches !== 'undefined' ? (caches as unknown as { default?: Cache }).default : undefined;
@@ -327,9 +529,31 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
   const cacheKey = new Request(`https://metar-cache.internal/v1?station=${id}`, { method: 'GET' });
 
+  /**
+   * Two different sets of headers for the same report.
+   *
+   * The strip asks for `/api/metar.json` with no station on it, and the answer
+   * depends on where the reader is, so a shared cache holding that URL would
+   * hand one reader's field to the next one. The copy sent back is `private`:
+   * browsers may keep it, shared caches may not.
+   *
+   * The copy stored below is keyed by station rather than by URL, so it is
+   * safe to share and is marked `public`. One upstream fetch still serves
+   * everyone asking for that field, which is the point of caching it, and
+   * nobody in Seattle is told about Phoenix.
+   */
+  const headers = (shared: boolean, cacheable = true) => ({
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': cacheable
+      ? `${shared || explicit ? 'public' : 'private'}, max-age=${CACHE_SECONDS}, stale-while-revalidate=600`
+      : 'no-store',
+  });
+
   if (cacheStore && !debug) {
     const hit = await cacheStore.match(cacheKey);
-    if (hit) return hit;
+    // Re-wrapped rather than returned as it stands: what is stored is the
+    // shareable copy, and this request may not be allowed to share it.
+    if (hit) return new Response(await hit.text(), { status: 200, headers: headers(false) });
   }
 
   let payload: MetarPayload = {
@@ -381,24 +605,15 @@ export const GET: APIRoute = async ({ url, locals }) => {
     clearTimeout(timer);
   }
 
-  const body = debug ? { ...payload, debug: { failure } } : payload;
+  const body = debug ? { ...payload, debug: { failure, geo, chose: id, explicit } } : payload;
+  const json = JSON.stringify(body);
+  const cacheable = payload.status === 'ok' && !debug;
 
-  const response = new Response(JSON.stringify(body), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control':
-        payload.status === 'ok' && !debug
-          ? `public, max-age=${CACHE_SECONDS}, stale-while-revalidate=600`
-          : 'no-store',
-    },
-  });
-
-  if (cacheStore && payload.status === 'ok' && !debug) {
-    const put = cacheStore.put(cacheKey, response.clone());
+  if (cacheStore && cacheable) {
+    const put = cacheStore.put(cacheKey, new Response(json, { status: 200, headers: headers(true) }));
     if (cfContext?.waitUntil) cfContext.waitUntil(put);
     else await put;
   }
 
-  return response;
+  return new Response(json, { status: 200, headers: headers(false, cacheable) });
 };

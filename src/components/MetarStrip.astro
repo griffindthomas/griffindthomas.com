@@ -121,48 +121,6 @@
 </style>
 
 <script>
-  /**
-   * Which field a reader gets, by their own clock.
-   *
-   * Zone names first because they are unambiguous. A UTC offset is not: in
-   * summer, Phoenix and Los Angeles are both seven hours behind, and Chicago
-   * and New York are both five behind at different times of year.
-   */
-  const ZONES: Record<string, string> = {
-    "America/New_York": "KBOS",
-    "America/Detroit": "KBOS",
-    "America/Toronto": "KBOS",
-    "America/Montreal": "KBOS",
-    "America/Halifax": "KBOS",
-    "America/Nassau": "KBOS",
-    "America/Havana": "KBOS",
-    "America/Puerto_Rico": "KBOS",
-    "America/Indiana/Indianapolis": "KBOS",
-    "America/Kentucky/Louisville": "KBOS",
-    "America/Chicago": "KPHX",
-    "America/Winnipeg": "KPHX",
-    "America/Regina": "KPHX",
-    "America/Mexico_City": "KPHX",
-    "America/Monterrey": "KPHX",
-    "America/Menominee": "KPHX",
-    "America/North_Dakota/Center": "KPHX",
-    "America/Denver": "KPHX",
-    "America/Phoenix": "KPHX",
-    "America/Boise": "KPHX",
-    "America/Edmonton": "KPHX",
-    "America/Chihuahua": "KPHX",
-    "America/Mazatlan": "KPHX",
-    "America/Los_Angeles": "KSEA",
-    "America/Vancouver": "KSEA",
-    "America/Tijuana": "KSEA",
-    "America/Whitehorse": "KSEA",
-    "America/Anchorage": "KSEA",
-    "America/Juneau": "KSEA",
-    "America/Sitka": "KSEA",
-    "America/Nome": "KSEA",
-    "Pacific/Honolulu": "KSEA",
-  };
-
   interface MetarToken {
     t: string;
     d: string;
@@ -183,19 +141,21 @@
   const slotEl = strip?.querySelector<HTMLElement>("[data-metar-slot]");
 
   if (strip && rawEl && slotEl) {
-    /** Anything further west than the mountain states, and anything east of
-     *  the country entirely, lands on the nearest of the three. */
-    function station(): string {
+    /**
+     * What to ask for.
+     *
+     * Which field a reader gets is the server's decision, because the edge
+     * already knows roughly where the request came from and the browser only
+     * knows its clock. The time zone goes along as a hint for the case where
+     * the edge has no position, and `?wx=KSEA` forces a field for testing.
+     */
+    function query(): string {
+      const params = new URLSearchParams();
       const forced = new URLSearchParams(location.search).get("wx");
-      if (forced) return forced.toUpperCase();
-
-      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
-      if (ZONES[zone]) return ZONES[zone];
-
-      const hours = -new Date().getTimezoneOffset() / 60;
-      if (hours >= -5) return "KBOS";
-      if (hours >= -7) return "KPHX";
-      return "KSEA";
+      if (forced) params.set("station", forced.toUpperCase());
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (zone) params.set("tz", zone);
+      return params.toString();
     }
 
     let fallbackText = "";
@@ -241,7 +201,7 @@
 
     async function load() {
       try {
-        const res = await fetch(`/api/metar.json?station=${encodeURIComponent(station())}`);
+        const res = await fetch(`/api/metar.json?${query()}`);
         if (!res.ok) return giveUp();
         const data = (await res.json()) as MetarPayload;
         if (data.status !== "ok" || data.tokens.length === 0) return giveUp();
