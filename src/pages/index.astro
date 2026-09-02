@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
 
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { SITE } from "../config/site";
+import { PROFILES, SITE } from "../config/site";
 import { galleryStats, loadPhotos } from "../lib/photos";
 import SplitFlapText from "../components/SplitFlapText.astro";
 
@@ -18,6 +18,42 @@ const showcase = (featured.length >= 3 ? featured : photos).slice(0, 3);
 const projects = (await getCollection("projects", ({ data }) => !data.draft))
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 3);
+
+/**
+ * Structured data, so a search engine knows this is a person rather than
+ * guessing from the words on the page.
+ *
+ * The job it actually does is disambiguation: `sameAs` is how Google ties this
+ * site to the LinkedIn, GitHub and SwimCloud accounts and works out they are
+ * one person. Someone who half remembers a name after a career fair is the
+ * reader this is for.
+ *
+ * Every value is read from the site config, so it cannot drift away from what
+ * the pages say. Nothing here is a claim that is not already on the site.
+ */
+const personLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: SITE.name,
+  url: SITE.url,
+  email: `mailto:${SITE.email}`,
+  image: new URL("/og.png", SITE.url).href,
+  description: SITE.tagline,
+  jobTitle: "Aerospace engineering student",
+  affiliation: {
+    "@type": "CollegeOrUniversity",
+    name: "Arizona State University",
+    url: "https://www.asu.edu/",
+  },
+  knowsAbout: [
+    "Aerospace engineering",
+    "Aircraft design",
+    "Aircraft photography",
+    "ADS-B",
+    "3D printing",
+  ],
+  sameAs: PROFILES.map((profile) => profile.href),
+};
 ---
 
 <BaseLayout title={SITE.name} description={SITE.tagline}>
@@ -117,6 +153,10 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft))
         }
       </ol>
     </section>
+
+    {/* Valid anywhere in the document, and this page owns the claim, so it
+        lives here rather than in the shared layout. */}
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(personLd)} />
 
     <section class="mt-20">
       <p class="font-display max-w-[24ch] text-3xl sm:text-4xl">

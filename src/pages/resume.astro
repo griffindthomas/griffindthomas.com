@@ -109,6 +109,7 @@ const skills = [
       <a
         href={RESUME_PDF}
         download
+        data-print-hide
         class="border-ink hover:bg-ink hover:text-paper data inline-flex items-center gap-3 border px-5 py-3 transition-colors"
       >
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -184,7 +185,10 @@ const skills = [
       </dl>
     </section>
 
-    <section class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12">
+    <section
+      class="border-rule mt-14 grid gap-x-10 gap-y-6 border-t pt-6 lg:grid-cols-12"
+      data-print-hide
+    >
       <h2 class="data text-signal lg:col-span-2">The PDF</h2>
       <div class="lg:col-span-10">
         <p class="text-graphite measure">
@@ -217,3 +221,96 @@ const skills = [
     </section>
   </div>
 </BaseLayout>
+
+<style is:global>
+  /**
+   * Printed resume.
+   *
+   * Printing this page used to produce the nav, the observation strip, the
+   * altitude tape, the footer and an embedded PDF viewer wrapped around the
+   * actual document. Recruiters do print pages, and a resume is the one page
+   * here that has a paper version of itself, so it should come out looking
+   * like one: black on white, no chrome, no rules that mean nothing in ink.
+   *
+   * Everything below is print only. Nothing here affects the screen.
+   */
+  @media print {
+    @page {
+      margin: 14mm 14mm 12mm;
+    }
+
+    html {
+      /* Scales every rem-based size on the page at once, which is most of
+         them. Screen sizes are set for a screen and are too big for paper. */
+      font-size: 10pt;
+      background: #fff;
+    }
+
+    body {
+      background: #fff;
+    }
+
+    /* The paper grain is a screen effect and would only cost toner. */
+    body::before {
+      display: none;
+    }
+
+    /* Layout chrome, and the two things on this page that exist only to get
+       you the file you are already holding. */
+    body > header,
+    body > footer,
+    [data-metar],
+    [data-tape],
+    .skip-link,
+    [data-print-hide] {
+      display: none !important;
+    }
+
+    main {
+      padding: 0 !important;
+    }
+
+    h1 {
+      font-size: 22pt;
+    }
+
+    /* Each block is a label beside its content, which is the shape the page
+       already has on a wide screen. The wide-screen rules are keyed to a
+       viewport that a sheet of A4 does not reach, so they are restated here. */
+    main section {
+      grid-template-columns: 24mm 1fr !important;
+      gap: 0 6mm !important;
+      margin-top: 6mm !important;
+      padding-top: 3mm !important;
+      break-inside: avoid;
+    }
+
+    main section > h2 {
+      grid-column: 1 !important;
+    }
+
+    main section > div,
+    main section > dl {
+      grid-column: 2 !important;
+    }
+
+    main section dl {
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 0 5mm !important;
+    }
+
+    h3 {
+      font-size: 12pt;
+    }
+
+    /* Keep one job or one qualification on one page. */
+    main section > div > div {
+      break-inside: avoid;
+    }
+
+    /* Underlines and hover affordances say nothing on paper. */
+    a {
+      text-decoration: none;
+    }
+  }
+</style>

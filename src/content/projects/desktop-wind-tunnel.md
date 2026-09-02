@@ -2,7 +2,7 @@
 title: Desktop Wind Tunnel
 summary: A small subsonic tunnel built to put printed airfoil sections into airflow you can actually see
 status: Senior project
-period: "2025-2026"
+period: "2026"
 order: 2
 specs:
   - label: Type
