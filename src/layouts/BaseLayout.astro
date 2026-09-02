@@ -31,6 +31,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 // card. Regenerate with `node scripts/make-og.mjs`.
 const ogImage = new URL(image ?? "/og.png", Astro.site);
 
+/**
+ * Cache buster on the icon URLs.
+ *
+ * Browsers keep favicons in their own store, keyed by URL, and revalidate
+ * them when they feel like it rather than when the file changes. This site
+ * shipped Astro's default icon first, and that copy kept coming back on
+ * machines that had seen it. Bumping this changes the URL, which is the only
+ * reliable way to retire the old one. Bump it whenever the artwork changes.
+ */
+const ICONS = "2";
+
 const SITE_NAME = "Griffin Thomas";
 const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
 ---
@@ -56,11 +67,11 @@ const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
 
         The PNGs are the fallback and stay navy. Regenerate everything with
         `node scripts/make-favicons.mjs`. */}
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href={`/favicon.svg?v=${ICONS}`} />
+    <link rel="icon" href={`/favicon.ico?v=${ICONS}`} sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href={`/favicon-32.png?v=${ICONS}`} />
+    <link rel="icon" type="image/png" sizes="192x192" href={`/favicon-192.png?v=${ICONS}`} />
+    <link rel="apple-touch-icon" href={`/apple-touch-icon.png?v=${ICONS}`} />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE_NAME} />

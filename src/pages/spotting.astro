@@ -2,10 +2,13 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PhotoGallery from "../components/PhotoGallery.astro";
 import SplitFlapBoard from "../components/SplitFlapBoard.astro";
+import TypeBoard from "../components/TypeBoard.astro";
 import { buildFilters, galleryStats, loadPhotos } from "../lib/photos";
 
 const photos = await loadPhotos();
-const filters = buildFilters(photos);
+// The type board below is the type filter, drawn out, so the bar does not
+// carry a second copy of the same list.
+const filters = buildFilters(photos).filter((g) => g.id !== "aircraft");
 const stats = galleryStats(photos);
 
 // Every figure here is counted from the library at build time. None of it is
@@ -63,6 +66,8 @@ const readout = [
         </section>
       )
     }
+
+    {photos.length > 0 && <TypeBoard photos={photos} />}
 
     {
       photos.length > 0 ? (

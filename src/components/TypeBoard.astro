@@ -1,0 +1,232 @@
+---
+/**
+ * The type board.
+ *
+ * A gallery is a folder. A collection is a set with holes in it, and the holes
+ * are the interesting part, so the types already shot are inked in and the
+ * ones still wanted sit underneath in a tone that is barely there. It fills in
+ * on its own: a type moves from one grid to the other the moment a photo of it
+ * is imported, with nothing here to edit.
+ *
+ * The inked plates are also the gallery's type filter. They carry the same
+ * `filter-chip` contract the filter bar uses, so clicking one filters the
+ * photographs below and the state stays in the URL.
+ *
+ * Silhouettes are generated from each type's real span and length rather than
+ * drawn, which is what keeps a Super Hornet next to a 787 honest. See
+ * src/lib/planform.ts.
+ */
+import { AIRCRAFT_TYPES, typeByCode } from "../data/aircraft-types";
+import { planform } from "../lib/planform";
+import type { Photo } from "../lib/photos";
+
+interface Props {
+  photos: Photo[];
+}
+
+const { photos } = Astro.props;
+
+/**
+ * What is in the library, counted by the exact aircraft string the gallery
+ * filters on. The type code links it to a drawing; a photo whose type is not
+ * in the catalogue still gets a plate, just without a silhouette.
+ */
+interface Caught {
+  /** Filter value, so it has to be the aircraft string on the photo. */
+  value: string;
+  code: string;
+  count: number;
+}
+
+const caught = new Map<string, Caught>();
+for (const p of photos) {
+  const value = p.data.aircraft;
+  if (!value) continue;
+  const row = caught.get(value) ?? { value, code: p.data.typeCode, count: 0 };
+  row.count += 1;
+  caught.set(value, row);
+}
+
+const shot = [...caught.values()]
+  .map((row) => {
+    const type = typeByCode(row.code);
+    return {
+      ...row,
+      name: type?.name ?? row.value,
+      span: type?.span ?? null,
+      drawing: type ? planform(type.span, type.length, type.shape) : null,
+    };
+  })
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+const shotCodes = new Set([...caught.values()].map((row) => row.code));
+const wanted = AIRCRAFT_TYPES.filter((t) => !shotCodes.has(t.code)).map((t) => ({
+  ...t,
+  drawing: planform(t.span, t.length, t.shape),
+}));
+
+const total = shot.length + wanted.length;
+---
+
+<section class="mt-16" aria-labelledby="types-heading">
+  <div
+    class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-2"
+  >
+    <h2 id="types-heading" class="font-display text-3xl">Types</h2>
+    <p class="data">
+      <span>{shot.length} of {total}</span>
+      <span class="text-rule mx-2">/</span>
+      <span>Drawn to their own span and length</span>
+    </p>
+  </div>
+
+  <ul class="plates mt-8">
+    {
+      shot.map((entry) => (
+        <li>
+          <button
+            type="button"
+            class="plate filter-chip"
+            data-group="aircraft"
+            data-value={entry.value}
+            aria-pressed="false"
+            aria-label={`Show only ${entry.name}, ${entry.count} ${entry.count === 1 ? "photo" : "photos"}`}
+          >
+            <span class="art">
+              {entry.drawing && (
+                <svg viewBox={entry.drawing.viewBox} aria-hidden="true" class="inked">
+                  {entry.drawing.paths.map((d) => (
+                    <path d={d} />
+                  ))}
+                </svg>
+              )}
+            </span>
+            <span class="data name">{entry.name}</span>
+            <span class="data foot">
+              {entry.span && <span>{entry.span} ft</span>}
+              <span class="tally">{entry.count}</span>
+            </span>
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="data text-rule mt-12">Yet to photograph</p>
+
+  <ul class="plates mt-4">
+    {
+      wanted.map((entry) => (
+        <li>
+          <span class="plate ghost">
+            <span class="art">
+              <svg viewBox={entry.drawing.viewBox} aria-hidden="true">
+                {entry.drawing.paths.map((d) => (
+                  <path d={d} />
+                ))}
+              </svg>
+            </span>
+            <span class="data name">{entry.name}</span>
+            <span class="data foot">
+              <span>{entry.span} ft</span>
+            </span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .plates {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 1.5rem 1.25rem;
+  }
+
+  .plate {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+
+  .art {
+    display: block;
+    /* The drawing box is square, and a square is also the shape that lets a
+       747 and a Hornet sit in the same grid without one of them rattling
+       around in a wide box. */
+    aspect-ratio: 1;
+    background: var(--color-paper-sunk);
+    padding: 0.5rem;
+  }
+
+  .art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Caught: filled, the way a stamp is stuck in. */
+  .inked path {
+    fill: var(--color-chart);
+    stroke: none;
+  }
+
+  /* Wanted: the same drawing, in a tone that is barely there.
+     Deliberately filled rather than stroked. The aeroplane is built out of
+     overlapping shapes, so stroking it draws every join as well as the
+     outline, and the wings come out with boxes in them where the tip devices
+     and nacelles overlap. Filling merges them into one silhouette. */
+  .ghost path {
+    fill: var(--color-rule);
+    stroke: none;
+  }
+
+  .name {
+    display: block;
+    margin-top: 0.6rem;
+    color: var(--color-ink);
+  }
+
+  .ghost .name {
+    color: var(--color-graphite);
+  }
+
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+    color: var(--color-graphite);
+  }
+
+  .tally {
+    color: var(--color-signal);
+  }
+
+  button.plate {
+    cursor: pointer;
+    transition: opacity 160ms ease;
+  }
+  button.plate:hover .inked path,
+  button.plate:focus-visible .inked path {
+    fill: var(--color-signal);
+  }
+  button.plate:hover .name,
+  button.plate:focus-visible .name {
+    color: var(--color-signal);
+  }
+
+  /* The selected type. Everything else stays where it is, so the board does
+     not reflow when a filter goes on. */
+  button.plate[aria-pressed="true"] .art {
+    outline: 1px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+  button.plate[aria-pressed="true"] .inked path {
+    fill: var(--color-signal);
+  }
+</style>
