@@ -31,6 +31,21 @@ Every page here is built into a static file and served from Cloudflare's edge.
 A push to the main branch is live in about fifty seconds. There is no database
 and nothing on the internet that can be logged into.
 
+## Written with Claude
+
+Claude Code did the typing. Worth saying plainly, and the commit history is
+public anyway.
+
+I decide what the site does, what it looks like and what it says. A fair
+amount of the time that means telling it the thing it just built is wrong and
+doing it again. The split-flap took three attempts before the modules moved at
+all. The aircraft silhouettes took four, and the first version drew winglets
+as little bars stuck on the wings.
+
+The photographs are mine. Every registration and type on them was read off the
+airframe. The swim times are the officially timed ones. Anything that read
+like a machine wrote it got cut.
+
 ## The photo pipeline
 
 A new frame goes into an inbox folder and one command imports it. The importer
