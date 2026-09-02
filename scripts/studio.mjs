@@ -1,16 +1,22 @@
 /**
- * Photo studio: a local editor for photo metadata.
+ * Studio: a local editor for the parts of the site that are content.
  *
- *   npm run studio
+ *   npm run studio        (or double click studio.cmd)
  *
- * Opens a small web page on localhost that lists every photo in the library
- * with its fields as form inputs, accepts new photos by drag and drop, and can
- * commit and push the result. It exists so that changing an airport code or
- * adding a caption is a thing Griffin does in thirty seconds, not a thing he
- * has to ask someone to do for him.
+ * Opens a small web page on localhost with two tabs. Photos lists every frame
+ * in the library with its fields as form inputs and accepts new ones by drag
+ * and drop. Projects lists every project write-up with its frontmatter as
+ * fields and its markdown in a box. Either can be committed and pushed from
+ * the same button.
  *
- * It edits the SAME JSON sidecars the importer writes, and only ever touches
- * the hand-entered keys, so the two tools cannot fight over a file.
+ * It exists so that changing an airport code, or fixing a date in a write-up,
+ * is a thing Griffin does in thirty seconds rather than a thing he has to ask
+ * someone to do for him.
+ *
+ * Photos: it edits the SAME JSON sidecars the importer writes, and only ever
+ * touches the hand-entered keys, so the two tools cannot fight over a file.
+ * Projects: it reads and writes the same markdown files the site builds from,
+ * frontmatter through a real YAML parser rather than a guess at the format.
  *
  * Bound to 127.0.0.1 on purpose. This process writes files, runs the importer
  * and can push to git; it must never be reachable from the network.
