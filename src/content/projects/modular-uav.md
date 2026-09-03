@@ -10,7 +10,7 @@ specs:
   - label: Structure
     value: Printed modular sections
   - label: Tail boom
-    value: Carbon fibre tube
+    value: Carbon fiber tube
   - label: CAD
     value: Fusion 360
   - label: Printer

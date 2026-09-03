@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DriveMap from '../../components/DriveMap.astro';
+import { DRIVES, driveStats } from '../../lib/trips';
+
+const readout = [
+  // Every distance here is the routed one: what the roads actually add up to
+  // between the waypoints, not a figure remembered afterwards.
+  { label: 'Miles', value: driveStats.roadMiles.toLocaleString() },
+  { label: 'Drives', value: String(driveStats.count) },
+  { label: 'Coast to coast', value: String(driveStats.crossings) },
+];
+
+/** Newest first everywhere else on the site, so newest first here too. */
+const ledger = DRIVES;
+---
+
+<BaseLayout
+  title="Driving"
+  description="Eight crossings between Seattle and New Hampshire, mapped on real road geometry and weighted by how many times each stretch has been driven."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">
+        <a href="/trips" class="hover:text-signal transition-colors">Trips</a>
+        <span class="text-rule mx-2">/</span>
+        Standing log
+      </p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Driving</h1>
+    </header>
+
+    <dl
+      class="border-rule mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t pt-6 sm:grid-cols-3"
+    >
+      {
+        readout.map((r) => (
+          <div>
+            <dt class="data text-graphite">{r.label}</dt>
+            <dd class="font-display mt-1 text-2xl tabular-nums">{r.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="mt-14">
+      <DriveMap />
+    </div>
+
+    <section class="mt-20" aria-labelledby="ledger-heading">
+      <div class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b pb-2">
+        <h2 id="ledger-heading" class="font-display text-3xl">The ledger</h2>
+        <p class="data">Point at a row to lift that route off the map</p>
+      </div>
+
+      <div class="scroller mt-6">
+        <table class="log">
+          <thead>
+            <tr>
+              <th scope="col" class="data">No</th>
+              <th scope="col" class="data">Date</th>
+              <th scope="col" class="data">Direction</th>
+              <th scope="col" class="data">Route</th>
+              <th scope="col" class="data num">Miles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              ledger.map((drive) => (
+                <tr data-drive-row={drive.id} tabindex="0">
+                  <td class="data text-signal">{drive.id}</td>
+                  <td class="data whitespace-nowrap">{drive.date}</td>
+                  <td class="data whitespace-nowrap">
+                    {drive.from}
+                    <span class="text-rule mx-1">&rarr;</span>
+                    {drive.to}
+                  </td>
+                  <th scope="row" class="route">
+                    {drive.route}
+                  </th>
+                  <td class="num">{drive.roadMiles.toLocaleString()}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="data text-graphite mt-6 max-w-[64ch] leading-relaxed">
+        Every distance here is routed rather than remembered: the waypoints are snapped to
+        real roads and the mileage is what those roads come to.
+      </p>
+    </section>
+
+    <section class="mt-20" aria-labelledby="colorado-heading">
+      <div class="border-rule border-b pb-2">
+        <h2 id="colorado-heading" class="font-display text-3xl">The gully, Colorado, 2024</h2>
+      </div>
+
+      <div class="copy mt-8">
+        <p>
+          Black Canyon that morning. That evening the bridge over the reservoir was closed and
+          the detour ran behind a pilot car, which had made its last run of the night before we
+          got there.
+        </p>
+        <p>
+          Backtracking put us on a reservation. We opened their gates and started through, and
+          sitting in a gully in full dark the phone went off with a flash flood warning. There
+          is no good way to work out how much water is above you or how long you have, and that
+          was the part that got to me. We built a path out of rocks to get around a locked gate
+          and reached the hotel five hours late.
+        </p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .scroller {
+    overflow-x: auto;
+  }
+
+  .log {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .log th,
+  .log td {
+    border-bottom: var(--rule-width) solid var(--color-rule);
+    padding: 0.85rem 1.25rem 0.85rem 0;
+    vertical-align: baseline;
+    font-weight: 400;
+  }
+
+  .log thead th {
+    padding-bottom: 0.5rem;
+    color: var(--color-graphite);
+  }
+
+  .log tbody .route {
+    color: var(--color-ink);
+    min-width: 22rem;
+    max-width: 34rem;
+    line-height: 1.5;
+  }
+
+  .log .num {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 0;
+    padding-left: 1.5rem;
+  }
+
+  .log thead .num {
+    font-size: 0.6875rem;
+  }
+
+  .log tbody tr:last-child th,
+  .log tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* The row and the route on the map light up together. */
+  .log tbody tr:hover,
+  .log tbody tr:focus-within {
+    background: var(--color-paper-sunk);
+    outline: none;
+  }
+
+  .log tbody tr:hover .route,
+  .log tbody tr:focus-within .route {
+    color: var(--color-signal);
+  }
+</style>

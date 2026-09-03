@@ -149,19 +149,19 @@ const PROJECT_IMAGES = path.join(PROJECTS, 'images');
  * generates its own sizes from whatever is here. Big enough that a full width
  * figure still has detail, and no bigger.
  */
-async function storeProjectImage(slug, buffer) {
-  fs.mkdirSync(PROJECT_IMAGES, { recursive: true });
+async function storeImage(dir, slug, buffer) {
+  fs.mkdirSync(dir, { recursive: true });
 
   // Never overwrite: two photographs of the same thing are the normal case.
   let n = 1;
   let name = `${slug}-${n}.jpg`;
-  while (fs.existsSync(path.join(PROJECT_IMAGES, name))) name = `${slug}-${++n}.jpg`;
+  while (fs.existsSync(path.join(dir, name))) name = `${slug}-${++n}.jpg`;
 
   await sharp(buffer)
     .rotate() // honour the EXIF orientation flag before it is stripped
     .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 82, mozjpeg: true })
-    .toFile(path.join(PROJECT_IMAGES, name));
+    .toFile(path.join(dir, name));
 
   return `./images/${name}`;
 }
@@ -210,6 +210,86 @@ function slugify(title) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
+}
+
+// --- trips -------------------------------------------------------------------
+//
+// Same shape as the projects block above, because a trip write-up is the same
+// kind of thing: frontmatter the form owns, a markdown body, and photographs
+// stored next to it. The differences are the fields.
+
+const TRIPS = path.join(ROOT, 'src', 'content', 'trips');
+const TRIP_IMAGES = path.join(TRIPS, 'images');
+
+const tripPath = (slug) => path.join(TRIPS, `${slug}.md`);
+
+/**
+ * The only three the content schema will accept.
+ *
+ * Sent to the page so the form can offer them as a dropdown. A free text box
+ * here would let "complete" through, and the build would reject it an hour
+ * later with the site still serving the old version.
+ */
+const TRIP_STATUSES = ['Planned', 'Ongoing', 'Complete'];
+
+function readTrips() {
+  if (!fs.existsSync(TRIPS)) return [];
+  return fs
+    .readdirSync(TRIPS)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => {
+      const slug = f.replace(/\.md$/, '');
+      const raw = fs.readFileSync(path.join(TRIPS, f), 'utf8');
+      const parts = splitFrontmatter(raw);
+      if (!parts) return { slug, unreadable: 'No frontmatter block' };
+      try {
+        return { slug, data: YAML.parse(parts.frontmatter) ?? {}, body: parts.body };
+      } catch (err) {
+        return { slug, unreadable: String(err?.message ?? err) };
+      }
+    })
+    // Newest first, which is the order the index puts them in within a status.
+    .sort((a, b) => String(b.data?.sort ?? '').localeCompare(String(a.data?.sort ?? '')));
+}
+
+function validateTrip(data) {
+  for (const key of ['title', 'summary', 'date']) {
+    if (!String(data[key] ?? '').trim()) return `${key} cannot be empty`;
+  }
+  // The sort key is what orders the index, and a wrong one moves the trip
+  // silently rather than breaking anything, so it is checked strictly.
+  if (!/^\d{4}-\d{2}$/.test(String(data.sort ?? ''))) {
+    return 'Month has to look like 2026-07';
+  }
+  if (!TRIP_STATUSES.includes(data.status)) {
+    return `Status has to be one of ${TRIP_STATUSES.join(', ')}`;
+  }
+  return null;
+}
+
+/** Only the keys the form owns, cleaned up, in a stable order. */
+function cleanTrip(input) {
+  return {
+    title: String(input.title ?? '').trim(),
+    summary: String(input.summary ?? '').trim(),
+    date: String(input.date ?? '').trim(),
+    sort: String(input.sort ?? '').trim(),
+    status: String(input.status ?? '').trim(),
+    where: String(input.where ?? '').trim(),
+    photos: (Array.isArray(input.photos) ? input.photos : [])
+      .map((photo) => ({
+        src: String(photo?.src ?? '').trim(),
+        alt: String(photo?.alt ?? '').trim(),
+        caption: String(photo?.caption ?? '').trim(),
+      }))
+      .filter((photo) => photo.src),
+    draft: Boolean(input.draft),
+  };
+}
+
+function writeTrip(slug, data, body) {
+  const frontmatter = YAML.stringify(data, { lineWidth: 0 }).trimEnd();
+  fs.writeFileSync(tripPath(slug), `---\n${frontmatter}\n---\n\n${String(body).trim()}\n`);
 }
 
 function readLibrary() {
@@ -301,6 +381,18 @@ const server = http.createServer(async (req, res) => {
       return res.end(fs.readFileSync(file));
     }
 
+    // --- a trip photograph, for the thumbnails in the editor --------------
+    if (req.method === 'GET' && url.pathname.startsWith('/trip-img/')) {
+      // basename() so a crafted path cannot climb out of the images folder.
+      const file = path.join(TRIP_IMAGES, path.basename(url.pathname.slice(10)));
+      if (!fs.existsSync(file)) {
+        res.writeHead(404);
+        return res.end('not found');
+      }
+      res.writeHead(200, { 'content-type': 'image/jpeg', 'cache-control': 'no-store' });
+      return res.end(fs.readFileSync(file));
+    }
+
     // --- current state ---------------------------------------------------
     if (req.method === 'GET' && url.pathname === '/api/state') {
       const status = await git('status', '--porcelain');
@@ -308,6 +400,8 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         photos: readLibrary(),
         projects: readProjects(),
+        trips: readTrips(),
+        tripStatuses: TRIP_STATUSES,
         gaps: findGaps(),
         airports,
         typeCodes,
@@ -417,12 +511,82 @@ const server = http.createServer(async (req, res) => {
         return json(res, 400, { error: `Not an image: ${name}` });
       }
 
-      const src = await storeProjectImage(slug, await readBody(req));
+      const src = await storeImage(PROJECT_IMAGES, slug, await readBody(req));
       const data = cleanProject({
         ...project.data,
         photos: [...(project.data.photos ?? []), { src, alt: '', caption: '' }],
       });
       writeProject(slug, { ...project.data, ...data }, project.body);
+      return json(res, 200, { ok: true, src });
+    }
+
+    // --- save one trip ----------------------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/trip') {
+      const { slug, data, body } = JSON.parse((await readBody(req)).toString('utf8'));
+      if (!/^[a-z0-9-]+$/.test(String(slug))) return json(res, 400, { error: 'bad slug' });
+      if (!fs.existsSync(tripPath(slug))) return json(res, 404, { error: 'no such trip' });
+
+      const clean = cleanTrip(data);
+      const problem = validateTrip(clean);
+      if (problem) return json(res, 400, { error: problem });
+
+      // Anything in the file this form does not know about is kept, the same
+      // rule the projects editor follows.
+      const existing = readTrips().find((t) => t.slug === slug);
+      if (existing?.unreadable) return json(res, 400, { error: existing.unreadable });
+
+      writeTrip(slug, { ...(existing?.data ?? {}), ...clean }, body ?? '');
+      return json(res, 200, { ok: true });
+    }
+
+    // --- start a new trip -------------------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/trip/new') {
+      const { title } = JSON.parse((await readBody(req)).toString('utf8'));
+      const base = slugify(title || 'new-trip') || 'new-trip';
+
+      let slug = base;
+      let n = 2;
+      while (fs.existsSync(tripPath(slug))) slug = `${base}-${n++}`;
+
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const data = cleanTrip({
+        title: String(title || '').trim() || 'Untitled trip',
+        // Placeholders the schema accepts, so the site keeps building while
+        // this is half written. It is a draft until it is not.
+        summary: 'One line about where this was',
+        date: now.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+        sort: month,
+        status: 'Planned',
+        where: '',
+        photos: [],
+        draft: true,
+      });
+      fs.mkdirSync(TRIPS, { recursive: true });
+      writeTrip(slug, data, 'Write-up goes here.');
+      return json(res, 200, { ok: true, slug });
+    }
+
+    // --- add a photograph to a trip ---------------------------------------
+    if (req.method === 'POST' && url.pathname === '/api/trip/photo') {
+      const slug = url.searchParams.get('slug') ?? '';
+      if (!/^[a-z0-9-]+$/.test(slug)) return json(res, 400, { error: 'bad slug' });
+
+      const trip = readTrips().find((t) => t.slug === slug);
+      if (!trip) return json(res, 404, { error: 'no such trip' });
+      if (trip.unreadable) return json(res, 400, { error: trip.unreadable });
+
+      const name = path.basename(url.searchParams.get('name') ?? '');
+      if (!/\.(jpe?g|png|tiff?|webp|heic)$/i.test(name)) {
+        return json(res, 400, { error: `Not an image: ${name}` });
+      }
+
+      const src = await storeImage(TRIP_IMAGES, slug, await readBody(req));
+      const clean = cleanTrip({
+        ...trip.data,
+        photos: [...(trip.data.photos ?? []), { src, alt: '', caption: '' }],
+      });
+      writeTrip(slug, { ...trip.data, ...clean }, trip.body);
       return json(res, 200, { ok: true, src });
     }
 
@@ -451,17 +615,60 @@ const server = http.createServer(async (req, res) => {
       if (!status.ok) return json(res, 400, { error: 'Not a git repository' });
       if (!status.out) return json(res, 200, { ok: true, log: ['Nothing to publish'] });
 
+      /**
+       * Publish stages ONLY what the studio itself writes.
+       *
+       * It used to run `git add -A`, and that is a trap. This button sits next
+       * to a text field, so it reads like "save my edit", but it was
+       * committing and pushing the whole working tree: changing one word on a
+       * project page shipped every unfinished thing in the repository, live,
+       * with nobody having looked at it. Anything outside these folders is now
+       * left alone and named in the log instead.
+       */
+      const OWNED = ['src/content/photos', 'src/content/projects', 'src/content/trips'];
+
+      const changed = status.out
+        .split('\n')
+        .filter(Boolean)
+        // Porcelain is one or two status characters, whitespace, then the
+        // path. Matched rather than sliced at a fixed offset, because the git
+        // helper trims its output and that eats the leading space on the very
+        // first line, which was quietly cutting a character off that path. A
+        // rename reads "old -> new", and the new name is the one to stage.
+        .map((line) =>
+          line
+            .trim()
+            .replace(/^[A-Z?!]{1,2}\s+/, '')
+            .split(' -> ')
+            .pop()
+            .replace(/^"|"$/g, ''),
+        );
+
+      const mine = changed.filter((f) => OWNED.some((dir) => f.startsWith(`${dir}/`)));
+      const others = changed.filter((f) => !OWNED.some((dir) => f.startsWith(`${dir}/`)));
+
+      const note = others.length
+        ? [
+            `Left alone, because the studio did not write ${others.length === 1 ? 'it' : 'them'}:`,
+            ...others.map((f) => `  ${f}`),
+          ]
+        : [];
+
+      if (mine.length === 0) {
+        return json(res, 200, { ok: true, log: ['Nothing of yours to publish.', ...note] });
+      }
+
       const log = [];
       for (const step of [
-        ['add', '-A'],
+        ['add', '--', ...OWNED],
         ['commit', '-m', message || 'Update photos'],
         ['push'],
       ]) {
         const r = await git(...step);
-        log.push(`$ git ${step.join(' ')}\n${r.out}`);
+        log.push(`$ git ${step[0]} ${step[0] === 'add' ? '(content only)' : ''}\n${r.out}`);
         if (!r.ok) return json(res, 500, { error: `git ${step[0]} failed`, log });
       }
-      return json(res, 200, { ok: true, log });
+      return json(res, 200, { ok: true, log: [...log, ...note] });
     }
 
     res.writeHead(404);

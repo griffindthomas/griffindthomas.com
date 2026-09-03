@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ElevationLadder from '../../components/ElevationLadder.astro';
+import { HIKES } from '../../lib/trips';
+---
+
+<BaseLayout
+  title="Hiking"
+  description="Nine recorded hikes, mostly Cascade volcanoes, with every peak drawn from real elevation data."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">
+        <a href="/trips" class="hover:text-signal transition-colors">Trips</a>
+        <span class="text-rule mx-2">/</span>
+        Standing log
+      </p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Hiking</h1>
+    </header>
+
+    <div class="mt-12">
+      <ElevationLadder />
+    </div>
+
+    <section class="mt-20" aria-labelledby="log-heading">
+      <div class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b pb-2">
+        <h2 id="log-heading" class="font-display text-3xl">The log</h2>
+        <p class="data">Newest first</p>
+      </div>
+
+      <div class="scroller mt-6">
+        <table class="log">
+          <thead>
+            <tr>
+              <th scope="col" class="data">Date</th>
+              <th scope="col" class="data">Trail</th>
+              <th scope="col" class="data num">Distance</th>
+              <th scope="col" class="data num">Gain</th>
+              <th scope="col" class="data num">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              HIKES.map((hike) => (
+                <tr>
+                  <td class="data whitespace-nowrap">{hike.date}</td>
+                  <th scope="row" class="trail">
+                    {hike.trail}
+                  </th>
+                  <td class="num">{hike.distanceMi} mi</td>
+                  <td class="num">
+                    {hike.gainEstimated && '~'}
+                    {hike.gainFt.toLocaleString()} ft
+                  </td>
+                  <td class="num">{hike.time ?? <span class="text-rule">n/a</span>}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="data text-graphite mt-6 max-w-[60ch] leading-relaxed">
+        Recorded hikes are AllTrails only, since July 2025. Green Mountain and Kilauea are
+        hand-entered, and Kilauea's gain is an estimate.
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Wide content scrolls inside its own box rather than pushing the page
+     sideways, which is the one thing a table must never do on a phone. */
+  .scroller {
+    overflow-x: auto;
+  }
+
+  .log {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .log th,
+  .log td {
+    border-bottom: var(--rule-width) solid var(--color-rule);
+    padding: 0.85rem 1rem 0.85rem 0;
+    vertical-align: baseline;
+    font-weight: 400;
+  }
+
+  .log thead th {
+    padding-bottom: 0.5rem;
+    color: var(--color-graphite);
+  }
+
+  .log tbody .trail {
+    color: var(--color-ink);
+    padding-right: 2rem;
+    min-width: 18rem;
+  }
+
+  .log .num {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 0;
+    padding-left: 1.5rem;
+  }
+
+  .log thead .num {
+    font-size: 0.6875rem;
+  }
+
+  .log tbody tr:last-child th,
+  .log tbody tr:last-child td {
+    border-bottom: 0;
+  }
+</style>

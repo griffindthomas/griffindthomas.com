@@ -1,0 +1,200 @@
+---
+/**
+ * The route map.
+ *
+ * Eight crossings, each one snapped to real road geometry by OSRM against
+ * OpenStreetMap and committed as path data. Nothing is a curve drawn between
+ * two cities: I-90 bends north around the Big Horns because it does, and the
+ * Trans-Canada threads the Fraser Canyon because it has to.
+ *
+ * WHAT THE DRAWING IS ABOUT is the weight of the lines, not the lines. Most of
+ * these crossings share one road, so the routes are broken onto a common grid,
+ * each cell counted for how many separate drives went through it, and the
+ * stroke set from that count. I-90 across Montana has been driven five times
+ * and is nearly black; the Florida run and the Canada run were each driven
+ * once and stay hairline. See scripts/build-drives.mjs.
+ *
+ * Every cell is drawn from exactly one drive's geometry, so the grid decides
+ * the weight and never the shape of the line.
+ */
+import basemap from '../data/map-drive.json';
+import routes from '../data/drive-routes.json';
+
+/**
+ * The frame is the states and the roads together. Framing to a lat/lon box
+ * instead left a third of the drawing as empty Pacific, and this way the run
+ * up to Banff is what pulls the top edge above the border.
+ */
+const b = {
+  minX: Math.min(basemap.bounds.minX, routes.routeBounds.minX),
+  minY: Math.min(basemap.bounds.minY, routes.routeBounds.minY),
+  maxX: Math.max(basemap.bounds.maxX, routes.routeBounds.maxX),
+  maxY: Math.max(basemap.bounds.maxY, routes.routeBounds.maxY),
+};
+const PAD = 8;
+const viewBox = [
+  b.minX - PAD,
+  b.minY - PAD,
+  b.maxX - b.minX + PAD * 2,
+  b.maxY - b.minY + PAD * 2,
+]
+  .map((v) => Number(v.toFixed(1)))
+  .join(' ');
+
+const label =
+  `Map of the United States and southern Canada with eight driving routes drawn on it. ` +
+  `The line is heavier where more of the drives used the same road: Interstate 90 across ` +
+  `Montana and the Dakotas is among the heaviest, and the run down to Florida and the run ` +
+  `through Canada are the lightest. Every route is listed in the table below.`;
+---
+
+<figure class="drivemap" data-drivemap>
+  <svg viewBox={viewBox} role="img" aria-label={label}>
+    <g class="land">
+      <path class="canada" d={basemap.canada} />
+      {basemap.states.map((state) => <path class="state" d={state.d} />)}
+    </g>
+
+    {/* The accumulation. One path per weight, drawn light to heavy so the
+        well-worn roads sit on top of the ones driven once. */}
+    <g class="roads">
+      {
+        routes.levels.map((level) => (
+          <path class={`road lv-${Math.min(level.count, 10)}`} d={level.d} />
+        ))
+      }
+    </g>
+
+    {/* One route lifted out of the stack. Hidden until a row is pointed at,
+        and inert to the mouse so it can never intercept anything. */}
+    <g class="lift" aria-hidden="true">
+      {routes.drives.map((drive) => <path class="one" data-drive={drive.id} d={drive.d} />)}
+    </g>
+  </svg>
+</figure>
+
+<script>
+  /**
+   * Lifts one route when its row in the ledger is pointed at or focused.
+   *
+   * Progressive enhancement: with no JS the map still draws and the table
+   * still reads, which between them is all of the information. The lift is
+   * the convenience, not the content.
+   */
+  const map = document.querySelector<HTMLElement>('[data-drivemap]');
+  const rows = document.querySelectorAll<HTMLElement>('[data-drive-row]');
+
+  if (map && rows.length > 0) {
+    const show = (id: string | null) => {
+      if (id) map.dataset.active = id;
+      else delete map.dataset.active;
+    };
+
+    for (const row of rows) {
+      const id = row.dataset.driveRow ?? null;
+      row.addEventListener('pointerenter', () => show(id));
+      row.addEventListener('pointerleave', () => show(null));
+      // Keyboard: the row carries a focusable cell, so this follows tabbing.
+      row.addEventListener('focusin', () => show(id));
+      row.addEventListener('focusout', () => show(null));
+    }
+  }
+</script>
+
+<style>
+  .drivemap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Land: a very light fill and a hairline border, the same weight as every
+     other rule on the site. */
+  .state {
+    fill: var(--color-paper-sunk);
+    stroke: var(--color-rule);
+    stroke-width: 1;
+    /* Held back deliberately. At full strength a state border is the same
+       weight as a road driven once, and the routes that only happened once
+       are exactly the ones that must not disappear into the basemap. */
+    stroke-opacity: 0.7;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Canada is drawn as ground rather than as a subject: filled, no internal
+     borders, and no outline. One crossing went to Banff and the line needs
+     something under it, but the map is about the United States. */
+  .canada {
+    fill: var(--color-paper-sunk);
+    fill-rule: nonzero;
+    opacity: 0.55;
+    stroke: none;
+  }
+
+  .road {
+    fill: none;
+    stroke: var(--color-chart);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Widths in pixels rather than map units, so a hairline stays a hairline
+       when the map is a phone wide. */
+    vector-effect: non-scaling-stroke;
+    transition: opacity 200ms ease;
+  }
+
+  /* Driven once, up to driven eight times. The step is deliberately uneven:
+     the difference between one and two crossings is the one worth seeing. */
+  .lv-1 { stroke-width: 0.9px; opacity: 0.55; }
+  .lv-2 { stroke-width: 1.3px; opacity: 0.68; }
+  .lv-3 { stroke-width: 1.7px; opacity: 0.78; }
+  .lv-4 { stroke-width: 2.1px; opacity: 0.86; }
+  .lv-5 { stroke-width: 2.5px; opacity: 0.93; }
+  .lv-6 { stroke-width: 2.9px; opacity: 0.97; }
+  .lv-7 { stroke-width: 3.3px; opacity: 1; }
+  .lv-8 { stroke-width: 3.6px; opacity: 1; }
+  .lv-9 { stroke-width: 3.9px; opacity: 1; }
+  .lv-10 { stroke-width: 4.2px; opacity: 1; }
+
+  .one {
+    fill: none;
+    stroke: var(--color-signal);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+
+  /* One route out of the stack: it comes up in the signal colour and the
+     accumulation drops back so it can be followed across the country. */
+  [data-active] .roads {
+    opacity: 0.3;
+  }
+
+  [data-active='1'] .one[data-drive='1'],
+  [data-active='2'] .one[data-drive='2'],
+  [data-active='3'] .one[data-drive='3'],
+  [data-active='4'] .one[data-drive='4'],
+  [data-active='5'] .one[data-drive='5'],
+  [data-active='6'] .one[data-drive='6'],
+  [data-active='7'] .one[data-drive='7'],
+  [data-active='8'] .one[data-drive='8'],
+  [data-active='9'] .one[data-drive='9'],
+  [data-active='10'] .one[data-drive='10'] {
+    opacity: 1;
+  }
+
+  .roads {
+    transition: opacity 200ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .road,
+    .one,
+    .roads {
+      transition: none;
+    }
+  }
+</style>

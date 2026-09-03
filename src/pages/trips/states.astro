@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StateMap from '../../components/StateMap.astro';
+import { stateStats } from '../../lib/trips';
+
+const readout = [
+  { label: 'States', value: `${stateStats.visited} of ${stateStats.total}` },
+  { label: 'Left', value: String(stateStats.total - stateStats.visited) },
+  { label: 'Which one', value: 'Alaska' },
+];
+---
+
+<BaseLayout
+  title="States"
+  description="49 of 50 states. The missing one is Alaska."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">
+        <a href="/trips" class="hover:text-signal transition-colors">Trips</a>
+        <span class="text-rule mx-2">/</span>
+        Standing log
+      </p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">States</h1>
+      <p class="measure text-graphite mt-6 text-lg leading-relaxed">
+        Most of these came from driving across the country rather than from flying anywhere.
+        The one that is still an outline is the one you cannot get to on I-90.
+      </p>
+    </header>
+
+    <dl
+      class="border-rule mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t pt-6 sm:grid-cols-3"
+    >
+      {
+        readout.map((r) => (
+          <div>
+            <dt class="data text-graphite">{r.label}</dt>
+            <dd class="font-display mt-1 text-2xl tabular-nums">{r.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="mt-14">
+      <StateMap />
+    </div>
+  </div>
+</BaseLayout>

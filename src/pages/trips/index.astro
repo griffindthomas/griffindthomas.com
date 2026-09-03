@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { STANDING_LOGS, type TripRow } from '../../lib/trips';
+
+/**
+ * One ledger over two sources: the standing logs, which are pages, and the
+ * discrete trips, which are content entries. Sorted together by date, newest
+ * first, so a trip that has not happened yet sits at the top where it belongs.
+ */
+const entries = await getCollection('trips', ({ data }) => !data.draft);
+
+const fromCollection: TripRow[] = entries.map((entry) => ({
+  href: `/trips/${entry.id}`,
+  title: entry.data.title,
+  summary: entry.data.summary,
+  date: entry.data.date,
+  sort: entry.data.sort,
+  status: entry.data.status,
+  where: entry.data.where,
+}));
+
+/**
+ * Grouped by status before date: what has not happened yet at the top, then
+ * what is still going, then what is finished. Within a group, newest first,
+ * the same way every other list on this site runs.
+ */
+const GROUPS = ['Planned', 'Ongoing', 'Complete'] as const;
+const rank = (status: TripRow['status']) => GROUPS.indexOf(status);
+
+const rows = [...STANDING_LOGS, ...fromCollection].sort(
+  (a, b) => rank(a.status) - rank(b.status) || b.sort.localeCompare(a.sort),
+);
+---
+
+<BaseLayout
+  title="Trips"
+  description="Where Griffin Thomas has been: eight coast to coast drives, nine recorded hikes, 49 states, and the trips worth writing up."
+>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">Standing logs and one-offs</p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">Trips</h1>
+      <p class="measure text-graphite mt-6 text-lg leading-relaxed">
+        Three logs that keep growing and a handful of trips that had a start and an end. The
+        drawings are all built from real data rather than sketched: the peaks come out of a
+        national elevation model and the routes are snapped to actual roads.
+      </p>
+    </header>
+
+    <ol class="mt-16">
+      {
+        rows.map((row) => (
+          <li class="border-rule border-t">
+            <a href={row.href} class="group grid gap-x-10 gap-y-4 py-9 lg:grid-cols-12">
+              <div class="data flex items-baseline gap-4 lg:col-span-3 lg:block">
+                <span class="text-signal">{row.status}</span>
+                <span class="lg:mt-3 lg:block">{row.date}</span>
+                <span class="lg:mt-1 lg:block">{row.where}</span>
+              </div>
+
+              <div class="lg:col-span-9">
+                <h2 class="font-display group-hover:text-signal text-3xl transition-colors sm:text-4xl">
+                  {row.title}
+                </h2>
+                <p class="text-graphite mt-3 max-w-[52ch] leading-relaxed">{row.summary}</p>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    <p class="data text-graphite border-rule mt-2 border-t pt-6">
+      {rows.length} entries
+      <span class="text-rule mx-2">/</span>
+      Not yet, then still going, then done
+    </p>
+  </div>
+</BaseLayout>

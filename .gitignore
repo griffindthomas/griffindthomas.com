@@ -41,3 +41,8 @@ src/components/FlightPath.astro
 # so that `git add -A` cannot sweep it into a push. Remove this line only when
 # Griffin asks for it specifically.
 src/components/UavExploded.astro
+
+# Natural Earth source geometry, cached by scripts/build-basemap.mjs. Large,
+# public domain, and re-downloadable; the projected output in src/data is what
+# ships and what is committed.
+.cache/

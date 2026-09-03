@@ -1,0 +1,1364 @@
+{
+  "note": "Hand-maintained. `waypoints` are the input to scripts/build-drives.mjs, which snaps them to real road geometry and writes drive-routes.json. Editing a waypoint means re-running that script. Coordinates are [longitude, latitude]. `crossing` marks the coast to coast runs; the other rows are drives that were not one. There is no mileage here: every distance on the site is the routed one, out of drive-routes.json.",
+  "drives": [
+    {
+      "id": 1,
+      "date": "Aug 2022",
+      "sort": "2022-08",
+      "from": "SEA",
+      "to": "Exeter",
+      "crossing": true,
+      "route": "Straight across on I-90. Wall Drug and Badlands NP",
+      "vehicles": [
+        "gti"
+      ],
+      "waypoints": [
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Billings MT",
+          -108.5007,
+          45.7833
+        ],
+        [
+          "Sheridan WY",
+          -106.956,
+          44.7972
+        ],
+        [
+          "Gillette WY",
+          -105.5022,
+          44.2911
+        ],
+        [
+          "Rapid City SD",
+          -103.231,
+          44.0805
+        ],
+        [
+          "Wall Drug SD",
+          -102.2413,
+          43.9928
+        ],
+        [
+          "Badlands NP SD",
+          -101.9269,
+          43.75
+        ],
+        [
+          "Sioux Falls SD",
+          -96.7311,
+          43.546
+        ],
+        [
+          "Albert Lea MN",
+          -93.3683,
+          43.648
+        ],
+        [
+          "La Crosse WI",
+          -91.2396,
+          43.8014
+        ],
+        [
+          "Madison WI",
+          -89.4012,
+          43.0731
+        ],
+        [
+          "Chicago IL",
+          -87.6298,
+          41.8781
+        ],
+        [
+          "Toledo OH",
+          -83.5379,
+          41.6528
+        ],
+        [
+          "Cleveland OH",
+          -81.6944,
+          41.4993
+        ],
+        [
+          "Erie PA",
+          -80.0851,
+          42.1292
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Syracuse NY",
+          -76.1474,
+          43.0481
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "date": "Apr 2023",
+      "sort": "2023-04",
+      "from": "Exeter",
+      "to": "SEA",
+      "crossing": true,
+      "route": "Indianapolis Motor Speedway, St. Louis, Denver, three days in Moab, then I-15 north out of Salt Lake into Idaho",
+      "vehicles": [
+        "crosstrek"
+      ],
+      "waypoints": [
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Cleveland OH",
+          -81.6944,
+          41.4993
+        ],
+        [
+          "Indianapolis Motor Speedway IN",
+          -86.2347,
+          39.795
+        ],
+        [
+          "St. Louis MO",
+          -90.1994,
+          38.627
+        ],
+        [
+          "Kansas City MO",
+          -94.5786,
+          39.0997
+        ],
+        [
+          "Denver CO",
+          -104.9903,
+          39.7392
+        ],
+        [
+          "Moab UT",
+          -109.5498,
+          38.5733
+        ],
+        [
+          "Salt Lake City UT",
+          -111.891,
+          40.7608
+        ],
+        [
+          "Idaho Falls ID",
+          -112.0341,
+          43.4917
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "date": "Aug 2023",
+      "sort": "2023-08",
+      "from": "SEA",
+      "to": "Exeter",
+      "crossing": true,
+      "route": "Straight across. Wall Drug and Badlands NP",
+      "vehicles": [
+        "crosstrek",
+        "explorer"
+      ],
+      "waypoints": [
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Billings MT",
+          -108.5007,
+          45.7833
+        ],
+        [
+          "Sheridan WY",
+          -106.956,
+          44.7972
+        ],
+        [
+          "Gillette WY",
+          -105.5022,
+          44.2911
+        ],
+        [
+          "Rapid City SD",
+          -103.231,
+          44.0805
+        ],
+        [
+          "Wall Drug SD",
+          -102.2413,
+          43.9928
+        ],
+        [
+          "Badlands NP SD",
+          -101.9269,
+          43.75
+        ],
+        [
+          "Sioux Falls SD",
+          -96.7311,
+          43.546
+        ],
+        [
+          "Albert Lea MN",
+          -93.3683,
+          43.648
+        ],
+        [
+          "La Crosse WI",
+          -91.2396,
+          43.8014
+        ],
+        [
+          "Madison WI",
+          -89.4012,
+          43.0731
+        ],
+        [
+          "Chicago IL",
+          -87.6298,
+          41.8781
+        ],
+        [
+          "Toledo OH",
+          -83.5379,
+          41.6528
+        ],
+        [
+          "Cleveland OH",
+          -81.6944,
+          41.4993
+        ],
+        [
+          "Erie PA",
+          -80.0851,
+          42.1292
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Syracuse NY",
+          -76.1474,
+          43.0481
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "date": "May 2024",
+      "sort": "2024-05",
+      "from": "Richmond",
+      "to": "Exeter",
+      "crossing": false,
+      "route": "Super Sectionals. The flight home was cancelled, so we kept the rental car and drove it back through the night",
+      "vehicles": [
+        "rental"
+      ],
+      "waypoints": [
+        [
+          "Richmond VA",
+          -77.436,
+          37.5407
+        ],
+        [
+          "Washington DC",
+          -77.0369,
+          38.9072
+        ],
+        [
+          "Baltimore MD",
+          -76.6122,
+          39.2904
+        ],
+        [
+          "Philadelphia PA",
+          -75.1652,
+          39.9526
+        ],
+        [
+          "New York NY",
+          -74.006,
+          40.7128
+        ],
+        [
+          "Hartford CT",
+          -72.6851,
+          41.7658
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "date": "Jun 2024",
+      "sort": "2024-06",
+      "from": "Exeter",
+      "to": "SEA",
+      "crossing": true,
+      "route": "Penn State at State College, down through West Virginia to Cincinnati and over the river into Kentucky for that state, then back up to Indianapolis for three days at the USA Swimming Olympic Trials. Dad flew home from Chicago. Then across the top of Iowa to Sioux City and into Nebraska, up to Sioux Falls and De Smet, across the empty interior of South Dakota and 45 minutes through North Dakota into Montana. Skipped Wall Drug and Badlands",
+      "vehicles": [
+        "crosstrek"
+      ],
+      "waypoints": [
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "State College PA",
+          -77.86,
+          40.7934
+        ],
+        [
+          "Morgantown WV",
+          -79.9553,
+          39.6295
+        ],
+        [
+          "Cincinnati OH",
+          -84.512,
+          39.1031
+        ],
+        [
+          "Covington KY",
+          -84.5085,
+          39.0837
+        ],
+        [
+          "Indianapolis IN",
+          -86.1581,
+          39.7684
+        ],
+        [
+          "Chicago IL",
+          -87.6298,
+          41.8781
+        ],
+        [
+          "Dubuque IA",
+          -90.6646,
+          42.5006
+        ],
+        [
+          "Waterloo IA",
+          -92.3426,
+          42.4928
+        ],
+        [
+          "Fort Dodge IA",
+          -94.168,
+          42.4975
+        ],
+        [
+          "Sioux City IA",
+          -96.4003,
+          42.4999
+        ],
+        [
+          "South Sioux City NE",
+          -96.4136,
+          42.4736
+        ],
+        [
+          "Sioux Falls SD",
+          -96.7311,
+          43.546
+        ],
+        [
+          "De Smet SD",
+          -97.5528,
+          44.3872
+        ],
+        [
+          "Redfield SD",
+          -98.5195,
+          44.873
+        ],
+        [
+          "Aberdeen SD",
+          -98.4865,
+          45.4647
+        ],
+        [
+          "Mobridge SD",
+          -100.4279,
+          45.5386
+        ],
+        [
+          "Lemmon SD",
+          -102.156,
+          45.9391
+        ],
+        [
+          "Hettinger ND",
+          -102.6394,
+          46.0002
+        ],
+        [
+          "Baker MT",
+          -104.2847,
+          46.3672
+        ],
+        [
+          "Miles City MT",
+          -105.8406,
+          46.4083
+        ],
+        [
+          "Billings MT",
+          -108.5007,
+          45.7833
+        ],
+        [
+          "Bozeman MT",
+          -111.0429,
+          45.677
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "date": "Aug 2024",
+      "sort": "2024-08",
+      "from": "SEA",
+      "to": "Exeter",
+      "crossing": true,
+      "route": "Split south at Idaho Falls for Wells, Nevada, then east over the salt flats through Wendover. Colorado and Black Canyon NP, down to Raton and across the Oklahoma panhandle with a stop at the New Mexico, Oklahoma and Texas corner. South to Florida, then up through the middle of Georgia rather than the coast, twenty minutes in South Carolina, and back into North Carolina and Tennessee. College tours at UGA, UTK, Duke, NC State, UNC, UF and FSU",
+      "vehicles": [
+        "bmw"
+      ],
+      "waypoints": [
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ],
+        [
+          "Yakima WA",
+          -120.5059,
+          46.6021
+        ],
+        [
+          "Pendleton OR",
+          -118.7886,
+          45.6721
+        ],
+        [
+          "Boise ID",
+          -116.2023,
+          43.615
+        ],
+        [
+          "Idaho Falls ID",
+          -112.0341,
+          43.4917
+        ],
+        [
+          "Wells NV",
+          -114.9622,
+          41.1116
+        ],
+        [
+          "Wendover UT",
+          -114.0369,
+          40.7377
+        ],
+        [
+          "Salt Lake City UT",
+          -111.891,
+          40.7608
+        ],
+        [
+          "Grand Junction CO",
+          -108.5506,
+          39.0639
+        ],
+        [
+          "Montrose CO",
+          -107.8762,
+          38.4783
+        ],
+        [
+          "Black Canyon of the Gunnison NP",
+          -107.689,
+          38.5527
+        ],
+        [
+          "Gunnison CO",
+          -106.9253,
+          38.5458
+        ],
+        [
+          "Pueblo CO",
+          -104.6091,
+          38.2544
+        ],
+        [
+          "Raton NM",
+          -104.4394,
+          36.9034
+        ],
+        [
+          "Clayton NM",
+          -103.1841,
+          36.4517
+        ],
+        [
+          "NM/OK/TX corner",
+          -103.0024,
+          36.5005
+        ],
+        [
+          "Boise City OK",
+          -102.5116,
+          36.7295
+        ],
+        [
+          "Guymon OK",
+          -101.4818,
+          36.6828
+        ],
+        [
+          "Woodward OK",
+          -99.3904,
+          36.4334
+        ],
+        [
+          "Oklahoma City OK",
+          -97.5164,
+          35.4676
+        ],
+        [
+          "Dallas TX",
+          -96.797,
+          32.7767
+        ],
+        [
+          "Shreveport LA",
+          -93.7502,
+          32.5252
+        ],
+        [
+          "Jackson MS",
+          -90.1848,
+          32.2988
+        ],
+        [
+          "Mobile AL",
+          -88.0399,
+          30.6954
+        ],
+        [
+          "Tallahassee FL",
+          -84.2963,
+          30.4419
+        ],
+        [
+          "Gainesville FL",
+          -82.3248,
+          29.6516
+        ],
+        [
+          "Macon GA",
+          -83.6324,
+          32.8407
+        ],
+        [
+          "Athens GA",
+          -83.3576,
+          33.9519
+        ],
+        [
+          "Westminster SC",
+          -83.0918,
+          34.6643
+        ],
+        [
+          "Asheville NC",
+          -82.5515,
+          35.5951
+        ],
+        [
+          "Knoxville TN",
+          -83.9207,
+          35.9606
+        ],
+        [
+          "Chapel Hill NC",
+          -79.0558,
+          35.9132
+        ],
+        [
+          "Durham NC",
+          -78.8986,
+          35.994
+        ],
+        [
+          "Raleigh NC",
+          -78.6382,
+          35.7796
+        ],
+        [
+          "Richmond VA",
+          -77.436,
+          37.5407
+        ],
+        [
+          "Washington DC",
+          -77.0369,
+          38.9072
+        ],
+        [
+          "Philadelphia PA",
+          -75.1652,
+          39.9526
+        ],
+        [
+          "New York NY",
+          -74.006,
+          40.7128
+        ],
+        [
+          "Hartford CT",
+          -72.6851,
+          41.7658
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "date": "Jun 2025",
+      "sort": "2025-06",
+      "from": "Exeter",
+      "to": "SEA",
+      "crossing": true,
+      "route": "Buffalo, Rainbow Bridge into Ontario, back over the Ambassador Bridge to Michigan, up to Sault Ste Marie, Highway 1 across Canada, Banff, re-entry at Sumas",
+      "vehicles": [
+        "explorer"
+      ],
+      "waypoints": [
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Rainbow Bridge, Niagara Falls ON",
+          -79.0685,
+          43.0906
+        ],
+        [
+          "Hamilton ON",
+          -79.8711,
+          43.2557
+        ],
+        [
+          "London ON",
+          -81.2453,
+          42.9849
+        ],
+        [
+          "Windsor ON",
+          -83.0364,
+          42.3149
+        ],
+        [
+          "Detroit MI",
+          -83.0764,
+          42.3117
+        ],
+        [
+          "Flint MI",
+          -83.6875,
+          43.0125
+        ],
+        [
+          "Bay City MI",
+          -83.8889,
+          43.5945
+        ],
+        [
+          "Grayling MI",
+          -84.7147,
+          44.6614
+        ],
+        [
+          "Mackinaw City MI",
+          -84.7278,
+          45.7772
+        ],
+        [
+          "Sault Ste. Marie MI",
+          -84.3453,
+          46.4953
+        ],
+        [
+          "Sault Ste. Marie ON",
+          -84.33,
+          46.5136
+        ],
+        [
+          "Wawa ON",
+          -84.7714,
+          47.9956
+        ],
+        [
+          "Thunder Bay ON",
+          -89.2477,
+          48.3809
+        ],
+        [
+          "Kenora ON",
+          -94.4894,
+          49.7669
+        ],
+        [
+          "Winnipeg MB",
+          -97.1385,
+          49.8951
+        ],
+        [
+          "Regina SK",
+          -104.6189,
+          50.4452
+        ],
+        [
+          "Medicine Hat AB",
+          -110.6764,
+          50.0405
+        ],
+        [
+          "Calgary AB",
+          -114.0719,
+          51.0447
+        ],
+        [
+          "Banff AB",
+          -115.5708,
+          51.1784
+        ],
+        [
+          "Golden BC",
+          -116.9631,
+          51.2965
+        ],
+        [
+          "Revelstoke BC",
+          -118.1953,
+          50.9981
+        ],
+        [
+          "Kamloops BC",
+          -120.3273,
+          50.6745
+        ],
+        [
+          "Hope BC",
+          -121.4416,
+          49.3827
+        ],
+        [
+          "Abbotsford BC",
+          -122.3045,
+          49.0504
+        ],
+        [
+          "Sumas WA",
+          -122.2646,
+          49.0006
+        ],
+        [
+          "Bellingham WA",
+          -122.4787,
+          48.7519
+        ],
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ]
+      ]
+    },
+    {
+      "id": 8,
+      "date": "Aug 2025",
+      "sort": "2025-08",
+      "from": "SEA",
+      "to": "Exeter",
+      "crossing": true,
+      "route": "Straight across. Wall Drug, Badlands NP and Indiana Dunes NP, and Iowa through Cedar Rapids instead of Minnesota and Wisconsin",
+      "vehicles": [
+        "explorer"
+      ],
+      "waypoints": [
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Billings MT",
+          -108.5007,
+          45.7833
+        ],
+        [
+          "Sheridan WY",
+          -106.956,
+          44.7972
+        ],
+        [
+          "Gillette WY",
+          -105.5022,
+          44.2911
+        ],
+        [
+          "Rapid City SD",
+          -103.231,
+          44.0805
+        ],
+        [
+          "Wall Drug SD",
+          -102.2413,
+          43.9928
+        ],
+        [
+          "Badlands NP SD",
+          -101.9269,
+          43.75
+        ],
+        [
+          "Sioux Falls SD",
+          -96.7311,
+          43.546
+        ],
+        [
+          "Sioux City IA",
+          -96.4003,
+          42.4999
+        ],
+        [
+          "Fort Dodge IA",
+          -94.168,
+          42.4975
+        ],
+        [
+          "Waterloo IA",
+          -92.3426,
+          42.4928
+        ],
+        [
+          "Cedar Rapids IA",
+          -91.6656,
+          41.9779
+        ],
+        [
+          "Chicago IL",
+          -87.6298,
+          41.8781
+        ],
+        [
+          "Indiana Dunes NP IN",
+          -87.0524,
+          41.6533
+        ],
+        [
+          "Toledo OH",
+          -83.5379,
+          41.6528
+        ],
+        [
+          "Cleveland OH",
+          -81.6944,
+          41.4993
+        ],
+        [
+          "Erie PA",
+          -80.0851,
+          42.1292
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Syracuse NY",
+          -76.1474,
+          43.0481
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 9,
+      "date": "Dec 2025",
+      "sort": "2025-12",
+      "from": "Exeter",
+      "to": "Lake Oconee",
+      "crossing": false,
+      "route": "Christmas at Lake Oconee, down and back on I-95 and I-85",
+      "vehicles": [
+        "explorer"
+      ],
+      "waypoints": [
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ],
+        [
+          "New York NY",
+          -74.006,
+          40.7128
+        ],
+        [
+          "Washington DC",
+          -77.0369,
+          38.9072
+        ],
+        [
+          "Richmond VA",
+          -77.436,
+          37.5407
+        ],
+        [
+          "Charlotte NC",
+          -80.8431,
+          35.2271
+        ],
+        [
+          "Lake Oconee GA",
+          -83.1824,
+          33.5757
+        ],
+        [
+          "Charlotte NC",
+          -80.8431,
+          35.2271
+        ],
+        [
+          "Richmond VA",
+          -77.436,
+          37.5407
+        ],
+        [
+          "Washington DC",
+          -77.0369,
+          38.9072
+        ],
+        [
+          "New York NY",
+          -74.006,
+          40.7128
+        ],
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ]
+      ]
+    },
+    {
+      "id": 10,
+      "date": "Jun 2026",
+      "sort": "2026-06",
+      "from": "Exeter",
+      "to": "SEA",
+      "crossing": true,
+      "route": "Straight across. Wall Drug and Badlands NP, and Iowa through Davenport and Cedar Rapids",
+      "vehicles": [
+        "bmw",
+        "explorer"
+      ],
+      "waypoints": [
+        [
+          "Exeter NH",
+          -70.9476,
+          42.9814
+        ],
+        [
+          "Boston MA",
+          -71.0589,
+          42.3601
+        ],
+        [
+          "Albany NY",
+          -73.7562,
+          42.6526
+        ],
+        [
+          "Syracuse NY",
+          -76.1474,
+          43.0481
+        ],
+        [
+          "Buffalo NY",
+          -78.8784,
+          42.8864
+        ],
+        [
+          "Erie PA",
+          -80.0851,
+          42.1292
+        ],
+        [
+          "Cleveland OH",
+          -81.6944,
+          41.4993
+        ],
+        [
+          "Toledo OH",
+          -83.5379,
+          41.6528
+        ],
+        [
+          "Chicago IL",
+          -87.6298,
+          41.8781
+        ],
+        [
+          "Davenport IA",
+          -90.5776,
+          41.5236
+        ],
+        [
+          "Cedar Rapids IA",
+          -91.6656,
+          41.9779
+        ],
+        [
+          "Waterloo IA",
+          -92.3426,
+          42.4928
+        ],
+        [
+          "Fort Dodge IA",
+          -94.168,
+          42.4975
+        ],
+        [
+          "Sioux City IA",
+          -96.4003,
+          42.4999
+        ],
+        [
+          "Sioux Falls SD",
+          -96.7311,
+          43.546
+        ],
+        [
+          "Badlands NP SD",
+          -101.9269,
+          43.75
+        ],
+        [
+          "Wall Drug SD",
+          -102.2413,
+          43.9928
+        ],
+        [
+          "Rapid City SD",
+          -103.231,
+          44.0805
+        ],
+        [
+          "Gillette WY",
+          -105.5022,
+          44.2911
+        ],
+        [
+          "Sheridan WY",
+          -106.956,
+          44.7972
+        ],
+        [
+          "Billings MT",
+          -108.5007,
+          45.7833
+        ],
+        [
+          "Butte MT",
+          -112.5348,
+          46.0038
+        ],
+        [
+          "Missoula MT",
+          -113.994,
+          46.8721
+        ],
+        [
+          "Spokane WA",
+          -117.426,
+          47.6588
+        ],
+        [
+          "Ellensburg WA",
+          -120.5478,
+          46.9965
+        ],
+        [
+          "Seattle WA",
+          -122.3321,
+          47.6062
+        ]
+      ]
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "gti",
+      "name": "2007 VW GTI",
+      "short": "GTI",
+      "silhouette": true
+    },
+    {
+      "id": "crosstrek",
+      "name": "2023 Subaru Crosstrek",
+      "short": "Crosstrek",
+      "silhouette": true
+    },
+    {
+      "id": "explorer",
+      "name": "2018 Ford Explorer",
+      "short": "Explorer",
+      "silhouette": true
+    },
+    {
+      "id": "bmw",
+      "name": "2007 BMW E90",
+      "short": "E90",
+      "silhouette": true
+    },
+    {
+      "id": "rental",
+      "name": "Rental car",
+      "short": "Rental",
+      "silhouette": false
+    }
+  ]
+}

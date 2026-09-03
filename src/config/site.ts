@@ -26,7 +26,28 @@ export const SITE = {
     lat: 33.4342,
     lon: -112.0116,
   },
+  /**
+   * West Seattle.
+   *
+   * The home page prints THESE coordinates under the Tempe label, which looks
+   * like a mistake and is not one. The label is where he is; the numbers are
+   * where he is from. Anyone who reads coordinates will notice they disagree,
+   * and that is the point of them being there.
+   */
+  home: {
+    label: "Seattle, Washington",
+    lat: 47.5707,
+    lon: -122.3868,
+  },
 } as const;
+
+/**
+ * Coordinates as they are printed on this site: four decimal places, hemisphere
+ * as a letter in front. One function, because the home page and the footer both
+ * print a pair and they must not drift into two formats.
+ */
+export const coordinates = (lat: number, lon: number) =>
+  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(4)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(4)}`;
 
 /**
  * Off-site profiles. `handle` is what gets displayed, so the link text is the

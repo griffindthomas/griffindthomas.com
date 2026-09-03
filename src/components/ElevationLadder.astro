@@ -1,0 +1,280 @@
+---
+/**
+ * The elevation ladder: every peak nested in one frame.
+ *
+ * One drawing, one coordinate system, and the coordinate system is feet on
+ * both axes. There is NO vertical exaggeration: 8 miles across is 42,240 ft
+ * across, drawn against a ceiling of 15,000 ft, so the frame is a wide low
+ * band and Kilauea is very nearly a flat line. That is the honest answer and
+ * it is the reason for putting it next to Rainier.
+ *
+ * Four miles either side of each summit. Fifteen was hopeless: at that range
+ * a section through a peak in a ridge system picks up three or four unrelated
+ * ridges and they pull the eye off the mountain the line is about. Narrowing
+ * alone could never finish the job, though, because the worst offender is only
+ * two and a half miles out. Cutting the line at the saddle does that instead,
+ * which leaves the width free to be whatever suits the drawing.
+ *
+ * Each profile is a real cross-section through its summit, out of USGS 3DEP at
+ * 10 m, committed as static data and not touched at render time beyond being
+ * closed and scaled. No smoothing: the ridges, the crater notch in St. Helens,
+ * and on Kilauea the drop off the caldera rim, the caldera floor, Kilauea Iki
+ * and Puu Puai standing over it are all still in the line. The sections run
+ * west to east bar Kilauea's, which is turned onto the summit-to-Iki line
+ * because due east misses Iki and the hike is both craters.
+ *
+ * WHY THEY NEST. Each profile is closed down to sea level at both frame edges,
+ * filled with the paper colour, then stroked. Drawn tallest first, so Rainier
+ * goes down at the back and Kilauea last at the front, every peak hides the
+ * ones behind it below its own skyline. The fill is invisible against the
+ * page, so it still reads as pure line work, but the weaving tangle of eleven
+ * open lines crossing each other is gone. This is how the comparison drawings
+ * it is modelled on work.
+ *
+ * Labels are not in the drawing. They sit in a column beside it in elevation
+ * order, so nothing has to be dodged and no leader line crosses a profile.
+ * There is no title and no key: two inks and eleven named heights are the
+ * whole of what this has to say.
+ */
+import { PEAKS, PROFILE_HALF_WIDTH_M } from '../lib/trips';
+
+const M_PER_FT = 0.3048;
+const FT_PER_MILE = 5280;
+
+/** Feet across the frame. Both axes in feet is what keeps this 1:1. */
+const WIDTH_FT = (PROFILE_HALF_WIDTH_M * 2) / M_PER_FT;
+const widthMiles = Math.round(WIDTH_FT / FT_PER_MILE);
+
+/** What the terrain model reads at the summit, which is what gets printed. */
+const summitFt = (metres: number) => Math.round(metres / M_PER_FT);
+
+const tallest = Math.max(...PEAKS.map((p) => p.sampledSummitM / M_PER_FT));
+/** Headroom over the tallest, rounded to a number a scale would carry. */
+const CEILING_FT = Math.ceil((tallest * 1.04) / 1000) * 1000;
+
+/** Metres east of the summit to feet across the frame. */
+const px = (metres: number) => metres / M_PER_FT + WIDTH_FT / 2;
+/** Metres above sea level to depth from the top. Sea level is the floor. */
+const py = (metres: number) => CEILING_FT - metres / M_PER_FT;
+
+/**
+ * The terrain itself, as far out as it is this peak's own.
+ *
+ * Cut at the saddle on any side where the transect climbs back over the
+ * summit, because past that saddle the ground belongs to a different mountain
+ * and drawing it in this peak's ink says he climbed it. Hannegan is the only
+ * one here that needs it: Mount Sefrit sits in its frame and is the taller of
+ * the two. Where the ink stops it stops below the Kilauea plateau, which is
+ * drawn in front of it, so nothing ends in mid air.
+ */
+const ridge = (profile: [number, number][], [from, to]: [number, number]) =>
+  profile
+    .filter(([x]) => x >= from && x <= to)
+    .map(([x, z], i) => `${i === 0 ? 'M' : 'L'}${px(x).toFixed(0)} ${py(z).toFixed(0)}`)
+    .join('');
+
+/**
+ * The same profile closed down to sea level at both ends of its drawn span.
+ *
+ * Filled and never stroked, and that split matters: closing the shape is what
+ * lets a nearer peak hide the ones behind it, but stroking the closure draws
+ * the two verticals and the floor as well, which puts a box round the whole
+ * drawing. The fill does the occluding, the ridge above does the drawing.
+ *
+ * THE SPAN HAS TO MATCH THE RIDGE. When only the ink was cut, the paper shape
+ * carried on across the full width and went on hiding whatever was behind it,
+ * so the ground that had been taken out of the drawing was still punching
+ * pieces out of the peaks behind. A shape nobody can see is still a shape. Cut
+ * both at the same place and the ones behind come back.
+ *
+ * Where a shape is cut short it closes with a vertical down to sea level. On
+ * Hannegan, the only peak that is, that closure is at 3,645 ft and Kilauea's
+ * plateau sits at 3,846 ft in front of it, so the seam never shows.
+ */
+const solid = (profile: [number, number][], [from, to]: [number, number]) =>
+  `M${px(from).toFixed(0)} ${CEILING_FT}` +
+  profile
+    .filter(([x]) => x >= from && x <= to)
+    .map(([x, z]) => `L${px(x).toFixed(0)} ${py(z).toFixed(0)}`)
+    .join('') +
+  `L${px(to).toFixed(0)} ${CEILING_FT}Z`;
+
+/** Faint reference heights, so the shared scale carries a number. */
+const GRID_FT = [5000, 10000].filter((ft) => ft < CEILING_FT);
+
+/** Tallest first: furthest back in the drawing, top of the list beside it. */
+const ordered = [...PEAKS].sort((a, b) => b.sampledSummitM - a.sampledSummitM);
+const climbed = ordered.filter((p) => p.summited).length;
+---
+
+<section aria-label="Elevation ladder">
+  <div class="frame">
+    <svg
+      class="plot"
+      viewBox={`0 0 ${WIDTH_FT.toFixed(0)} ${CEILING_FT}`}
+      role="img"
+      aria-label={`Eleven mountain profiles nested in one frame, all to the same scale across ${widthMiles} miles. ${ordered
+        .map(
+          (p) =>
+            `${p.name}, ${summitFt(p.sampledSummitM).toLocaleString()} feet, ${p.summited ? 'summited' : 'not climbed'}`,
+        )
+        .join('. ')}.`}
+    >
+      {/* Tallest first, so the shorter ones come forward and cover it. The
+          fill goes down immediately before its own ridge line, so a peak
+          never blanks its own outline. */}
+      {
+        ordered.map((peak) => (
+          <>
+            <path class="mass" d={solid(peak.profile, peak.drawnSpan)} />
+            <path
+              class:list={['ridge', peak.summited ? 'climbed' : 'unclimbed']}
+              d={ridge(peak.profile, peak.drawnSpan)}
+            />
+          </>
+        ))
+      }
+
+      {/* On top, so a reference height stays readable wherever it crosses. */}
+      {
+        GRID_FT.map((ft) => (
+          <line class="grid" x1="0" x2={WIDTH_FT} y1={CEILING_FT - ft} y2={CEILING_FT - ft} />
+        ))
+      }
+      <line class="sea" x1="0" x2={WIDTH_FT} y1={CEILING_FT} y2={CEILING_FT} />
+    </svg>
+
+    <ol class="legend">
+      {
+        ordered.map((peak) => (
+          <li class:list={[peak.summited ? 'climbed' : 'unclimbed']}>
+            <span class="who">{peak.name}</span>
+            {/* The two inks carry this for anyone who can see them, and colour
+                on its own is not something to rely on, so the word is still
+                here for a screen reader. */}
+            <span class="sr-only">{peak.summited ? 'Summited' : 'Not climbed'}</span>
+            <span class="ft">{summitFt(peak.sampledSummitM).toLocaleString()} ft</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <p class="data text-graphite mt-6">
+    {climbed} of {ordered.length}
+    <span class="text-rule mx-2">/</span>
+    {widthMiles} miles across, sampled from USGS 3DEP
+    <span class="text-rule mx-2">/</span>
+    Heights as the terrain model reads them
+  </p>
+</section>
+
+<style>
+  /* The drawing takes the width it can get and the list sits beside it. On a
+     narrow screen the list drops underneath rather than squeezing the
+     mountains into nothing. */
+  .frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (min-width: 48rem) {
+    .frame {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2rem;
+    }
+  }
+
+  .plot {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* The page colour, so a nearer peak hides the ones behind it and nothing
+     reads as a solid silhouette. Never stroked: see the note on `solid`. */
+  .mass {
+    fill: var(--color-paper);
+    stroke: none;
+  }
+
+  .ridge {
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ridge.climbed {
+    stroke: var(--color-ink);
+    stroke-width: 1.3px;
+  }
+
+  .ridge.unclimbed {
+    stroke: var(--color-graphite);
+    stroke-width: 1px;
+    opacity: 0.75;
+  }
+
+  .sea {
+    stroke: var(--color-rule);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .grid {
+    stroke: var(--color-rule);
+    stroke-width: 1px;
+    stroke-dasharray: 2 6;
+    opacity: 0.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Tallest at the top, matching the order they are drawn in. */
+  .legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .legend li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 1.5rem;
+    padding: 0.3rem 0;
+    white-space: nowrap;
+  }
+
+  /* Not climbed, drawn back a little. Held at 0.85 rather than lighter still
+     because below that this size of mono text stops clearing 4.5:1 against
+     the paper, and the whole list would fail a contrast check to make a
+     distinction the two inks are already making. */
+  .legend li.unclimbed {
+    opacity: 0.85;
+  }
+
+  .legend li + li {
+    border-top: var(--rule-width) solid var(--color-rule);
+  }
+
+  .legend li.climbed .who {
+    color: var(--color-ink);
+  }
+
+  .legend li.unclimbed .who {
+    color: var(--color-graphite);
+  }
+
+  .legend .ft {
+    color: var(--color-graphite);
+    text-align: right;
+  }
+
+</style>

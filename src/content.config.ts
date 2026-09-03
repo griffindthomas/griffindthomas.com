@@ -142,6 +142,51 @@ const projects = defineCollection({
 });
 
 /**
+ * Trips.
+ *
+ * Only the discrete ones: a trip with a start and an end, a handful of
+ * photographs and something to say about it. The three standing logs
+ * (/trips/hiking, /trips/driving, /trips/states) are not here, because they
+ * are tables of numbers rather than prose and they live in src/data with
+ * their own schemas in src/lib/trips.ts.
+ *
+ * The index at /trips reads both and sorts them together.
+ */
+const trips = defineCollection({
+  loader: glob({ base: "./src/content/trips", pattern: "**/*.{md,mdx}" }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      /** One line, shown in the index. No trailing full stop. */
+      summary: z.string(),
+      /** As printed, e.g. "July 22 to 26, 2026". */
+      date: z.string(),
+      /** Sortable, YYYY-MM. Drives the order of the index. */
+      sort: z.string().regex(/^\d{4}-\d{2}$/),
+      /** Rendered through the same plate as a project's status. */
+      status: z.enum(["Complete", "Planned", "Ongoing"]),
+      /** Where, in a couple of words. Shown under the title. */
+      where: z.string().default(""),
+      /**
+       * Photographs, in order. Same contract as a project's: `src` is relative
+       * to this markdown file, so the files sit in src/content/trips/images/
+       * and go through the build-time image pipeline rather than being served
+       * untouched out of public/.
+       */
+      photos: z
+        .array(
+          z.object({
+            src: image(),
+            alt: z.string().default(""),
+            caption: z.string().default(""),
+          }),
+        )
+        .default([]),
+      draft: z.boolean().default(false),
+    }),
+});
+
+/**
  * Log. Empty today. The nav hides the section until an entry exists, so
  * shipping this collection early costs nothing and adding a post is a
  * one-file change.
@@ -156,4 +201,4 @@ const log = defineCollection({
   }),
 });
 
-export const collections = { photos, projects, log };
+export const collections = { photos, projects, trips, log };

@@ -1,0 +1,95 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+/**
+ * The discrete trips. Static routes like /trips/hiking win over this one, so
+ * the standing logs keep their own pages and only the content entries land
+ * here.
+ */
+export const getStaticPaths = (async () => {
+  const entries = await getCollection('trips', ({ data }) => !data.draft);
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, date, status, where, photos } = entry.data;
+---
+
+<BaseLayout title={title} description={summary}>
+  <div class="mx-auto max-w-[88rem]">
+    <header>
+      <p class="data">
+        <a href="/trips" class="hover:text-signal transition-colors">Trips</a>
+        <span class="text-rule mx-2">/</span>
+        {where}
+      </p>
+      <h1 class="font-display mt-5 text-5xl sm:text-7xl">{title}</h1>
+      <p class="measure text-graphite mt-6 text-lg leading-relaxed">{summary}</p>
+
+      <dl class="border-rule mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t pt-6 sm:grid-cols-3">
+        <div>
+          <dt class="data text-graphite">Status</dt>
+          <dd class="font-display mt-1 text-2xl">{status}</dd>
+        </div>
+        <div>
+          <dt class="data text-graphite">When</dt>
+          <dd class="font-display mt-1 text-2xl">{date}</dd>
+        </div>
+        <div>
+          <dt class="data text-graphite">Where</dt>
+          <dd class="font-display mt-1 text-2xl">{where}</dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="copy mt-16">
+      <Content />
+    </div>
+
+    {
+      photos.length > 0 && (
+        <section class="mt-20" aria-labelledby="photos-heading">
+          <div class="border-rule border-b pb-2">
+            <h2 id="photos-heading" class="font-display text-3xl">
+              Photographs
+            </h2>
+          </div>
+
+          <ul class="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2">
+            {photos.map((photo, i) => (
+              <li>
+                <div class="bg-paper-sunk">
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    widths={[600, 1200]}
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    class="w-full"
+                  />
+                </div>
+                {photo.caption && (
+                  <p class="data text-graphite border-rule mt-3 border-t pt-3 leading-relaxed">
+                    {photo.caption}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <p class="border-rule mt-20 border-t pt-6">
+      <a href="/trips" class="data hover:text-signal transition-colors">
+        <span class="mr-2" aria-hidden="true">&larr;</span>
+        All trips
+      </a>
+    </p>
+  </div>
+</BaseLayout>

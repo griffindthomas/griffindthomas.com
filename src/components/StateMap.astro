@@ -1,0 +1,69 @@
+---
+/**
+ * The states map.
+ *
+ * Same boundaries and the same projection family as the driving map, so the
+ * two read as siblings, but on the standard composite: the lower 48 on one
+ * cone, with Alaska and Hawaii on their own and moved into the corner. That
+ * composite is the only reason this map can make its point, which is that
+ * Alaska is the one empty shape on it.
+ *
+ * No county layer, no labels, no legend. The drawing is one fill and one
+ * hole, and a legend would be explaining a joke.
+ */
+import basemap from '../data/map-states.json';
+import { VISITED_STATES, stateStats } from '../lib/trips';
+
+/** DC is drawn so the eastern seaboard is not missing a piece, never counted. */
+const isVisited = (code: string) => VISITED_STATES.has(code);
+
+const missing = basemap.states
+  .filter((s) => s.code !== 'DC' && !isVisited(s.code))
+  .map((s) => s.name);
+
+const label =
+  `Map of the United States with ${stateStats.visited} of ${stateStats.total} states filled in. ` +
+  `${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} left as an empty outline. ` +
+  `Alaska and Hawaii are drawn in the bottom left at the usual reduced scale rather than in ` +
+  `their real positions.`;
+---
+
+<figure class="statemap">
+  <svg viewBox={basemap.viewBox} role="img" aria-label={label}>
+    {
+      basemap.states.map((state) => (
+        <path
+          class:list={['state', isVisited(state.code) ? 'been' : 'not']}
+          d={state.d}
+        />
+      ))
+    }
+  </svg>
+
+  <figcaption class="data mt-4">{stateStats.visited} of {stateStats.total}</figcaption>
+</figure>
+
+<style>
+  .statemap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .state {
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Been: inked in, the same ink the type board and the peaks use. */
+  .been {
+    fill: var(--color-chart);
+    stroke: var(--color-paper);
+  }
+
+  /* Not been: the outline and nothing in it. */
+  .not {
+    fill: none;
+    stroke: var(--color-graphite);
+  }
+</style>

@@ -1,0 +1,107 @@
+{
+  "note": "Hand-maintained. AllTrails has no export on the free tier, so every row is typed in from the app. Import rule: where two records describe the same hike, keep the larger distance and gain; same-day duplicates are an AllTrails artefact and collapse to one row; the same trail on different dates is two hikes and both count.",
+  "hikes": [
+    {
+      "id": "kilauea-2026",
+      "date": "Jul 2026",
+      "sort": "2026-07-24",
+      "trail": "Kilauea and Kilauea Iki, Hawaii Volcanoes NP",
+      "peak": "kilauea",
+      "distanceMi": 20,
+      "gainFt": 5000,
+      "time": "12h",
+      "recorded": false,
+      "gainEstimated": true,
+      "dateApproximate": true
+    },
+    {
+      "id": "st-helens-2026",
+      "date": "Jul 6 2026",
+      "sort": "2026-07-06",
+      "trail": "Mount St. Helens summit via Ptarmigan",
+      "peak": "st-helens",
+      "distanceMi": 9.4,
+      "gainFt": 4518,
+      "time": "7h36m",
+      "recorded": true
+    },
+    {
+      "id": "gothic-2026",
+      "date": "Jun 29 2026",
+      "sort": "2026-06-29",
+      "trail": "Gothic Basin to Foggy Lake",
+      "peak": "gothic",
+      "distanceMi": 9.8,
+      "gainFt": 2913,
+      "time": "5h05m",
+      "recorded": true
+    },
+    {
+      "id": "mcneil-2026",
+      "date": "Jun 21 2026",
+      "sort": "2026-06-21",
+      "trail": "McNeil Peak via Russell Ridge",
+      "peak": "mcneil",
+      "distanceMi": 10,
+      "gainFt": 2835,
+      "time": "5h05m",
+      "recorded": true
+    },
+    {
+      "id": "mesa-2026",
+      "date": "Feb 22 2026",
+      "sort": "2026-02-22",
+      "trail": "Hawes, Ridge, Saddle and Saguaro loop, Mesa AZ",
+      "peak": null,
+      "distanceMi": 6.2,
+      "gainFt": 764,
+      "time": "2h24m",
+      "recorded": true
+    },
+    {
+      "id": "dirty-harrys-2025",
+      "date": "Aug 8 2025",
+      "sort": "2025-08-08",
+      "trail": "Dirty Harry's Balcony",
+      "peak": null,
+      "distanceMi": 2.6,
+      "gainFt": 614,
+      "time": "1h15m",
+      "recorded": true
+    },
+    {
+      "id": "gothic-2025",
+      "date": "Jul 27 2025",
+      "sort": "2025-07-27",
+      "trail": "Gothic Basin to Foggy Lake",
+      "peak": "gothic",
+      "distanceMi": 10,
+      "gainFt": 3087,
+      "time": "5h21m",
+      "recorded": true
+    },
+    {
+      "id": "hannegan-2025",
+      "date": "Jul 26 2025",
+      "sort": "2025-07-26",
+      "trail": "Hannegan Peak",
+      "peak": "hannegan",
+      "distanceMi": 11.6,
+      "gainFt": 3291,
+      "time": "4h36m",
+      "recorded": true
+    },
+    {
+      "id": "green-2024",
+      "date": "2024",
+      "sort": "2024-06-01",
+      "trail": "Green Mountain",
+      "peak": "green",
+      "distanceMi": 7,
+      "gainFt": 2600,
+      "time": null,
+      "recorded": false,
+      "dateApproximate": true
+    }
+  ]
+}

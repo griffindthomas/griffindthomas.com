@@ -245,6 +245,7 @@
       <nav class="tabs">
         <button class="tab" data-tab="photos" aria-pressed="true">Photos</button>
         <button class="tab" data-tab="projects" aria-pressed="false">Projects</button>
+        <button class="tab" data-tab="trips" aria-pressed="false">Trips</button>
       </nav>
       <span class="label" id="summary">Loading</span>
       <span class="spacer"></span>
@@ -279,12 +280,27 @@
         </div>
         <div id="project-cards"></div>
       </div>
+
+      <div id="panel-trips" hidden>
+        <div id="new-project">
+          <input type="text" id="new-trip-title" placeholder="Where the trip was" />
+          <button id="add-trip">Start it</button>
+          <p class="label" style="margin: 8px 0 0">
+            It starts hidden from the site. Untick "Hide from site" when it is ready.
+            Hiking, driving and states are not here: those are tables of numbers and they
+            live in src/data.
+          </p>
+        </div>
+        <div id="trip-cards"></div>
+      </div>
     </main>
 
     <script>
       const $ = (sel, root = document) => root.querySelector(sel);
       let AIRPORTS = {};
       let TYPE_CODES = [];
+      // Replaced by whatever the server says, which is the schema's own list.
+      let TRIP_STATUSES = ["Planned", "Ongoing", "Complete"];
 
       const TIMEZONES = [
         ["America/Los_Angeles", "Pacific (Seattle)"],
@@ -585,6 +601,173 @@
         refreshStatus();
       }
 
+      /**
+       * A trip photograph. Same row as a project's, served from the trips
+       * images folder rather than the projects one.
+       */
+      function tripPhotoRow(photo) {
+        const file = String(photo?.src ?? "").split("/").pop();
+        return `
+          <div class="photo-row" data-src="${esc(photo?.src ?? "")}">
+            <img src="/trip-img/${esc(file)}" alt="" loading="lazy" />
+            <div class="photo-fields">
+              <input type="text" class="photo-caption" value="${esc(photo?.caption ?? "")}" placeholder="Caption, printed under the photo" />
+              <input type="text" class="photo-alt" value="${esc(photo?.alt ?? "")}" placeholder="What is in the frame, for anyone who cannot see it" />
+            </div>
+            <div class="photo-buttons">
+              <button type="button" class="photo-up" title="Move up">&uarr;</button>
+              <button type="button" class="photo-down" title="Move down">&darr;</button>
+              <button type="button" class="photo-drop" title="Remove from this trip">&times;</button>
+            </div>
+          </div>`;
+      }
+
+      function tripList(trips) {
+        if (!trips) {
+          return `
+          <section class="card project missing">
+            <p style="margin: 0">
+              This studio is still running an older version of itself.
+              Close the black window and open the studio again.
+            </p>
+          </section>`;
+        }
+        if (!trips.length) {
+          return `
+          <section class="card project">
+            <p style="margin: 0; color: var(--graphite)">
+              No trips yet. Start one with the box above.
+            </p>
+          </section>`;
+        }
+        return trips.map(tripCard).join("");
+      }
+
+      function tripCard(t) {
+        if (t.unreadable) {
+          return `
+          <section class="card project missing">
+            <div class="project-head">
+              <strong>${esc(t.slug)}</strong>
+              <span class="slug">cannot be read: ${esc(t.unreadable)}</span>
+            </div>
+            <p style="margin: 0; color: var(--graphite); font-size: 13px">
+              This file is left alone rather than rewritten into something else.
+              Open it in an editor to fix the frontmatter.
+            </p>
+          </section>`;
+        }
+
+        const d = t.data ?? {};
+        const status = String(d.status ?? "Planned");
+        const options = TRIP_STATUSES.map(
+          (v) => `<option value="${esc(v)}"${v === status ? " selected" : ""}>${esc(v)}</option>`,
+        ).join("");
+
+        return `
+        <section class="card project" data-trip="${esc(t.slug)}">
+          <div class="project-head">
+            <strong>${esc(d.title ?? t.slug)}</strong>
+            <span class="slug">/trips/${esc(t.slug)}</span>
+            <span class="spacer"></span>
+            <span class="status" data-status></span>
+          </div>
+
+          <div class="fields">
+            <div class="field wide">
+              <span class="label">Title</span>
+              <input type="text" name="title" value="${esc(d.title ?? "")}" />
+            </div>
+            <div class="field wide">
+              <span class="label">Summary</span>
+              <input type="text" name="summary" value="${esc(d.summary ?? "")}" placeholder="One line, shown in the index. No full stop." />
+            </div>
+            <div class="field">
+              <span class="label">Status</span>
+              <select name="status">${options}</select>
+            </div>
+            <div class="field">
+              <span class="label">Dates, as printed</span>
+              <input type="text" name="date" value="${esc(d.date ?? "")}" placeholder="e.g. July 22 to 26, 2026" />
+            </div>
+            <div class="field">
+              <span class="label">Month, for ordering</span>
+              <input type="month" name="sort" value="${esc(d.sort ?? "")}" />
+            </div>
+            <div class="field">
+              <span class="label">Where</span>
+              <input type="text" name="where" value="${esc(d.where ?? "")}" placeholder="e.g. Big Island, Hawaii" />
+            </div>
+
+            <div class="field wide">
+              <span class="label">Photos</span>
+              <div class="photos" data-photos>${(d.photos ?? []).map(tripPhotoRow).join("")}</div>
+              <label class="add-photos">
+                Add photos
+                <input type="file" accept="image/*" multiple hidden />
+              </label>
+            </div>
+
+            <div class="field wide">
+              <span class="label">Write-up, markdown</span>
+              <textarea class="body" name="body" spellcheck="true">${esc(t.body ?? "")}</textarea>
+            </div>
+
+            <div class="field wide toggles">
+              <label><input type="checkbox" name="draft"${d.draft ? " checked" : ""} /> <span class="label">Hide from site</span></label>
+            </div>
+          </div>
+        </section>`;
+      }
+
+      function collectTrip(section) {
+        const val = (n) => $(`[name="${n}"]`, section);
+        const photos = [...section.querySelectorAll(".photo-row")].map((row) => ({
+          src: row.dataset.src,
+          caption: $(".photo-caption", row).value,
+          alt: $(".photo-alt", row).value,
+        }));
+        return {
+          data: {
+            photos,
+            title: val("title").value,
+            summary: val("summary").value,
+            status: val("status").value,
+            date: val("date").value,
+            sort: val("sort").value,
+            where: val("where").value,
+            draft: val("draft").checked,
+          },
+          body: val("body").value,
+        };
+      }
+
+      async function saveTrip(section) {
+        const status = $("[data-status]", section);
+        status.className = "status";
+        status.textContent = "Saving";
+
+        const res = await fetch("/api/trip", {
+          method: "POST",
+          body: JSON.stringify({ slug: section.dataset.trip, ...collectTrip(section) }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Save failed";
+          return;
+        }
+
+        status.className = "status saved";
+        status.textContent = "Saved";
+        setTimeout(() => {
+          status.textContent = "";
+          status.className = "status";
+        }, 1800);
+        refreshStatus();
+      }
+
       function collect(section) {
         const val = (n) => $(`[name="${n}"]`, section);
         return {
@@ -669,6 +852,52 @@
 
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
         $("#project-cards").innerHTML = projectList(state.projects);
+        TRIP_STATUSES = state.tripStatuses ?? TRIP_STATUSES;
+        $("#trip-cards").innerHTML = tripList(state.trips);
+
+        // One listener per trip card, the same arrangement as the projects
+        // above: photo rows come and go inside it, so the listener sits on the
+        // card rather than on the rows.
+        for (const section of document.querySelectorAll(".card.project[data-trip]")) {
+          section.addEventListener("change", () => saveTrip(section));
+
+          section.addEventListener("click", (event) => {
+            const photo = event.target.closest(".photo-row");
+            if (!photo) return;
+
+            // The file on disk is left alone. Taking a photograph off a trip
+            // is not the same as wanting it deleted.
+            if (event.target.closest(".photo-drop")) photo.remove();
+            else if (event.target.closest(".photo-up")) photo.previousElementSibling?.before(photo);
+            else if (event.target.closest(".photo-down")) photo.nextElementSibling?.after(photo);
+            else return;
+
+            saveTrip(section);
+          });
+
+          const picker = $(".add-photos input", section);
+          picker?.addEventListener("change", async () => {
+            const files = [...picker.files];
+            if (!files.length) return;
+            const status = $("[data-status]", section);
+            status.className = "status";
+
+            for (const [i, file] of files.entries()) {
+              status.textContent = `Adding ${i + 1} of ${files.length}`;
+              const res = await fetch(
+                `/api/trip/photo?slug=${encodeURIComponent(section.dataset.trip)}` +
+                  `&name=${encodeURIComponent(file.name)}`,
+                { method: "POST", body: file },
+              );
+              if (!res.ok) {
+                status.className = "status error";
+                status.textContent = (await res.json()).error ?? "Upload failed";
+                return;
+              }
+            }
+            await load();
+          });
+        }
 
         // One listener per project card. Spec rows come and go inside it, so
         // the listener sits on the card rather than on the inputs.
@@ -803,6 +1032,27 @@
         await load();
         // Straight to the thing that was just made, rather than hunting for it.
         const made = document.querySelector(`[data-project="${body.slug}"]`);
+        made?.scrollIntoView({ block: "center" });
+        made?.querySelector('[name="summary"]')?.focus();
+      });
+
+      $("#add-trip").addEventListener("click", async () => {
+        const input = $("#new-trip-title");
+        const title = input.value.trim();
+        if (!title) {
+          input.focus();
+          return;
+        }
+        const res = await fetch("/api/trip/new", {
+          method: "POST",
+          body: JSON.stringify({ title }),
+        });
+        const body = await res.json();
+        if (!res.ok) return showLog(body.error ?? "Could not start it");
+        input.value = "";
+        await load();
+        // Straight to the thing that was just made, rather than hunting for it.
+        const made = document.querySelector(`[data-trip="${body.slug}"]`);
         made?.scrollIntoView({ block: "center" });
         made?.querySelector('[name="summary"]')?.focus();
       });
