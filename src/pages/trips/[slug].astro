@@ -20,7 +20,7 @@ const { Content } = await render(entry);
 const { title, summary, date, status, where, photos } = entry.data;
 ---
 
-<BaseLayout title={title} description={summary}>
+<BaseLayout title={title} description={summary} noindex>
   <div class="mx-auto max-w-[88rem]">
     <header>
       <p class="data">

@@ -18,7 +18,15 @@ export default defineConfig({
   trailingSlash: 'never',
   build: { format: 'file' },
 
-  integrations: [react(), mdx(), sitemap()],
+  integrations: [
+    react(),
+    mdx(),
+    // /trips is noindex, so it must not be advertised in the sitemap either.
+    // Submitting a URL for indexing and then telling the crawler not to index
+    // it is a contradiction, and the sitemap is the half that is easy to
+    // forget. The noindex tag itself is set per page in the layout.
+    sitemap({ filter: (page) => !new URL(page).pathname.startsWith('/trips') }),
+  ],
 
   vite: {
     plugins: [tailwindcss()],

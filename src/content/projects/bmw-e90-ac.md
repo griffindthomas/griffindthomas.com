@@ -26,63 +26,42 @@ stack:
 draft: false
 ---
 
-The blower motor died at the start of the summer. No air out of any vent at
-any speed, with a drive from Seattle to New Hampshire booked for the end of
-August. If it was not fixed by then the trip happened in a different car, so
-there was a date on it.
+No air, any vent, any speed, with a drive from Seattle to New Hampshire booked
+for the end of August.
 
-I started with the blower motor itself. A replacement off Amazon went in and
-changed nothing.
+## In order
 
-The dealership diagnosed the Junction Box Unit and quoted $2,500 to replace
-it. I took the dash apart myself, pulled the JBU, wrote down the part number
-and then spent hours on eBay finding another one, because it was a short
-production run and they are scarce. It came, I fitted it, the blower stayed
-dead.
+1. New blower motor. No change.
+2. Dealer diagnosed the Junction Box Unit at $2,500. I pulled the dash and the
+   JBU myself, found a used one on eBay, fitted it. No change.
+3. A replacement JBU has to be flashed to the modules already in the car, and
+   the only software that runs the procedure is entirely in German. I learned
+   enough German to work the interface.
+4. The flash bricked the car. Red car symbol, which usually means the
+   electronics are not coming back. Second attempt bricked it again.
+5. A German developer on a forum found it: the car was not holding supply
+   voltage through the flash, which is how a module ends up half written. On an
+   external supply it took.
+6. The blower was still dead. The fault was the climate control module, which
+   plugs in. The air came on immediately.
 
-A replacement JBU has to be flashed to match the modules already in the car.
-The only software that does the procedure is entirely in German, so I learned
-enough German to work through the interface.
-
-The first flash failed and bricked the car. The dash came up with the red car
-symbol, which usually means the electronics are not coming back. I tried again
-and bricked it a second time.
-
-I found a German developer on a forum and emailed him. He worked out that the
-car was not holding enough supply voltage through the flash, which is exactly
-the way a module ends up half written and dead. On a proper external supply
-the reflash went through and the JBU coded correctly.
-
-The blower was still dead.
-
-The part that had failed was the climate control module. It plugs in. I
-swapped it and the air came on immediately. Nobody at the dealership had
-mentioned it.
-
-That was four or five hours a day after practice, most of a summer, while I
-was swimming for two teams. It was done a few days before we left. The
-dealership got the module wrong, and I kept going down the same path for
-weeks after they did.
+Most of a summer, four or five hours a day after practice, while swimming for
+two teams. The dealership never mentioned the module, and I kept going down
+their path for weeks after they did.
 
 ## The raccoon weekend
 
-I hit a raccoon and it took out the A/C condenser, so the front of the car had
-to come apart anyway. I used that as the excuse to do everything else at once.
+I hit a raccoon, it took out the condenser, and the front of the car had to
+come off anyway.
 
-The front clip and the cooling stack came off for the condenser. A cracked
-upper radiator hose came out with it, and the two-piece radiator drain
-petcock got rebuilt and reseated before the electronic coolant bleed. Then
-full synthetic oil, a serpentine belt, and the hydraulic lifter tick the N52
-is known for. On the intake side, a charcoal filter delete and a resonator
-delete I cut, sanded and sealed with RTV.
+- Condenser, and a cracked upper radiator hose that came out with it
+- Petcock rebuilt and reseated, then an electronic coolant bleed
+- Full synthetic oil, serpentine belt, the lifter tick the N52 is known for
+- Charcoal filter delete, and a resonator delete I cut, sanded and sealed
 
-Parts came to about $300, plus paying a shop to vacuum test the A/C, which is
-the only part of it I did not do myself. The same list at the dealership is
-north of $1,200 in labour before any markup on parts.
+$300 in parts. The same list at a dealership is north of $1,200 in labour.
 
-Two things did not go to plan. I did not own a T60 Torx for the belt
-tensioner, so I worked out how the tensioner spring released and did the job
-without one. And I rounded a block bolt on the oil filter housing gasket and
-stopped there, because a snapped bolt in the block is a whole different
-weekend and an extractor in an aluminium block is worse. That gasket is still
-on the list.
+Two I did not finish. No T60 Torx for the belt tensioner, so I worked out how
+the spring released and did it without one. And I rounded a block bolt on the
+oil filter housing gasket and stopped, because an extractor in an aluminium
+block is a worse weekend than the one it saves.

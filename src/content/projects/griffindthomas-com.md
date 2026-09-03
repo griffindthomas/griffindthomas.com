@@ -27,72 +27,39 @@ stack:
 draft: false
 ---
 
-Every page here is built into a static file and served from Cloudflare's edge.
-A push to the main branch is live in about fifty seconds. There is no database
-and nothing on the internet that can be logged into.
+Every page is built to a static file and served from Cloudflare's edge. No
+database, and nothing on the internet that can be logged into.
 
 ## Written with Claude
 
-Claude Code did the typing. Worth saying plainly, and the commit history is
-public anyway.
-
-I decide what the site does, what it looks like and what it says. A fair
-amount of the time that means telling it the thing it just built is wrong and
-doing it again. The split-flap took three attempts before the modules moved at
-all. The aircraft silhouettes took four, and the first version drew winglets
-as little bars stuck on the wings.
-
-The photographs are mine. Every registration and type on them was read off the
-airframe. The swim times are the officially timed ones. Anything that read
-like a machine wrote it got cut.
+Claude Code did the typing, and the commit history is public anyway. I decide
+what it does, what it looks like and what it says, which often means telling it
+the thing it just built is wrong: the split-flap took three attempts, the
+aircraft silhouettes four. The photographs are mine, every registration read
+off the airframe, and the swim times are the officially timed ones.
 
 ## The photo pipeline
 
-A new frame goes into an inbox folder and one command imports it. The importer
-reads the EXIF the camera wrote, so the body, the lens, the focal length, the
-shutter speed and the ISO under every photo come off the file rather than out
-of my memory. It resizes the image, builds a tiny blurred copy that is inlined
-into the page so the grid never flashes empty boxes while it loads, and writes
-a JSON record next to the photo with everything it found.
+A frame goes in an inbox folder and one command imports it.
+
+- EXIF off the file, so body, lens, focal length, shutter and ISO are not from
+  memory
+- A resize, and a tiny blurred copy inlined so the grid never flashes empty
+- A JSON record written beside the photo
+- Airfield codes checked against a real list, so a typo fails the build
 
 What it will not do is guess. Type, registration, operator and airfield are
-typed in by hand, and any field I cannot read off the airframe stays empty.
-There is a P-8A in the gallery whose last serial digit is illegible, and it is
-going to stay blank until I shoot that aircraft again.
-
-Nothing hand-entered is ever overwritten by a later import. That is the rule
-the whole pipeline is built around, because an importer that clobbers a
-correction is one you stop running.
-
-Editing happens on my own machine rather than on the site: one command opens a
-small editor on 127.0.0.1 where I can drop photos in, fix a field, and publish,
-which commits and pushes. Airfield codes are validated against a real list at
-build time, so a typo fails the build instead of quietly creating a gallery
-filter with one photo behind it.
-
-## The split-flap modules
-
-The aircraft names on the home page and the board on the spotting page are
-built out of real photo records, not decorative text. The characters are
-rendered into the page on the server, so with JavaScript switched off it is
-plain text in boxes. The flipping is added afterwards and is never the thing
-that puts the words there.
-
-The favicon is the griffin traced into vector paths, which is what lets it
-switch to a light mark when the browser is in dark mode. The version before it
-wrapped a PNG inside an SVG, which renders perfectly as an image and not at
-all as a tab icon, so the tab came up blank.
+typed by hand, and anything I cannot read off the airframe stays empty. There
+is a P-8A in the gallery whose last serial digit is illegible and it stays
+blank until I shoot that aircraft again. Nothing hand-entered is ever
+overwritten by a later import, because an importer that clobbers a correction
+is one you stop running.
 
 ## What does not work
 
-The live radar. The plan was to show traffic overhead at Sky Harbor and Boeing
-Field from the community ADS-B feeds, and all three of them refuse requests
-that come from Cloudflare's network, with 403s and 429s, while the identical
-request from my laptop returns fine. There is nothing to cache when there is
-no successful response to cache, and a fourth provider of the same kind will
-behave the same way. The endpoint reports itself unavailable rather than
-inventing aircraft.
-
-The way out is my own receiver. There is a Raspberry Pi and an RTL-SDR in West
-Seattle already feeding, and pointing this site at that instead of at a public
-feed is the fix. It waits until I am back there with access to the box.
+The live radar. All three community ADS-B feeds refuse requests from
+Cloudflare's network while the identical request from my laptop returns fine,
+and there is nothing to cache when there is no successful response. The
+endpoint reports itself unavailable rather than inventing aircraft. The fix is
+my own receiver, and there is a Pi and an RTL-SDR in West Seattle already
+feeding. It waits until I am back there.

@@ -1,0 +1,10 @@
+# Everything here is meant to be found except /trips.
+#
+# /trips is NOT disallowed below on purpose. It carries a noindex tag, and a
+# crawler that is blocked here never fetches the page and so never reads that
+# tag, which leaves the URL eligible to show up in results anyway on the
+# strength of a link alone. Letting it be crawled is what gets it dropped.
+User-agent: *
+Allow: /
+
+Sitemap: https://griffindthomas.com/sitemap-index.xml

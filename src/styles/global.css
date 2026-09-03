@@ -280,13 +280,53 @@
   color: var(--color-ink);
 }
 
+/* Lists, with no list marker anywhere.
+ *
+ * A bullet glyph is the wrong register for this site. Nothing else on it is
+ * decorated, and the drawing-office equivalent of a bulleted list is a ruled
+ * schedule: items stacked on hairlines, no dots. So that is what a list is
+ * here, and it is the same rule and the same rhythm the specification table
+ * and the ledgers already use, which is the point of doing it this way rather
+ * than inventing a third thing.
+ *
+ * This is deliberately global. Anything written into a project or a trip from
+ * the studio gets the treatment without anyone having to remember it. */
 .copy ul,
 .copy ol {
-  padding-left: 1.25em;
+  list-style: none;
+  padding-left: 0;
+}
+
+.copy li {
+  border-top: var(--rule-width) solid var(--color-rule);
+  padding: 0.5rem 0;
 }
 
 .copy li + li {
-  margin-top: 0.4em;
+  margin-top: 0;
+}
+
+/* An ordered list keeps its numbers, because where the order matters the
+   number is information rather than decoration. Mono and zero-padded, which is
+   how every other counted thing on the site is set. */
+.copy ol {
+  counter-reset: step;
+}
+
+.copy ol li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0 1rem;
+}
+
+.copy ol li::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--color-graphite);
+  padding-top: 0.35em;
 }
 
 /* ---------------------------------------------------------------------------

@@ -153,6 +153,12 @@ const swimcloud = profile("swimcloud");
     <p class="data">
       <span>{swims.length} swims</span>
       <span class="text-rule mx-2">/</span>
+      {/* The one thing the plot does not say for itself. Everything else the
+          two paragraphs here used to explain is drawn: the faint marks and the
+          record line are in the legend, the first and best times are printed
+          beside it, and the surgery is a dated marker on the plot. */}
+      <span>Faster is up</span>
+      <span class="text-rule mx-2">/</span>
       <a
         href={swimcloud.href}
         target="_blank"
@@ -164,19 +170,6 @@ const swimcloud = profile("swimcloud");
       </a>
     </p>
   </div>
-
-  <p class="measure text-graphite mt-5">
-    Breaststroke. Every race I have swum is on here, in both courses. The faint marks
-    are all of them, and the solid line is the record, each best holding until it was
-    beaten. Faster is up. The gap after May 2024 is shoulder surgery. Both short course
-    bests came that December.
-  </p>
-
-  <p class="measure text-graphite mt-4">
-    Yards and metres are not the same race, so each course is drawn against its own
-    scale, short course on the left and long course on the right. Compare the shapes,
-    not the heights.
-  </p>
 
   <div class="mt-8 space-y-12">
     {
