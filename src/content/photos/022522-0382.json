@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 787-8 Dreamliner",
+  "typeCode": "B788",
+  "operator": "Japan Airlines",
+  "registration": "JA843J",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-02-25T12:51:02",
+  "timezone": "America/Los_Angeles",
+  "image": "./022522-0382.jpg",
+  "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAADwAwCdASoYABAAPu1oqk6ppiQiMAgBMB2JQBOkDgBgcaAHdF/W5WaQAP7eculca23RCoDZN3ZmkAAx1m8vJk5q1gPeaD4/PqC6V3+emvBLs3uSK6lJFI7vd9NuvAhV674Df4EqD1wSiV2k9OQ7kGSPtOFtxTgAAAA=",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 155,
+    "aperture": 5.6,
+    "shutter": "1/1000",
+    "iso": 200,
+    "rawDate": "2022:02:25 12:51:02"
+  },
+  "source": {
+    "file": "022522_0382.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 4798786,
+    "originalLongEdge": 3984
+  }
+}

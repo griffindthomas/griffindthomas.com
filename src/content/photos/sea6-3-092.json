@@ -1,11 +1,11 @@
 {
-  "aircraft": "Boeing 737-8",
+  "aircraft": "Boeing 737 MAX 8",
   "typeCode": "B38M",
   "operator": "Alaska Airlines",
   "registration": "N801AK",
   "airport": "KSEA",
   "location": "",
-  "caption": "Alaska's first 737-8, msn 67802.",
+  "caption": "Alaska's first 737 MAX 8, msn 67802.",
   "tags": [
     "airliner"
   ],

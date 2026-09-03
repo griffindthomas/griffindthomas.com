@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A321neo",
+  "typeCode": "A21N",
+  "operator": "Alaska Airlines",
+  "registration": "N921VA",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "The very first Virgin Atlantic A321neo, acquired by Alaska in the merger. Later sold to American Airlines and reregistered as N950XV",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-05-29T11:36:04",
+  "timezone": "America/Los_Angeles",
+  "image": "./052922-25.jpg",
+  "lqip": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAADwAwCdASoYABAAPu1kq04ppaQiMAgBMB2JYwCdACHYV7BOsyIZ9N4AAP7no+dTn0GdcQUWCIm5iwRYbVErq1uACAgj6v0rA0NkPGBCWnHyKfPH7t5iq4HXBFvHutYh4Hjkjc9eYrDN+cdgXbS0Jl46zFbex8JH/5wCLgAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 200,
+    "aperture": 9,
+    "shutter": "1/640",
+    "iso": 400,
+    "rawDate": "2022:05:29 11:36:04"
+  },
+  "source": {
+    "file": "052922-25.jpg",
+    "width": 2162,
+    "height": 1441,
+    "bytes": 1927629,
+    "originalLongEdge": 2162
+  }
+}

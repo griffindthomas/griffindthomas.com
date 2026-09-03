@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A350-900",
+  "typeCode": "A359",
+  "operator": "Singapore Airlines",
+  "registration": "9V-SMV",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-08-11T09:54:42",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-2579.jpg",
+  "lqip": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwBACdASoYABAAPu1iqU2ppaOiMAgBMB2JQBOiP/wHkU06XVKFgXg9S6QA/hCvshuXYB5/ojVqiBuLE+TsvQUc5isFZuqf7E8aBEsKG3L4ilbu0s3w4b5bMGcPN3w3Qs5rYPxAm7mpegOIQldQKBAXsAA=",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 140,
+    "aperture": 10,
+    "shutter": "1/500",
+    "iso": 800,
+    "rawDate": "2022:08:11 09:54:42"
+  },
+  "source": {
+    "file": "IMG_2579.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 9496934,
+    "originalLongEdge": 4893
+  }
+}

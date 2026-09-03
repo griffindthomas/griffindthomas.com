@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 787-9 Dreamliner",
+  "typeCode": "B789",
+  "operator": "All Nippon Airways",
+  "registration": "JA898A",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-05-29T13:07:19",
+  "timezone": "America/Los_Angeles",
+  "image": "./052922-18.jpg",
+  "lqip": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQAwCdASoYABAAPu1mq04ppaQiMAgBMB2JYwCdABez1oeAJx0BPYAA/c1KItqEZxnFvMr4r6YcJmGdGxieFhwVM1ElbBtuB7mzg3SO8P7qvKRXD/0Y+G5lTNLBWZ8X7FDGdmKPIQ8/v/zgDBFk2puwgAA=",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 140,
+    "aperture": 9,
+    "shutter": "1/640",
+    "iso": 400,
+    "rawDate": "2022:05:29 13:07:19"
+  },
+  "source": {
+    "file": "052922-18.jpg",
+    "width": 2281,
+    "height": 1520,
+    "bytes": 2025836,
+    "originalLongEdge": 2281
+  }
+}

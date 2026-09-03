@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 9",
+  "typeCode": "B39M",
+  "operator": "Alaska Airlines",
+  "registration": "N919AK",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-02-25T11:43:47",
+  "timezone": "America/Los_Angeles",
+  "image": "./022522-0173.jpg",
+  "lqip": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAABwBACdASoYABAAPu1iqk4ppaQiMAgBMB2JZACdMoMkfEml0douXCG7dv8pAAD+Upcl33dCzRYm9GaxxOT7ztpCyQMuTrZ3GvUJ3gyrXUp3b7J2e96dPLQJZiUnBVB8nbcIs5d/les3gVtp566YqQ4r0QAAAA==",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 170,
+    "aperture": 5.6,
+    "shutter": "1/1000",
+    "iso": 400,
+    "rawDate": "2022:02:25 11:43:47"
+  },
+  "source": {
+    "file": "022522_0173.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 5626211,
+    "originalLongEdge": 3827
+  }
+}

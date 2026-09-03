@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-800",
+  "typeCode": "B738",
+  "operator": "American Airlines",
+  "registration": "N837NN",
+  "airport": "",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": true,
+  "shotAt": "2022-06-06T13:55:28",
+  "timezone": "America/New_York",
+  "image": "./060622-0179.jpg",
+  "lqip": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAADQAwCdASoYABAAPu1kqk2ppaQiMAgBMB2JZwDImCHM4OMQ2NNlbwAA/uEFM0WvFHGwLah5Y3iGZ2O2b22uxgntibtCOSz0fvkE9EE5IwMlkyRzFUcLqAY5QV+D5OHxkp7HbuC1oBNqmJa+o7gxcAAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 120,
+    "aperture": 4.5,
+    "shutter": "1/500",
+    "iso": 200,
+    "rawDate": "2022:06:06 13:55:28"
+  },
+  "source": {
+    "file": "060622_0179.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 7642028,
+    "originalLongEdge": 3984
+  }
+}

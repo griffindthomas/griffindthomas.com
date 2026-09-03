@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A350-900",
+  "typeCode": "A359",
+  "operator": "Delta",
+  "registration": "N576DZ",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-08-11T11:04:52",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-2703.jpg",
+  "lqip": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADwAwCdASoYABAAPu1kqU4ppaOiMAgBMB2JYwCdACHYJlPjk32IatCcAP646nnckn3At+Y7GbbKw024tR0BiGjgqOix5RGzPmXmKVurKB85CBVbrayxZMdOrdq8pg75OBBZdNnIpUbG1jFtL5SDDVFwAAA=",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 150,
+    "aperture": 10,
+    "shutter": "1/640",
+    "iso": 800,
+    "rawDate": "2022:08:11 11:04:52"
+  },
+  "source": {
+    "file": "IMG_2703.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 11174090,
+    "originalLongEdge": 5531
+  }
+}

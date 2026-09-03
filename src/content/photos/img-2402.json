@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A320-200",
+  "typeCode": "A320",
+  "operator": "Alaska Airlines",
+  "registration": "N844VA",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "N844VA is an Airbus A320-200 that originally flew for Virgin America and later Alaska Airlines before being transferred to Tunisair as TS-ITD.",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2022-08-11T08:58:44",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-2402.jpg",
+  "lqip": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwBACdASoYABAAPu1kq04ppaQiMAgBMB2JZACdIExDAlZcRUAxILY2fSAAymyDjRlB1qBFGJe25TDj7kXUrnQAE9p0vCNDuKLsqzRyyvZp6yAV7X4OaIN1fav47XLXAAA=",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 80,
+    "aperture": 5,
+    "shutter": "1/200",
+    "iso": 100,
+    "rawDate": "2022:08:11 08:58:44"
+  },
+  "source": {
+    "file": "IMG_2402.JPG",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 13419985,
+    "originalLongEdge": 4956
+  }
+}
