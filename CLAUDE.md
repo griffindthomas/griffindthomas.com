@@ -231,3 +231,24 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## /trips is gated, and `prerender = false` is what makes that work
+
+Every route under `/trips` is rendered by the Worker, not prerendered. That is
+not a performance choice and it is not optional: the lock lives in
+`src/middleware.ts`, middleware only sees requests the Worker handles, and a
+prerendered page is served by Cloudflare's asset handler before any Worker code
+runs. Put `prerender` back to the default on a trips route and that page is
+served to everyone with no passphrase, silently, with nothing failing.
+
+`npm run build` should emit no `dist/client/trips*` files at all. If it does,
+the gate has a hole in it.
+
+The passphrase is the `TRIPS_PASSPHRASE` Cloudflare secret, declared in
+`astro.config.mjs` under `env.schema` and read through `astro:env/server`. It is
+never in this repo, which is public. Set it with
+`wrangler secret put TRIPS_PASSPHRASE`, or in the dashboard under Settings ->
+Variables and Secrets. Locally, `astro preview` reads it from a `.dev.vars`
+**next to the generated config in `dist/server/`**, not the one in the project
+root; `astro build` wipes `dist/`, so that file has to be put back after every
+build. A missing secret is open in dev and locked in production.
