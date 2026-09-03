@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
 
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
@@ -17,6 +17,20 @@ export default defineConfig({
   // to the trailing-slash form before serving the page.
   trailingSlash: 'never',
   build: { format: 'file' },
+
+  /**
+   * The passphrase for /trips. Secret, server only, and optional so that a
+   * checkout without it still builds: the middleware treats a missing one as
+   * open in development and locked in production.
+   *
+   * Set it with `wrangler secret put TRIPS_PASSPHRASE`, or in a local .env for
+   * dev. It must never be committed, and this repo is public.
+   */
+  env: {
+    schema: {
+      TRIPS_PASSPHRASE: envField.string({ context: 'server', access: 'secret', optional: true }),
+    },
+  },
 
   integrations: [
     react(),

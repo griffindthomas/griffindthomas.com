@@ -36,18 +36,32 @@ export const SITE = {
    */
   home: {
     label: "Seattle, Washington",
-    lat: 47.5707,
-    lon: -122.3868,
+    /**
+     * Two decimals, not four, and that is the whole point of them being here.
+     *
+     * Four decimals is about eleven metres, which is a building. This pair is
+     * printed on the home page, which is indexed on purpose and sits outside
+     * the gate on /trips, so it is the one piece of location on this site that
+     * anyone at all can read. A kilometre is enough to say West Seattle and
+     * not enough to say which house.
+     */
+    lat: 47.57,
+    lon: -122.39,
+    dp: 2,
   },
 } as const;
 
 /**
- * Coordinates as they are printed on this site: four decimal places, hemisphere
- * as a letter in front. One function, because the home page and the footer both
- * print a pair and they must not drift into two formats.
+ * Coordinates as they are printed on this site: hemisphere as a letter in
+ * front, four decimal places by default. One function, because the home page
+ * and the footer both print a pair and they must not drift into two formats.
+ *
+ * `dp` is there for one caller. Sky Harbor is a published airport reference and
+ * gets the usual four. The home pair is deliberately coarser, for the reason
+ * written against it above.
  */
-export const coordinates = (lat: number, lon: number) =>
-  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(4)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(4)}`;
+export const coordinates = (lat: number, lon: number, dp = 4) =>
+  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(dp)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(dp)}`;
 
 /**
  * Off-site profiles. `handle` is what gets displayed, so the link text is the

@@ -2,6 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ElevationLadder from '../../components/ElevationLadder.astro';
 import { HIKES } from '../../lib/trips';
+/**
+ * Rendered by the Worker, not prerendered, so the gate in src/middleware.ts
+ * runs in front of it. A prerendered page here would be served straight off
+ * Cloudflare's asset handler and the lock would never be consulted.
+ */
+export const prerender = false;
 ---
 
 <BaseLayout

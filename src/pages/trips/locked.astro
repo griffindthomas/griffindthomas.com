@@ -1,0 +1,73 @@
+---
+/**
+ * What anyone without the passphrase gets.
+ *
+ * Reached by rewrite from the middleware, so the address bar still reads
+ * whichever trips page was asked for and unlocking lands there rather than
+ * back at the top.
+ *
+ * Deliberately says almost nothing. A locked page that lists what is behind it
+ * has told a scraper the interesting part anyway.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { safeReturnPath } from '../../lib/trips-gate';
+
+export const prerender = false;
+
+const next = safeReturnPath(Astro.url.searchParams.get('next'));
+const wrong = Astro.url.searchParams.get('wrong') === '1';
+
+// A wrong passphrase is a wrong passphrase, not a page that is missing. 401
+// is the honest code and it keeps the page out of anything that indexes on
+// status alone.
+Astro.response.status = 401;
+---
+
+<BaseLayout title="Trips" description="This section is not public." noindex>
+  <div class="mx-auto flex max-w-[32rem] flex-col justify-center py-24">
+    <p class="data">Locked</p>
+    <h1 class="font-display mt-5 text-5xl">Trips</h1>
+
+    <p class="text-graphite mt-6 leading-relaxed">
+      This part is not public. Griffin has the passphrase.
+    </p>
+
+    <form method="post" action="/trips/unlock" class="mt-10">
+      <input type="hidden" name="next" value={next} />
+
+      <label for="passphrase" class="data block">Passphrase</label>
+
+      <div class="mt-3 flex flex-wrap gap-3">
+        <input
+          id="passphrase"
+          name="passphrase"
+          type="password"
+          autocomplete="current-password"
+          required
+          autofocus
+          aria-describedby={wrong ? 'wrong' : undefined}
+          class="border-rule focus:border-ink min-w-0 flex-1 border bg-transparent px-3 py-2 font-mono text-sm transition-colors outline-none"
+        />
+
+        <button
+          type="submit"
+          class="data border-rule hover:border-ink hover:text-ink border px-4 py-2 transition-colors"
+        >
+          Unlock
+        </button>
+      </div>
+
+      {
+        wrong && (
+          <p id="wrong" role="alert" class="data text-signal mt-3">
+            That is not it. Try again.
+          </p>
+        )
+      }
+    </form>
+
+    <p class="data text-graphite mt-10">
+      <a href="/" class="hover:text-signal transition-colors">Back to the site</a>
+    </p>
+  </div>
+</BaseLayout>

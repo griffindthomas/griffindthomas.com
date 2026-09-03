@@ -1,5 +1,4 @@
 ---
-import type { GetStaticPaths } from 'astro';
 import { getCollection, render } from 'astro:content';
 import { Image } from 'astro:assets';
 
@@ -9,13 +8,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
  * The discrete trips. Static routes like /trips/hiking win over this one, so
  * the standing logs keep their own pages and only the content entries land
  * here.
+ *
+ * Rendered by the Worker rather than prerendered, for the same reason as the
+ * rest of the section: the gate in src/middleware.ts only sees requests the
+ * Worker handles, and a prerendered page is served around it.
+ *
+ * That is why this looks up the entry from the slug instead of listing the
+ * routes with getStaticPaths, which only builds pages ahead of time.
  */
-export const getStaticPaths = (async () => {
-  const entries = await getCollection('trips', ({ data }) => !data.draft);
-  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
-}) satisfies GetStaticPaths;
+export const prerender = false;
 
-const { entry } = Astro.props;
+const entries = await getCollection('trips', ({ data }) => !data.draft);
+const entry = entries.find((candidate) => candidate.id === Astro.params.slug);
+if (!entry) return new Response('Not found', { status: 404 });
+
 const { Content } = await render(entry);
 const { title, summary, date, status, where, photos } = entry.data;
 ---

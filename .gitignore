@@ -46,3 +46,8 @@ src/components/UavExploded.astro
 # public domain, and re-downloadable; the projected output in src/data is what
 # ships and what is committed.
 .cache/
+
+# Local secrets for `npm run preview` (wrangler reads this file). Same rule as
+# .env above: never committed, and this repo is public.
+.dev.vars
+.dev.vars.*
