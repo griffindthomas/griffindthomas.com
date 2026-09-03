@@ -110,6 +110,18 @@ const shown = mode === "caught" ? caught : wanted;
     gap: 1.75rem 1rem;
   }
 
+  /* On a phone 7.5rem only ever leaves room for two columns, which makes each
+     drawing about 160px square. Four of them then fill more than half the
+     screen and the twenty on the wanted board run to ten rows of it. Below
+     40rem the minimum comes down far enough for three, which takes a third off
+     every drawing and still leaves the name and the wingspan on one line. */
+  @media (max-width: 40rem) {
+    .plates {
+      grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+      gap: 1.25rem 0.75rem;
+    }
+  }
+
   .plate {
     display: block;
     width: 100%;

@@ -28,7 +28,12 @@ import { HIKES } from '../../lib/trips';
         <p class="data">Newest first</p>
       </div>
 
-      <div class="scroller mt-6">
+      {/* Focusable on purpose. The table scrolls sideways on a narrow screen
+          rather than pushing the page along with it, and a region that scrolls
+          has to be reachable by keyboard or the columns past the edge are only
+          available to a pointer. The label is what a screen reader announces
+          on arriving in it. */}
+      <div class="scroller mt-6" tabindex="0" role="region" aria-label="Hike log">
         <table class="log">
           <thead>
             <tr>
@@ -52,7 +57,7 @@ import { HIKES } from '../../lib/trips';
                     {hike.gainEstimated && '~'}
                     {hike.gainFt.toLocaleString()} ft
                   </td>
-                  <td class="num">{hike.time ?? <span class="text-rule">n/a</span>}</td>
+                  <td class="num">{hike.time ?? <span class="text-graphite">n/a</span>}</td>
                 </tr>
               ))
             }

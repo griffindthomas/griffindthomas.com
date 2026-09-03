@@ -52,7 +52,12 @@ const ledger = DRIVES;
         <p class="data">Point at a row to lift that route off the map</p>
       </div>
 
-      <div class="scroller mt-6">
+      {/* Focusable on purpose. The table scrolls sideways on a narrow screen
+          rather than pushing the page along with it, and a region that scrolls
+          has to be reachable by keyboard or the columns past the edge are only
+          available to a pointer. The label is what a screen reader announces
+          on arriving in it. */}
+      <div class="scroller mt-6" tabindex="0" role="region" aria-label="Drive ledger">
         <table class="log">
           <thead>
             <tr>
@@ -164,11 +169,15 @@ const ledger = DRIVES;
     border-bottom: 0;
   }
 
-  /* The row and the route on the map light up together. */
+  /* The row and the route on the map light up together. The tint is shared
+     with hover and it is deliberately quiet, which is exactly why the focus
+     ring stays: a keyboard user needs to see which row they are on, and a
+     tint this faint is not on its own an indicator. The global rule in
+     global.css says not to drop the ring without replacing it, and an earlier
+     version of this block dropped it. */
   .log tbody tr:hover,
   .log tbody tr:focus-within {
     background: var(--color-paper-sunk);
-    outline: none;
   }
 
   .log tbody tr:hover .route,

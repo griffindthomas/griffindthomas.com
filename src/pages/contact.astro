@@ -29,9 +29,15 @@ import { PROFILES, RESUME_PDF, SITE } from "../config/site";
 
       <div class="lg:col-span-10">
         <div class="flex flex-wrap items-baseline gap-x-6 gap-y-3">
+          {/* The address is one 26 character word, and at text-3xl it measures
+              369px against the 335px a 375px phone has to give it, so the last
+              letter of .com fell to a line of its own. Sized off the viewport
+              below the sm breakpoint it fits on one line from 280px up. The
+              cap is the old size, so nothing changes on a wide screen, and
+              break-all stays as the last resort under 280px. */}
           <a
             href={`mailto:${SITE.email}`}
-            class="font-display hover:text-signal text-3xl break-all transition-colors sm:text-4xl"
+            class="font-display hover:text-signal text-[clamp(1.05rem,6.9vw,1.875rem)] break-all transition-colors sm:text-4xl"
           >
             {SITE.email}
           </a>
