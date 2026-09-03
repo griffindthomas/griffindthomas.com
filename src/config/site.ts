@@ -26,42 +26,15 @@ export const SITE = {
     lat: 33.4342,
     lon: -112.0116,
   },
-  /**
-   * West Seattle.
-   *
-   * The home page prints THESE coordinates under the Tempe label, which looks
-   * like a mistake and is not one. The label is where he is; the numbers are
-   * where he is from. Anyone who reads coordinates will notice they disagree,
-   * and that is the point of them being there.
-   */
-  home: {
-    label: "Seattle, Washington",
-    /**
-     * Two decimals, not four, and that is the whole point of them being here.
-     *
-     * Four decimals is about eleven metres, which is a building. This pair is
-     * printed on the home page, which is indexed on purpose and sits outside
-     * the gate on /trips, so it is the one piece of location on this site that
-     * anyone at all can read. A kilometre is enough to say West Seattle and
-     * not enough to say which house.
-     */
-    lat: 47.57,
-    lon: -122.39,
-    dp: 2,
-  },
 } as const;
 
 /**
- * Coordinates as they are printed on this site: hemisphere as a letter in
- * front, four decimal places by default. One function, because the home page
- * and the footer both print a pair and they must not drift into two formats.
- *
- * `dp` is there for one caller. Sky Harbor is a published airport reference and
- * gets the usual four. The home pair is deliberately coarser, for the reason
- * written against it above.
+ * Coordinates as printed on this site: hemisphere as a letter in front, four
+ * decimal places. Only the footer prints a pair, and that pair is Sky Harbor,
+ * which is a published airport reference rather than anywhere Griffin lives.
  */
-export const coordinates = (lat: number, lon: number, dp = 4) =>
-  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(dp)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(dp)}`;
+export const coordinates = (lat: number, lon: number) =>
+  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(4)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(4)}`;
 
 /**
  * Off-site profiles. `handle` is what gets displayed, so the link text is the
