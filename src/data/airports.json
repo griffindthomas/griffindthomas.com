@@ -38,5 +38,13 @@
     "city": "Mesa, Arizona",
     "lat": 33.3078,
     "lon": -111.6555
+  },
+  "KBOS": {
+    "icao": "KBOS",
+    "iata": "BOS",
+    "name": "Boston Logan International",
+    "city": "Boston, Massachusetts",
+    "lat": 42.3629,
+    "lon": -71.0064
   }
 }
