@@ -824,7 +824,85 @@
         $("#summary").textContent =
           `${photoCount} photos / ${gaps.length} incomplete / ` +
           `${changed.length} unpublished change${changed.length === 1 ? "" : "s"}`;
-        $("#publish").disabled = changed.length === 0;
+        // Deliberately not disabled when the count is zero. Disabling it was
+        // what swallowed the click that would have committed the edit in the
+        // first place, and the server already answers "Nothing to publish".
+      }
+
+      /**
+       * Saves in flight, and the per-card debounce timers feeding them.
+       *
+       * A text input only fires `change` when it loses focus, and the thing
+       * that usually takes focus off it is the Publish button. That stranded
+       * the edit: nothing had saved yet, so Publish was still disabled, and a
+       * click on a disabled button does nothing at all, not even blur the
+       * field. The keystrokes went nowhere and it looked like there was
+       * nothing to publish.
+       *
+       * So a card saves as you type, debounced, and Publish flushes whatever
+       * is still in flight before it runs.
+       */
+      const pendingSaves = new Set();
+      /**
+       * Cards with a debounced save still counting down, and the saver each
+       * one needs. A Map rather than a WeakMap because flushSaves has to walk
+       * it: a save that has not fired yet is not in `pendingSaves`, so waiting
+       * on that set alone would miss the most recent keystrokes, which are
+       * exactly the ones at risk. Cards live as long as the page, so holding
+       * strong references to them costs nothing.
+       */
+      const saveTimers = new Map();
+
+      function track(promise) {
+        pendingSaves.add(promise);
+        promise.finally(() => pendingSaves.delete(promise));
+        return promise;
+      }
+
+      /** Save this card shortly after the typing stops. */
+      function autosave(section, saver) {
+        const queued = saveTimers.get(section);
+        if (queued) clearTimeout(queued.timer);
+        saveTimers.set(section, {
+          saver,
+          timer: setTimeout(() => {
+            saveTimers.delete(section);
+            track(saver(section));
+          }, 700),
+        });
+      }
+
+      /** Save now, cancelling any debounce already counting down for it. */
+      function saveNow(section, saver) {
+        const queued = saveTimers.get(section);
+        if (queued) clearTimeout(queued.timer);
+        saveTimers.delete(section);
+        return track(saver(section));
+      }
+
+      /**
+       * Everything typed is on disk before anything is committed.
+       *
+       * Blur first, because the field being edited commits on blur, then wait
+       * for that save and any debounced one still counting down.
+       */
+      async function flushSaves() {
+        // Blur first: a field the browser considers dirty commits on blur, and
+        // that is the case for anything actually typed by hand.
+        document.activeElement?.blur?.();
+
+        // Then run anything still waiting out its debounce, rather than
+        // waiting the rest of the delay or losing it.
+        for (const [section, queued] of [...saveTimers]) {
+          clearTimeout(queued.timer);
+          saveTimers.delete(section);
+          track(queued.saver(section));
+        }
+
+        // A save can queue another, so settle repeatedly rather than once.
+        for (let i = 0; i < 3 && pendingSaves.size; i += 1) {
+          await Promise.allSettled([...pendingSaves]);
+        }
       }
 
       async function refreshStatus() {
@@ -859,7 +937,8 @@
         // above: photo rows come and go inside it, so the listener sits on the
         // card rather than on the rows.
         for (const section of document.querySelectorAll(".card.project[data-trip]")) {
-          section.addEventListener("change", () => saveTrip(section));
+          section.addEventListener("change", () => saveNow(section, saveTrip));
+          section.addEventListener("input", () => autosave(section, saveTrip));
 
           section.addEventListener("click", (event) => {
             const photo = event.target.closest(".photo-row");
@@ -902,7 +981,8 @@
         // One listener per project card. Spec rows come and go inside it, so
         // the listener sits on the card rather than on the inputs.
         for (const section of document.querySelectorAll(".card.project[data-project]")) {
-          section.addEventListener("change", () => saveProject(section));
+          section.addEventListener("change", () => saveNow(section, saveProject));
+          section.addEventListener("input", () => autosave(section, saveProject));
 
           section.addEventListener("click", (event) => {
             const row = event.target.closest(".drop-spec");
@@ -966,7 +1046,8 @@
 
         // One listener per photo card, not per input.
         for (const section of document.querySelectorAll(".card:not(.project)")) {
-          section.addEventListener("change", () => save(section));
+          section.addEventListener("change", () => saveNow(section, save));
+          section.addEventListener("input", () => autosave(section, save));
           // Live, because the point is to catch a code that lands nowhere
           // BEFORE it is saved and quietly missing from the type board.
           const code = section.querySelector('[name="typeCode"]');
@@ -1102,6 +1183,10 @@
       $("#import").addEventListener("click", () => runImport());
 
       $("#publish").addEventListener("click", async () => {
+        // Commit whatever is still being typed before asking what to call it.
+        await flushSaves();
+        await refreshStatus();
+
         const message = prompt("Describe the change", "Update photos");
         if (message === null) return;
 

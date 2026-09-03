@@ -23,7 +23,7 @@ interface Props {
   limit?: number;
 }
 
-const { photos, limit = 10 } = Astro.props;
+const { photos, limit = 5 } = Astro.props;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -42,18 +42,30 @@ function boardName(aircraft: string): string {
 }
 
 /**
- * One row per distinct aircraft, operator and field.
+ * One row per aircraft type, newest first.
  *
- * Six photographs from one airshow would otherwise be six identical rows,
- * which is a worse board than three varied ones. The most recent frame of
- * each combination wins, and `photos` arrives newest first.
+ * Six photographs from one airshow would otherwise be six near-identical rows,
+ * which is a worse board than five varied ones. Keying on the type alone,
+ * rather than on type and operator and field together, is what guarantees five
+ * different aircraft rather than the same airframe under three headings.
+ *
+ * The type code is the key where there is one, since that is the field the
+ * library already uses to mean "this kind of aeroplane". The printed name is
+ * the fallback, because a photo with no code should still not duplicate one
+ * that has the same name.
+ *
+ * Five, not ten, and the reason is weight rather than taste. Every character
+ * on this board is its own element so it can flip independently, and at ten
+ * rows the board was 638 elements against 815 for the whole of the rest of the
+ * page: 44% of the DOM for the thing above the photographs. Halving the rows
+ * halves that, and `photos` arrives newest first so the five are the five most
+ * recent.
  */
 const seen = new Set<string>();
 const chosen: Photo[] = [];
 for (const p of photos) {
-  const where = p.field ? p.field.icao : p.data.location;
-  const key = `${p.data.aircraft}|${p.data.operator}|${where}`;
-  if (seen.has(key)) continue;
+  const key = p.data.typeCode || p.data.aircraft;
+  if (!key || seen.has(key)) continue;
   seen.add(key);
   chosen.push(p);
   if (chosen.length >= limit) break;

@@ -18,13 +18,14 @@ const elsewhere = [
   >
     <div class="data">
       <p>&copy; {year} {SITE.name}</p>
-      {/* Sky Harbor, and the second way into /trips. The link carries a real
-          label rather than being hidden from assistive tech: keeping the
-          section out of the nav is a choice about visual noise, not a reason
-          to make it unreachable for anyone reading with a screen reader. */}
+      {/* West Seattle, deliberately not the Tempe label above it, and the only
+          way into /trips. The link carries a real label rather than being
+          hidden from assistive tech: keeping the section out of the nav is a
+          choice about visual noise, not a reason to make it unreachable for
+          anyone reading with a screen reader. */}
       <p class="mt-1">
         <a href="/trips" aria-label="Trips" class="hover:text-signal transition-colors">
-          {coordinates(SITE.base.lat, SITE.base.lon)}
+          {coordinates(SITE.home.lat, SITE.home.lon, SITE.home.dp)}
         </a>
       </p>
     </div>

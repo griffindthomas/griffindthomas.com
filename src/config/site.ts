@@ -20,21 +20,36 @@ export const SITE = {
    * It is already printed in the resume PDF, so it must keep working.
    */
   email: "contact@griffindthomas.com",
-  /** Sky Harbor. Used by the footer readout and the home page dateline. */
+  /** Where he is. The home page prints this label above his name. */
   base: {
     label: "Tempe, Arizona",
     lat: 33.4342,
     lon: -112.0116,
   },
+  /**
+   * West Seattle, and where he is from. The footer prints THIS pair, not the
+   * Tempe one above it, which looks like a mistake and is not one.
+   *
+   * Two decimals, about a kilometre. Four would be roughly eleven metres,
+   * which is a building, and this page is indexed on purpose and sits outside
+   * the gate on /trips: it is the one piece of location anyone at all can
+   * read. A kilometre says West Seattle without saying which house.
+   */
+  home: {
+    label: "Seattle, Washington",
+    lat: 47.57,
+    lon: -122.39,
+    dp: 2,
+  },
 } as const;
 
 /**
- * Coordinates as printed on this site: hemisphere as a letter in front, four
- * decimal places. Only the footer prints a pair, and that pair is Sky Harbor,
- * which is a published airport reference rather than anywhere Griffin lives.
+ * Coordinates as printed on this site: hemisphere as a letter in front, and
+ * four decimal places unless a caller asks for fewer. The footer asks for two,
+ * for the reason written against SITE.home.
  */
-export const coordinates = (lat: number, lon: number) =>
-  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(4)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(4)}`;
+export const coordinates = (lat: number, lon: number, dp = 4) =>
+  `${lat >= 0 ? "N" : "S"}${Math.abs(lat).toFixed(dp)} ${lon >= 0 ? "E" : "W"}${Math.abs(lon).toFixed(dp)}`;
 
 /**
  * Off-site profiles. `handle` is what gets displayed, so the link text is the
