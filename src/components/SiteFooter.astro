@@ -19,13 +19,19 @@ const elsewhere = [
     <div class="data">
       <p>&copy; {year} {SITE.name}</p>
       {/* West Seattle, deliberately not the Tempe label above it, and the only
-          way into /trips. The link carries a real label rather than being
-          hidden from assistive tech: keeping the section out of the nav is a
-          choice about visual noise, not a reason to make it unreachable for
-          anyone reading with a screen reader. */}
+          way into /trips. Keeping the section out of the nav is a choice about
+          visual noise, not a reason to make it unreachable for anyone reading
+          with a screen reader, so the destination is said out loud.
+
+          It is appended as hidden text rather than set with aria-label. An
+          aria-label replaces the accessible name outright, which left the link
+          reading as "Trips" while showing coordinates, and a control whose
+          spoken name shares no words with its visible text cannot be activated
+          by someone using speech input to say what they can see. */}
       <p class="mt-1">
-        <a href="/trips" aria-label="Trips" class="hover:text-signal transition-colors">
+        <a href="/trips" class="hover:text-signal transition-colors">
           {coordinates(SITE.home.lat, SITE.home.lon, SITE.home.dp)}
+          <span class="sr-only">Trips</span>
         </a>
       </p>
     </div>

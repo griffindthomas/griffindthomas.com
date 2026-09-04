@@ -311,6 +311,8 @@ const PLAIN: Record<string, string> = {
   RVRNO: 'Runway visual range not available',
   TSNO: 'Thunderstorm detector not working',
   FZRANO: 'Freezing rain sensor not working',
+  SLPNO: 'Sea level pressure not available',
+  PWINO: 'Precipitation identifier not working',
   WSHFT: 'Wind shift',
 };
 
