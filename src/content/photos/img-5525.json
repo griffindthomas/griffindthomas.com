@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 9",
+  "typeCode": "B39M",
+  "operator": "Alaska Airlines",
+  "registration": "N983AK",
+  "airport": "KBFI",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-06-19T11:39:16",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-5525.jpg",
+  "lqip": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAACwAwCdASoYABIAPu1orlCppaQiqAqpMB2JZQAAKavk6d+nyjrEwAD+jR65tjD7/k7s05cvADSXEUu5u6odiztENDNQ9S/FHeMd87HpW9yfl/yV00D336OTXfyaB8atHKbbntHy1B1lx0fLzS4oB8yXSTerH9RZ5sAAAA==",
+  "exif": {
+    "camera": "Apple iPhone 17 Pro",
+    "lens": "iPhone 17 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/1800",
+    "iso": 20,
+    "rawDate": "2026:06:19 11:39:16"
+  },
+  "source": {
+    "file": "IMG_5525.jpg",
+    "width": 2236,
+    "height": 1710,
+    "bytes": 1394753,
+    "originalLongEdge": 2236
+  }
+}
