@@ -589,7 +589,7 @@
       "from": "SEA",
       "to": "Exeter",
       "crossing": true,
-      "route": "Split south at Idaho Falls for Wells, Nevada, then east over the salt flats through Wendover. Colorado and Black Canyon NP, down to Raton and across the Oklahoma panhandle with a stop at the New Mexico, Oklahoma and Texas corner. South to Florida, then up through the middle of Georgia rather than the coast, twenty minutes in South Carolina, and back into North Carolina and Tennessee. College tours at UGA, UTK, Duke, NC State, UNC, UF and FSU",
+      "route": "Split south at Idaho Falls for Wells, Nevada, then east over the salt flats through Wendover. Colorado and Black Canyon NP, down to Raton and across the Oklahoma panhandle with a stop at the New Mexico, Oklahoma and Texas corner. The Indian Nation Turnpike down to Hugo and into Texas at Paris, then back up to Texarkana for Arkansas. South to Florida, then up through the middle of Georgia rather than the coast, twenty minutes in South Carolina, and back into North Carolina and Tennessee. College tours at UGA, UTK, Duke, NC State, UNC, UF and FSU",
       "vehicles": [
         "bmw"
       ],
@@ -695,9 +695,29 @@
           35.4676
         ],
         [
-          "Dallas TX",
-          -96.797,
-          32.7767
+          "Henryetta OK",
+          -95.9865,
+          35.4397
+        ],
+        [
+          "Hugo OK",
+          -95.5131,
+          34.0106
+        ],
+        [
+          "Paris TX",
+          -95.5555,
+          33.6618
+        ],
+        [
+          "Mount Pleasant TX",
+          -94.9694,
+          33.1571
+        ],
+        [
+          "Texarkana AR",
+          -94.0431,
+          33.4254
         ],
         [
           "Shreveport LA",
