@@ -261,6 +261,12 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+      /* The same seam closing the board does, so the preview is the plate. */
+      .preview svg g[data-traced] path:not([data-stroke]) {
+        stroke: var(--ink);
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+      }
       .preview .label { margin: 6px 0 0; }
       .preview .label[data-bad] { color: var(--signal); }
 
@@ -1769,7 +1775,7 @@
         // Each path carries its own transform and fill rule when it came out
         // of a tracing, so it is rendered the same way the board renders it.
         const attr = (name, value) => (value ? ` ${name}="${esc(value)}"` : "");
-        const g = attr("transform", body.drawing.transform);
+        const g = attr("transform", body.drawing.transform) + (body.drawing.traced ? " data-traced" : "");
         const paths = body.drawing.paths
           .map(
             (p) =>

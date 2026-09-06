@@ -99,6 +99,16 @@ export interface Drawing {
    * are authored at full size in the box and scaled here instead.
    */
   transform?: string;
+  /**
+   * True when the paths came out of a tracing rather than the generator.
+   *
+   * The board needs to know, because a tracing is drawn as many panels laid
+   * edge to edge and a generated shape is a few big overlapping ones. Panels
+   * that abut leave a seam where they meet, which is invisible while each
+   * panel is its own colour and shows as a light hairline the moment they all
+   * become one ink.
+   */
+  traced?: boolean;
 }
 
 const BOX = 100;
@@ -344,7 +354,12 @@ export function planform(
       }
     }
 
-    return { paths: shape.custom, viewBox: `0 0 ${BOX} ${BOX}`, transform: `${outer}${inner}` };
+    return {
+      paths: shape.custom,
+      viewBox: `0 0 ${BOX} ${BOX}`,
+      transform: `${outer}${inner}`,
+      traced: true,
+    };
   }
 
   if (shape.family === 'fighter') return fighter(spanFt, lengthFt, shape, reference);

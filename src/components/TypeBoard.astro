@@ -65,7 +65,7 @@ const shown = mode === "caught" ? caught : wanted;
               {/* Generated drawings carry their scale in the coordinates and
                   set no transform. Hand drawn ones are authored full size in
                   the box, so the group scales them to the board's reference. */}
-              <g transform={drawing.transform}>
+              <g transform={drawing.transform} data-traced={drawing.traced ? "" : undefined}>
                 {drawing.paths.map((p) => (
                   <path
                     d={p.d}
@@ -187,6 +187,34 @@ const shown = mode === "caught" ? caught : wanted;
   }
 
   .ghost path[data-stroke] {
+    stroke: var(--color-rule);
+  }
+
+  /* Seams.
+
+     A traced drawing is built from panels laid edge to edge. While each panel
+     is its own grey that join is invisible, but once every shape is one ink
+     the hairline where two of them meet shows as a light line across the
+     aeroplane, and the drawing looks cracked. Nothing is wrong with the
+     tracing: there is simply nothing behind the join to fill it.
+
+     So every filled shape in a tracing is also stroked in the colour it is
+     filled with, which closes the seam. Non-scaling, so it is one pixel
+     whatever coordinate space the drawing happened to be made in, and small
+     enough that the outline it adds is not a shape change. Generated drawings
+     are a few big overlapping shapes with no seams to close and are left
+     alone. */
+  .inked g[data-traced] path:not([data-stroke]),
+  .ghost g[data-traced] path:not([data-stroke]) {
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .inked g[data-traced] path:not([data-stroke]) {
+    stroke: var(--color-chart);
+  }
+
+  .ghost g[data-traced] path:not([data-stroke]) {
     stroke: var(--color-rule);
   }
 
