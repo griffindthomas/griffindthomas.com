@@ -297,6 +297,13 @@
     </header>
 
     <main>
+      <!-- Outside every panel on purpose. It used to sit inside the photos
+           panel, which meant everything written to it while the Airports or
+           Aircraft tab was open went into a hidden element: an import could
+           say which parts of a drawing it had to leave out and nobody would
+           ever see it. -->
+      <pre id="log" hidden></pre>
+
       <div id="panel-photos">
       <div id="drop">
         <p class="label" style="margin: 0 0 6px">Drop photos here</p>
@@ -306,7 +313,6 @@
         </p>
       </div>
 
-      <pre id="log" hidden></pre>
       <div id="cards"></div>
 
       <!-- Every type code the site knows, so the box offers real ones. -->
@@ -391,6 +397,13 @@
         const el = $("#log");
         el.hidden = false;
         el.textContent = Array.isArray(lines) ? lines.join("\n") : String(lines);
+      }
+
+      /** Cleared on success, so a fixed problem stops being reported as one. */
+      function clearLog() {
+        const el = $("#log");
+        el.hidden = true;
+        el.textContent = "";
       }
 
       function card(p, gaps) {
@@ -1249,11 +1262,16 @@
         if (!res.ok) {
           status.className = "status error";
           status.textContent = body.error ?? "Save failed";
-          if (body.photos?.length) showLog(["Still on these photos:", ...body.photos]);
+          showLog([
+            "That did not save:",
+            ...(body.problems ?? [body.error]).map((p) => `  ${p}`),
+            ...(body.photos?.length ? ["Still on these photos:", ...body.photos] : []),
+          ]);
           return;
         }
 
         AIRPORTS = body.airports;
+        clearLog();
         await load();
         refreshStatus();
       }
@@ -1805,9 +1823,14 @@
         if (!res.ok) {
           status.className = "status error";
           status.textContent = body.error ?? "Save failed";
+          // The status sits at the top of a tall card and is easy to miss
+          // while looking at the drawing at the bottom of it, so the whole
+          // list goes somewhere that cannot be missed as well.
+          showLog(["That did not save:", ...(body.problems ?? [body.error]).map((p) => `  ${p}`)]);
           return;
         }
 
+        clearLog();
         await load();
         refreshStatus();
       }
@@ -1882,6 +1905,23 @@
           section.querySelector("[data-art-clear]")?.addEventListener("click", () => {
             writeArt(section, { custom: [], customBox: "" });
             drawPreview(section);
+          });
+
+          /**
+           * A new card starts with nothing in id, and id is not a thing anyone
+           * thinks to fill in: it is a slug for the URL, not part of the
+           * aeroplane. So it writes itself from the name until it is touched,
+           * which is what "F-35" to "f-35" would have been anyway.
+           */
+          const idField = section.querySelector('[name="id"]');
+          const nameField = section.querySelector('[name="name"]');
+          idField?.addEventListener("input", () => idField.setAttribute("data-typed", ""));
+          nameField?.addEventListener("input", () => {
+            if (section.dataset.aircraft || idField.hasAttribute("data-typed")) return;
+            idField.value = nameField.value
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "");
           });
 
           showArt(section);

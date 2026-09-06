@@ -105,6 +105,13 @@ const sidecarPath = (slug) => path.join(LIBRARY, `${slug}.json`);
 const ICAO = /^[A-Z0-9]{3,4}$/;
 const IATA = /^[A-Z]{3}$/;
 
+/**
+ * Every problem at once, not the first one.
+ *
+ * A half filled form usually has several things wrong with it, and answering
+ * one at a time means saving, reading, fixing, saving again. The caller shows
+ * the whole list.
+ */
 function validateAirport(a, existing) {
   const icao = String(a.icao ?? '').trim().toUpperCase();
   const iata = String(a.iata ?? '').trim().toUpperCase();
@@ -112,22 +119,23 @@ function validateAirport(a, existing) {
   const city = String(a.city ?? '').trim();
   const lat = Number(a.lat);
   const lon = Number(a.lon);
+  const problems = [];
 
-  if (!ICAO.test(icao)) return { error: 'ICAO is three or four letters and digits, like KSEA' };
-  if (iata && !IATA.test(iata)) return { error: 'IATA is three letters, or leave it empty' };
-  if (!name) return { error: 'The airport needs a name' };
-  if (!city) return { error: 'The airport needs a city' };
-  if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-    return { error: 'Latitude is between -90 and 90' };
-  }
+  if (!icao) problems.push('Give it an ICAO code, like KSEA');
+  else if (!ICAO.test(icao)) problems.push('ICAO is three or four letters and digits, like KSEA');
+  if (iata && !IATA.test(iata)) problems.push('IATA is three letters, or leave it empty');
+  if (!name) problems.push('The airport needs a name');
+  if (!city) problems.push('The airport needs a city');
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) problems.push('Latitude is between -90 and 90');
   if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
-    return { error: 'Longitude is between -180 and 180' };
+    problems.push('Longitude is between -180 and 180');
   }
 
   // Renaming onto a code that already exists would swallow the other airport,
   // and its photographs would follow the wrong pin onto the map.
-  if (icao !== existing && airports[icao]) return { error: `${icao} is already in the list` };
+  if (icao && icao !== existing && airports[icao]) problems.push(`${icao} is already in the list`);
 
+  if (problems.length) return { error: problems[0], problems };
   return { value: { icao, iata, name, city, lat, lon } };
 }
 
@@ -251,32 +259,39 @@ function validateFamily(entry, existing) {
   const length = Number(entry.length);
   const shape = entry.shape ?? {};
 
-  if (!/^[a-z0-9-]+$/.test(id)) return { error: 'id is lowercase letters, digits and dashes' };
-  if (!name) return { error: 'The family needs a name' };
-  if (!drawn) return { error: 'Say which variant the drawing is of' };
-  if (!(span > 0) || !(length > 0)) return { error: 'Span and length are what size the drawing' };
+  const problems = [];
+  if (!id) problems.push('Give it an id: the name in lowercase, with dashes for spaces');
+  else if (!/^[a-z0-9-]+$/.test(id)) problems.push('id is lowercase letters, digits and dashes');
+  if (!name) problems.push('The family needs a name, like "737 MAX"');
+  if (!drawn) problems.push('Say which variant the drawing is of, like "737-8"');
+  if (!(span > 0)) problems.push('Wingspan in feet is what sizes the drawing');
+  if (!(length > 0)) problems.push('Length in feet is what sizes the drawing');
   if (!SHAPE_FAMILIES.includes(shape.family)) {
-    return { error: `family is one of ${SHAPE_FAMILIES.join(', ')}` };
+    problems.push(`family is one of ${SHAPE_FAMILIES.join(', ')}`);
   }
-  if (!TIPS.includes(shape.tip)) return { error: `tip is one of ${TIPS.join(', ')}` };
-  if (![0, 2, 4].includes(Number(shape.engines))) return { error: 'engines is 0, 2 or 4' };
-  if (![1, 2].includes(Number(shape.fins))) return { error: 'fins is 1 or 2' };
+  if (!TIPS.includes(shape.tip)) problems.push(`tip is one of ${TIPS.join(', ')}`);
+  if (![0, 2, 4].includes(Number(shape.engines))) problems.push('engines is 0, 2 or 4');
+  if (![1, 2].includes(Number(shape.fins))) problems.push('fins is 1 or 2');
 
   const codes = (Array.isArray(entry.codes) ? entry.codes : [])
     .map((c) => String(c).trim().toUpperCase())
     .filter(Boolean);
-  if (!codes.length) return { error: 'A family needs at least one type code' };
+  if (!codes.length) {
+    problems.push('At least one type code, or no photograph can ever reach this plate');
+  }
 
   // One code in two families would count a photo twice, and the board would
   // then disagree with itself about how many there are.
   for (const other of aircraftTypes) {
     if (other.id === existing) continue;
     const clash = codes.find((c) => other.codes.includes(c));
-    if (clash) return { error: `${clash} is already in ${other.name}` };
+    if (clash) problems.push(`${clash} is already in ${other.name}`);
   }
-  if (id !== existing && aircraftTypes.some((t) => t.id === id)) {
-    return { error: `${id} is already a family` };
+  if (id && id !== existing && aircraftTypes.some((t) => t.id === id)) {
+    problems.push(`${id} is already a family`);
   }
+
+  if (problems.length) return { error: problems[0], problems };
 
   // Traced paths arrive as objects, because a tracing carries the transform it
   // was nested under and the fill rule that keeps its holes open.
@@ -977,8 +992,8 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/airport') {
       const { existing, airport } = JSON.parse((await readBody(req)).toString('utf8'));
-      const { error, value } = validateAirport(airport, existing ?? null);
-      if (error) return json(res, 400, { error });
+      const { error, problems, value } = validateAirport(airport, existing ?? null);
+      if (error) return json(res, 400, { error, problems });
 
       const next = { ...airports };
 
@@ -1046,8 +1061,8 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/aircraft') {
       const { existing, family } = JSON.parse((await readBody(req)).toString('utf8'));
-      const { error, value } = validateFamily(family, existing ?? null);
-      if (error) return json(res, 400, { error });
+      const { error, problems, value } = validateFamily(family, existing ?? null);
+      if (error) return json(res, 400, { error, problems });
 
       const next = [...aircraftTypes];
       const at = existing ? next.findIndex((t) => t.id === existing) : -1;
