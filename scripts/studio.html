@@ -236,6 +236,31 @@
         font-size: 12.5px;
         line-height: 1.65;
       }
+      /* Airports and aircraft ------------------------------------------- */
+      .row-actions { display: flex; gap: 8px; align-items: center; }
+      .row-actions .spacer { flex: 1; }
+
+      .aircraft-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 22px; }
+      @media (max-width: 900px) { .aircraft-body { grid-template-columns: 1fr; } }
+
+      .preview { position: sticky; top: 16px; align-self: start; }
+      .preview svg {
+        width: 100%;
+        aspect-ratio: 1;
+        background: var(--sunk);
+        border: 1px solid var(--rule);
+      }
+      /* The plate outline, so it is obvious when pasted art is sitting off it. */
+      .preview svg .frame { fill: none; stroke: var(--rule); stroke-width: 0.5; }
+      .preview svg path { fill: var(--ink); }
+      .preview .label { margin: 6px 0 0; }
+      .preview .label[data-bad] { color: var(--signal); }
+
+      .slider { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 8px; align-items: center; }
+      .slider input[type="range"] { accent-color: var(--signal); width: 100%; }
+      .slider output { font-family: var(--mono); font-size: 10.5px; color: var(--graphite); text-align: right; }
+
+      .paths { font-family: var(--mono); font-size: 11px; min-height: 84px; }
     </style>
   </head>
 
@@ -246,6 +271,8 @@
         <button class="tab" data-tab="photos" aria-pressed="true">Photos</button>
         <button class="tab" data-tab="projects" aria-pressed="false">Projects</button>
         <button class="tab" data-tab="trips" aria-pressed="false">Trips</button>
+        <button class="tab" data-tab="airports" aria-pressed="false">Airports</button>
+        <button class="tab" data-tab="aircraft" aria-pressed="false">Aircraft</button>
       </nav>
       <span class="label" id="summary">Loading</span>
       <span class="spacer"></span>
@@ -293,12 +320,43 @@
         </div>
         <div id="trip-cards"></div>
       </div>
+
+      <div id="panel-airports" hidden>
+        <div id="new-project">
+          <input type="text" id="new-icao" placeholder="ICAO code, like KJFK" maxlength="4" />
+          <button id="lookup-airport" class="primary">Look it up</button>
+          <button id="blank-airport">Add by hand</button>
+          <p class="label" style="margin: 8px 0 0">
+            The name and the coordinates come from OurAirports, which is the open dataset
+            the routing already uses. Check the city line before saving: it is built from a
+            municipality and a region code and is right most of the time, not all of it.
+          </p>
+        </div>
+        <div id="airport-cards"></div>
+      </div>
+
+      <div id="panel-aircraft" hidden>
+        <div id="new-project">
+          <button id="blank-aircraft" class="primary">Add a type</button>
+          <p class="label" style="margin: 8px 0 0">
+            Every plate is drawn from the numbers on it, so a new type is a row of figures
+            rather than a drawing, and the preview updates as you move them. If the
+            generator cannot reach the shape, paste real artwork into the drawing box at the
+            bottom of the card and it takes over. Every plate is drawn to one scale, so a
+            747 stays the size of four F-35s either way.
+          </p>
+        </div>
+        <div id="aircraft-cards"></div>
+      </div>
     </main>
 
     <script>
       const $ = (sel, root = document) => root.querySelector(sel);
       let AIRPORTS = {};
       let TYPE_CODES = [];
+      let AIRCRAFT = [];
+      /** The largest aeroplane on the board, which every plate is drawn against. */
+      let REFERENCE = 1;
       // Replaced by whatever the server says, which is the schema's own list.
       let TRIP_STATUSES = ["Planned", "Ongoing", "Complete"];
 
@@ -928,7 +986,13 @@
           (t) => `<option value="${esc(t.code)}">${esc(t.family)}</option>`,
         ).join("");
 
+        AIRCRAFT = state.aircraftTypes ?? [];
+        REFERENCE = state.reference ?? 1;
+
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
+        $("#airport-cards").innerHTML = airportList(AIRPORTS);
+        $("#aircraft-cards").innerHTML = aircraftList(AIRCRAFT);
+        wireReferenceCards();
         $("#project-cards").innerHTML = projectList(state.projects);
         TRIP_STATUSES = state.tripStatuses ?? TRIP_STATUSES;
         $("#trip-cards").innerHTML = tripList(state.trips);
@@ -1084,6 +1148,421 @@
         }
       }
 
+      // --- airports ------------------------------------------------------------
+
+      /**
+       * Saved on a button rather than as you type, which is the opposite of the
+       * photo cards above.
+       *
+       * Those edit a record that already exists. These two tabs can create one,
+       * and both are keyed on a field you type into: autosaving an ICAO box
+       * halfway through "KJFK" would leave KJ and KJF behind as real airports.
+       */
+      function airportCard(a, isNew) {
+        return `
+        <section class="card project" data-airport="${esc(isNew ? "" : (a.icao ?? ""))}">
+          <div class="project-head">
+            <strong>${esc(a.icao || "New airport")}</strong>
+            <span class="slug">${esc(a.name ?? "")}</span>
+            <span class="spacer"></span>
+            <span class="status" data-status></span>
+          </div>
+          <div class="fields">
+            <div class="field">
+              <span class="label">ICAO</span>
+              <input type="text" name="icao" value="${esc(a.icao ?? "")}" maxlength="4" placeholder="KSEA" />
+            </div>
+            <div class="field">
+              <span class="label">IATA, optional</span>
+              <input type="text" name="iata" value="${esc(a.iata ?? "")}" maxlength="3" placeholder="SEA" />
+            </div>
+            <div class="field wide">
+              <span class="label">Name</span>
+              <input type="text" name="name" value="${esc(a.name ?? "")}" />
+            </div>
+            <div class="field wide">
+              <span class="label">City</span>
+              <input type="text" name="city" value="${esc(a.city ?? "")}" placeholder="Seattle, Washington" />
+            </div>
+            <div class="field">
+              <span class="label">Latitude</span>
+              <input type="number" step="0.0001" name="lat" value="${a.lat ?? ""}" />
+            </div>
+            <div class="field">
+              <span class="label">Longitude</span>
+              <input type="number" step="0.0001" name="lon" value="${a.lon ?? ""}" />
+            </div>
+            <div class="field wide row-actions">
+              <button type="button" class="primary" data-save>Save</button>
+              <span class="spacer"></span>
+              <button type="button" data-delete>Delete</button>
+            </div>
+          </div>
+        </section>`;
+      }
+
+      const airportList = (airports) =>
+        Object.values(airports)
+          .sort((a, b) => a.icao.localeCompare(b.icao))
+          .map((a) => airportCard(a, false))
+          .join("");
+
+      const fieldValue = (section, name) => section.querySelector(`[name="${name}"]`)?.value ?? "";
+
+      async function saveAirport(section) {
+        const status = $("[data-status]", section);
+        status.className = "status";
+        status.textContent = "Saving";
+
+        const res = await fetch("/api/airport", {
+          method: "POST",
+          body: JSON.stringify({
+            existing: section.dataset.airport || null,
+            airport: {
+              icao: fieldValue(section, "icao"),
+              iata: fieldValue(section, "iata"),
+              name: fieldValue(section, "name"),
+              city: fieldValue(section, "city"),
+              lat: fieldValue(section, "lat"),
+              lon: fieldValue(section, "lon"),
+            },
+          }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Save failed";
+          if (body.photos?.length) showLog(["Still on these photos:", ...body.photos]);
+          return;
+        }
+
+        AIRPORTS = body.airports;
+        await load();
+        refreshStatus();
+      }
+
+      async function removeAirport(section) {
+        const icao = section.dataset.airport;
+        // An unsaved card is not on disk, so there is nothing to ask about.
+        if (!icao) return section.remove();
+        if (!confirm(`Delete ${icao}?`)) return;
+
+        const status = $("[data-status]", section);
+        const res = await fetch("/api/airport/delete", {
+          method: "POST",
+          body: JSON.stringify({ icao }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Delete failed";
+          if (body.photos?.length) showLog(["Still on these photos:", ...body.photos]);
+          return;
+        }
+
+        AIRPORTS = body.airports;
+        await load();
+        refreshStatus();
+      }
+
+      // --- aircraft types --------------------------------------------------
+
+      /** The shape numbers, with the range each one is actually useful over. */
+      const SHAPE_SLIDERS = [
+        ["sweep", "Wing sweep, degrees", 0, 70, 1],
+        ["wingAt", "Wing position, nose 0 to tail 1", 0.1, 0.8, 0.01],
+        ["rootChord", "Root chord, of the length", 0.05, 0.6, 0.01],
+        ["taper", "Tip chord, of the root", 0.05, 1, 0.01],
+        ["waist", "Body width, of the length", 0.03, 0.3, 0.005],
+      ];
+
+      const options = (list, chosen) =>
+        list
+          .map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(chosen) ? " selected" : ""}>${esc(l)}</option>`)
+          .join("");
+
+      function aircraftCard(t, isNew) {
+        const sh = t.shape ?? {};
+        const sliders = SHAPE_SLIDERS.map(
+          ([name, label, min, max, step]) => `
+            <div class="field">
+              <span class="label">${label}</span>
+              <div class="slider">
+                <input type="range" name="${name}" min="${min}" max="${max}" step="${step}" value="${sh[name] ?? min}" />
+                <output>${sh[name] ?? min}</output>
+              </div>
+            </div>`,
+        ).join("");
+
+        return `
+        <section class="card project aircraft" data-aircraft="${esc(isNew ? "" : (t.id ?? ""))}">
+          <div class="project-head">
+            <strong>${esc(t.name || "New type")}</strong>
+            <span class="slug">${esc((t.codes ?? []).join(", "))}</span>
+            <span class="spacer"></span>
+            <span class="status" data-status></span>
+          </div>
+          <div class="aircraft-body">
+            <div class="preview">
+              <svg viewBox="0 0 100 100" data-preview aria-hidden="true"></svg>
+              <p class="label" data-note>To the board's scale</p>
+            </div>
+            <div class="fields">
+              <div class="field">
+                <span class="label">Family name</span>
+                <input type="text" name="name" value="${esc(t.name ?? "")}" placeholder="737 MAX" />
+              </div>
+              <div class="field">
+                <span class="label">id, for the URL</span>
+                <input type="text" name="id" value="${esc(t.id ?? "")}" placeholder="b737-max" />
+              </div>
+              <div class="field">
+                <span class="label">Variant drawn</span>
+                <input type="text" name="drawn" value="${esc(t.drawn ?? "")}" placeholder="737-8" />
+              </div>
+              <div class="field">
+                <span class="label">Type codes, comma separated</span>
+                <input type="text" name="codes" value="${esc((t.codes ?? []).join(", "))}" placeholder="B38M, B39M" />
+              </div>
+              <div class="field">
+                <span class="label">Wingspan, feet</span>
+                <input type="number" step="0.1" name="span" value="${t.span ?? ""}" />
+              </div>
+              <div class="field">
+                <span class="label">Length, feet</span>
+                <input type="number" step="0.1" name="length" value="${t.length ?? ""}" />
+              </div>
+              <div class="field">
+                <span class="label">Built as</span>
+                <select name="family">${options([["jet", "Airliner"], ["fighter", "Fighter"]], sh.family ?? "jet")}</select>
+              </div>
+              <div class="field">
+                <span class="label">Wingtips</span>
+                <select name="tip">${options([["plain", "Plain"], ["raked", "Raked"]], sh.tip ?? "plain")}</select>
+              </div>
+              <div class="field">
+                <span class="label">Engines drawn</span>
+                <select name="engines">${options([["0", "None"], ["2", "Two"], ["4", "Four"]], sh.engines ?? 2)}</select>
+              </div>
+              <div class="field">
+                <span class="label">Fins</span>
+                <select name="fins">${options([["1", "One"], ["2", "Two, canted"]], sh.fins ?? 1)}</select>
+              </div>
+              ${sliders}
+              <div class="field wide toggles">
+                <label><input type="checkbox" name="highWing"${sh.highWing ? " checked" : ""} /> Wing on top of the body</label>
+                <label><input type="checkbox" name="strake"${sh.strake === false ? "" : " checked"} /> Leading edge extensions, fighters only</label>
+              </div>
+
+              <div class="field wide">
+                <span class="label">Drawing, if the numbers cannot get there</span>
+                <textarea class="paths" name="custom" rows="4" placeholder="Paste an SVG and it unpacks itself, or put one path per line. Leave empty to use the generated shape.">${esc((sh.custom ?? []).join("\n"))}</textarea>
+              </div>
+              <div class="field wide">
+                <span class="label">Box the drawing was made in</span>
+                <input type="text" name="customBox" value="${esc(sh.customBox ?? "")}" placeholder="Filled in from a pasted SVG. Empty means it is already in a 100 by 100 box." />
+              </div>
+
+              <div class="field wide row-actions">
+                <button type="button" class="primary" data-save>Save</button>
+                <span class="spacer"></span>
+                <button type="button" data-delete>Delete</button>
+              </div>
+            </div>
+          </div>
+        </section>`;
+      }
+
+      const aircraftList = (types) => types.map((t) => aircraftCard(t, false)).join("");
+
+      /**
+       * Pasted markup unpacks itself.
+       *
+       * Nothing exports artwork in a hundred unit box, so the viewBox comes out
+       * with the paths and the site fits one onto the other. Without that, art
+       * from any real drawing tool lands somewhere off the plate at a size
+       * nobody could guess.
+       */
+      function readCustom(section) {
+        const box = section.querySelector('[name="customBox"]');
+        const field = section.querySelector('[name="custom"]');
+        const raw = field.value.trim();
+        if (!raw) return { custom: [], customBox: "" };
+
+        if (raw.includes("<")) {
+          const paths = [...raw.matchAll(/\sd\s*=\s*"([^"]+)"/g)].map((m) => m[1].trim()).filter(Boolean);
+          const vb = /viewBox\s*=\s*"([^"]+)"/.exec(raw)?.[1]?.trim() ?? "";
+          if (paths.length) {
+            field.value = paths.join("\n");
+            if (vb) box.value = vb;
+            return { custom: paths, customBox: vb || box.value.trim() };
+          }
+        }
+        return {
+          custom: raw.split(/\n+/).map((l) => l.trim()).filter(Boolean),
+          customBox: box.value.trim(),
+        };
+      }
+
+      function collectFamily(section) {
+        const { custom, customBox } = readCustom(section);
+        const shape = {
+          family: fieldValue(section, "family"),
+          tip: fieldValue(section, "tip"),
+          engines: Number(fieldValue(section, "engines")),
+          fins: Number(fieldValue(section, "fins")),
+          strake: section.querySelector('[name="strake"]').checked,
+          highWing: section.querySelector('[name="highWing"]').checked,
+          custom,
+          customBox,
+        };
+        for (const [name] of SHAPE_SLIDERS) shape[name] = Number(fieldValue(section, name));
+
+        return {
+          id: fieldValue(section, "id").trim(),
+          name: fieldValue(section, "name").trim(),
+          drawn: fieldValue(section, "drawn").trim(),
+          codes: fieldValue(section, "codes").split(",").map((c) => c.trim()).filter(Boolean),
+          span: Number(fieldValue(section, "span")),
+          length: Number(fieldValue(section, "length")),
+          shape,
+        };
+      }
+
+      /**
+       * Drawn by the server, using the site's own generator.
+       *
+       * Reimplementing the geometry here would be a second copy that drifts,
+       * and the drift would only show up once something was published. It is a
+       * round trip to localhost, which costs nothing worth saving.
+       */
+      async function drawPreview(section) {
+        const svg = $("[data-preview]", section);
+        const note = $("[data-note]", section);
+        const family = collectFamily(section);
+        if (!(family.span > 0) || !(family.length > 0)) {
+          svg.innerHTML = "";
+          note.textContent = "Give it a span and a length";
+          note.setAttribute("data-bad", "");
+          return;
+        }
+
+        const res = await fetch("/api/aircraft/preview", {
+          method: "POST",
+          body: JSON.stringify({
+            span: family.span,
+            length: family.length,
+            shape: family.shape,
+            // Against the board's own reference, so the preview is the size
+            // the plate will be and not this aeroplane filling the square.
+            reference: Math.max(REFERENCE, family.span, family.length),
+          }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          note.textContent = body.error ?? "Could not draw that";
+          note.setAttribute("data-bad", "");
+          return;
+        }
+
+        const g = body.drawing.transform ? ` transform="${esc(body.drawing.transform)}"` : "";
+        svg.innerHTML =
+          `<rect class="frame" x="0" y="0" width="100" height="100" />` +
+          `<g${g}>${body.drawing.paths.map((d) => `<path d="${esc(d)}" />`).join("")}</g>`;
+        note.textContent = family.shape.custom.length ? "Your drawing, to the board's scale" : "To the board's scale";
+        note.removeAttribute("data-bad");
+      }
+
+      async function saveAircraft(section) {
+        const status = $("[data-status]", section);
+        status.className = "status";
+        status.textContent = "Saving";
+
+        const res = await fetch("/api/aircraft", {
+          method: "POST",
+          body: JSON.stringify({
+            existing: section.dataset.aircraft || null,
+            family: collectFamily(section),
+          }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Save failed";
+          return;
+        }
+
+        await load();
+        refreshStatus();
+      }
+
+      async function removeAircraft(section) {
+        const id = section.dataset.aircraft;
+        if (!id) return section.remove();
+        if (!confirm(`Delete ${id}?`)) return;
+
+        const status = $("[data-status]", section);
+        const res = await fetch("/api/aircraft/delete", {
+          method: "POST",
+          body: JSON.stringify({ id }),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Delete failed";
+          if (body.photos?.length) showLog(["Still on these photos:", ...body.photos]);
+          return;
+        }
+
+        await load();
+        refreshStatus();
+      }
+
+      /**
+       * One listener per card, the same arrangement as everything above.
+       *
+       * Called again every time a card is added, so each one is marked once it
+       * is wired. Without that, a card would collect a second click listener
+       * per insert and a single Delete would ask twice.
+       */
+      function wireReferenceCards() {
+        for (const section of document.querySelectorAll("[data-airport]:not([data-wired])")) {
+          section.setAttribute("data-wired", "");
+          section.addEventListener("click", (event) => {
+            if (event.target.closest("[data-save]")) saveAirport(section);
+            else if (event.target.closest("[data-delete]")) removeAirport(section);
+          });
+        }
+
+        for (const section of document.querySelectorAll("[data-aircraft]:not([data-wired])")) {
+          section.setAttribute("data-wired", "");
+          section.addEventListener("click", (event) => {
+            if (event.target.closest("[data-save]")) saveAircraft(section);
+            else if (event.target.closest("[data-delete]")) removeAircraft(section);
+          });
+
+          // The preview is the whole reason the numbers are workable, so it
+          // follows every input rather than waiting for a save.
+          let pending;
+          const redraw = () => {
+            clearTimeout(pending);
+            pending = setTimeout(() => drawPreview(section), 120);
+          };
+          section.addEventListener("input", (event) => {
+            const slider = event.target.closest('input[type="range"]');
+            if (slider) slider.nextElementSibling.textContent = slider.value;
+            redraw();
+          });
+          section.addEventListener("change", redraw);
+          drawPreview(section);
+        }
+      }
+
       // --- tabs ---------------------------------------------------------------
       for (const tab of document.querySelectorAll(".tab")) {
         tab.addEventListener("click", () => {
@@ -1094,6 +1573,82 @@
           }
         });
       }
+
+      // --- new airport, new type -----------------------------------------------
+
+      function prependCard(panel, html) {
+        const cards = $(panel);
+        cards.insertAdjacentHTML("afterbegin", html);
+        wireReferenceCards();
+        cards.firstElementChild.scrollIntoView({ block: "center" });
+        cards.firstElementChild.querySelector("input")?.focus();
+      }
+
+      $("#blank-airport").addEventListener("click", () => {
+        prependCard("#airport-cards", airportCard({}, true));
+      });
+
+      $("#lookup-airport").addEventListener("click", async () => {
+        const input = $("#new-icao");
+        const button = $("#lookup-airport");
+        const icao = input.value.trim().toUpperCase();
+        if (!icao) return input.focus();
+
+        // Re-enabled in the finally, always. A button left disabled is what
+        // swallowed the click on Publish, and it is not worth repeating.
+        button.disabled = true;
+        button.textContent = "Looking";
+        try {
+          const res = await fetch(`/api/airport/lookup?icao=${encodeURIComponent(icao)}`);
+          const body = await res.json();
+          if (!res.ok) return showLog(body.error ?? "Lookup failed");
+          if (AIRPORTS[body.airport.icao]) {
+            return showLog(`${body.airport.icao} is already in the list.`);
+          }
+          // A heliport or a closed strip answers to a code too, and is almost
+          // never what was meant. Worth saying, not worth refusing.
+          const odd = body.airport.type && !/(large|medium|small)_airport/.test(body.airport.type);
+          showLog(
+            odd
+              ? `${body.airport.icao} came back as a ${body.airport.type.replace(/_/g, " ")}. Check it is the field you meant.`
+              : `Found ${body.airport.icao}. Check the city line, then Save.`,
+          );
+          input.value = "";
+          prependCard("#airport-cards", airportCard(body.airport, true));
+        } catch (err) {
+          showLog(`Lookup failed: ${err.message}`);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Look it up";
+        }
+      });
+
+      $("#blank-aircraft").addEventListener("click", () => {
+        // Started as an ordinary twin, so the preview draws an aeroplane while
+        // the real numbers go in rather than sitting empty until it is valid.
+        prependCard(
+          "#aircraft-cards",
+          aircraftCard(
+            {
+              codes: [],
+              span: 117.8,
+              length: 129.5,
+              shape: {
+                family: "jet",
+                sweep: 25,
+                wingAt: 0.4,
+                rootChord: 0.2,
+                taper: 0.3,
+                waist: 0.11,
+                engines: 2,
+                tip: "plain",
+                fins: 1,
+              },
+            },
+            true,
+          ),
+        );
+      });
 
       // --- new project ---------------------------------------------------------
       $("#add-project").addEventListener("click", async () => {

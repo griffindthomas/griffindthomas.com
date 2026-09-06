@@ -62,9 +62,14 @@ const shown = mode === "caught" ? caught : wanted;
           const count = counts.get(type.id) ?? 0;
           const art = (
             <svg viewBox={drawing.viewBox} aria-hidden="true">
-              {drawing.paths.map((d) => (
-                <path d={d} />
-              ))}
+              {/* Generated drawings carry their scale in the coordinates and
+                  set no transform. Hand drawn ones are authored full size in
+                  the box, so the group scales them to the board's reference. */}
+              <g transform={drawing.transform}>
+                {drawing.paths.map((d) => (
+                  <path d={d} />
+                ))}
+              </g>
             </svg>
           );
 

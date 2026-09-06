@@ -61,6 +61,20 @@ function validate(entries: unknown): AircraftFamily[] {
     if (!TIPS.includes(entry.shape.tip)) {
       throw new Error(`${entry.id}: shape.tip must be one of ${TIPS.join(', ')}`);
     }
+    // Hand drawn art replaces the generator entirely, so an empty string here
+    // would draw nothing at all and the plate would come out blank.
+    const custom = entry.shape.custom;
+    if (custom !== undefined) {
+      const bad = !Array.isArray(custom) || custom.some((d) => typeof d !== 'string' || !d.trim());
+      if (bad) throw new Error(`${entry.id}: shape.custom must be a list of path data strings`);
+      const box = entry.shape.customBox;
+      if (box !== undefined) {
+        const parts = String(box).trim().split(/[\s,]+/).map(Number);
+        if (parts.length !== 4 || !parts.every(Number.isFinite) || parts[2] <= 0 || parts[3] <= 0) {
+          throw new Error(`${entry.id}: shape.customBox must be "x y width height"`);
+        }
+      }
+    }
     if (!(entry.span > 0) || !(entry.length > 0)) {
       throw new Error(`${entry.id}: span and length are what size the drawing`);
     }

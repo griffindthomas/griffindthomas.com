@@ -3,11 +3,13 @@
  *
  *   npm run studio        (or double click studio.cmd)
  *
- * Opens a small web page on localhost with two tabs. Photos lists every frame
+ * Opens a small web page on localhost with five tabs. Photos lists every frame
  * in the library with its fields as form inputs and accepts new ones by drag
- * and drop. Projects lists every project write-up with its frontmatter as
- * fields and its markdown in a box. Either can be committed and pushed from
- * the same button.
+ * and drop. Projects and Trips list the write-ups with their frontmatter as
+ * fields and their markdown in a box. Airports and Aircraft edit the two
+ * reference tables the photos point at, so adding a field or a type is not a
+ * job for somebody else. Any of it can be committed and pushed from the same
+ * button.
  *
  * It exists so that changing an airport code, or fixing a date in a write-up,
  * is a thing Griffin does in thirty seconds rather than a thing he has to ask
@@ -56,9 +58,20 @@ const EDITABLE = new Set([
   'timezone',
 ]);
 
-const airports = JSON.parse(
-  fs.readFileSync(path.join(ROOT, 'src', 'data', 'airports.json'), 'utf8'),
-);
+const AIRPORTS_FILE = path.join(ROOT, 'src', 'data', 'airports.json');
+const AIRCRAFT_FILE = path.join(ROOT, 'src', 'data', 'aircraft-types.json');
+
+const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+const writeJson = (file, value) => fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}
+`);
+
+/**
+ * Both catalogues are now editable from the studio, so neither can be read
+ * once and held. They are reassigned after every write, because /api/save
+ * validates a photo's airport against this object and a stale copy would
+ * reject a code that was added a moment earlier.
+ */
+let airports = readJson(AIRPORTS_FILE);
 
 /**
  * The same catalogue the type board is built from, read straight from the
@@ -67,16 +80,264 @@ const airports = JSON.parse(
  * on the board, with nothing to say so. The editor offers the real codes and
  * names the family, which is the only place that mistake can be caught.
  */
-const aircraftTypes = JSON.parse(
-  fs.readFileSync(path.join(ROOT, 'src', 'data', 'aircraft-types.json'), 'utf8'),
-);
+let aircraftTypes = readJson(AIRCRAFT_FILE);
 
 /** Flat list of every known code, with the family it belongs to. */
-const typeCodes = aircraftTypes
-  .flatMap((family) => family.codes.map((code) => ({ code, family: family.name })))
-  .sort((a, b) => a.code.localeCompare(b.code));
+const deriveTypeCodes = () =>
+  aircraftTypes
+    .flatMap((family) => family.codes.map((code) => ({ code, family: family.name })))
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+let typeCodes = deriveTypeCodes();
 
 const sidecarPath = (slug) => path.join(LIBRARY, `${slug}.json`);
+
+// --- airports ---------------------------------------------------------------
+
+/**
+ * Airports and aircraft types are reference data rather than content, and
+ * until now adding either meant editing JSON by hand or asking someone else
+ * to. They are edited here instead. Both are validated hard on the way in,
+ * because a bad value does not fail here: it fails the site build, minutes
+ * later, in a message about a content schema.
+ */
+
+const ICAO = /^[A-Z0-9]{3,4}$/;
+const IATA = /^[A-Z]{3}$/;
+
+function validateAirport(a, existing) {
+  const icao = String(a.icao ?? '').trim().toUpperCase();
+  const iata = String(a.iata ?? '').trim().toUpperCase();
+  const name = String(a.name ?? '').trim();
+  const city = String(a.city ?? '').trim();
+  const lat = Number(a.lat);
+  const lon = Number(a.lon);
+
+  if (!ICAO.test(icao)) return { error: 'ICAO is three or four letters and digits, like KSEA' };
+  if (iata && !IATA.test(iata)) return { error: 'IATA is three letters, or leave it empty' };
+  if (!name) return { error: 'The airport needs a name' };
+  if (!city) return { error: 'The airport needs a city' };
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+    return { error: 'Latitude is between -90 and 90' };
+  }
+  if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+    return { error: 'Longitude is between -180 and 180' };
+  }
+
+  // Renaming onto a code that already exists would swallow the other airport,
+  // and its photographs would follow the wrong pin onto the map.
+  if (icao !== existing && airports[icao]) return { error: `${icao} is already in the list` };
+
+  return { value: { icao, iata, name, city, lat, lon } };
+}
+
+/** Photos pointing at an airport, so it is never deleted out from under one. */
+const photosUsingAirport = (icao) =>
+  readLibrary()
+    .filter((p) => p.airport === icao)
+    .map((p) => p.slug);
+
+/**
+ * OurAirports, so that adding a field does not mean going and finding its
+ * coordinates first. That lookup was the actual reason this was a job for
+ * somebody else, and it is the whole point of the button.
+ *
+ * The file is twelve megabytes and changes about as often as airports get
+ * built, so it is fetched once and kept. Delete .cache/ourairports.csv to
+ * force a fresh copy.
+ */
+const OURAIRPORTS = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
+const CACHE_DIR = path.join(ROOT, '.cache');
+const AIRPORTS_CSV = path.join(CACHE_DIR, 'ourairports.csv');
+
+/** One CSV line into fields, respecting quotes. Airport names contain commas. */
+function csvLine(line) {
+  const out = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const c = line[i];
+    if (quoted) {
+      if (c !== '"') field += c;
+      else if (line[i + 1] === '"') {
+        field += '"';
+        i += 1;
+      } else quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') {
+      out.push(field);
+      field = '';
+    } else field += c;
+  }
+  out.push(field);
+  return out;
+}
+
+const US_STATES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
+  FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois',
+  IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
+  ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan',
+  MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana',
+  NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota',
+  OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania',
+  RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee',
+  TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
+  WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+};
+
+async function airportsCsv() {
+  if (!fs.existsSync(AIRPORTS_CSV)) {
+    const res = await fetch(OURAIRPORTS);
+    if (!res.ok) throw new Error(`OurAirports answered ${res.status}`);
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    fs.writeFileSync(AIRPORTS_CSV, Buffer.from(await res.arrayBuffer()));
+  }
+  return fs.readFileSync(AIRPORTS_CSV, 'utf8');
+}
+
+/** One airport by ICAO, in the shape airports.json wants. */
+async function lookupAirport(code) {
+  const text = await airportsCsv();
+  const lines = text.split(/\r?\n/);
+  const head = csvLine(lines[0]);
+  const col = Object.fromEntries(head.map((h, i) => [h, i]));
+  const wanted = code.toUpperCase();
+
+  for (let i = 1; i < lines.length; i += 1) {
+    // Cheap reject before parsing the line at all. This file is eighty
+    // thousand rows and the code has to appear somewhere on the right one.
+    if (!lines[i] || !lines[i].toUpperCase().includes(wanted)) continue;
+
+    const f = csvLine(lines[i]);
+    const ident = (f[col.ident] ?? '').toUpperCase();
+    const icao = (f[col.icao_code] ?? '').toUpperCase();
+    if (ident !== wanted && icao !== wanted) continue;
+
+    const region = f[col.iso_region] ?? '';
+    const country = f[col.iso_country] ?? '';
+    const where = country === 'US' ? US_STATES[region.replace('US-', '')] : country;
+
+    return {
+      icao: icao || ident,
+      iata: (f[col.iata_code] ?? '').toUpperCase(),
+      name: f[col.name] ?? '',
+      city: [f[col.municipality], where].filter(Boolean).join(', '),
+      lat: Number(Number(f[col.latitude_deg]).toFixed(4)),
+      lon: Number(Number(f[col.longitude_deg]).toFixed(4)),
+      type: f[col.type] ?? '',
+    };
+  }
+  return null;
+}
+
+// --- aircraft types ---------------------------------------------------------
+
+const SHAPE_FAMILIES = ['jet', 'fighter'];
+const TIPS = ['plain', 'raked'];
+
+/**
+ * The same rules src/data/aircraft-types.ts enforces at build time, applied
+ * here so that the mistake is visible while the person who made it is still
+ * looking at the form. Deliberately kept in step with that file.
+ */
+function validateFamily(entry, existing) {
+  const id = String(entry.id ?? '').trim();
+  const name = String(entry.name ?? '').trim();
+  const drawn = String(entry.drawn ?? '').trim();
+  const span = Number(entry.span);
+  const length = Number(entry.length);
+  const shape = entry.shape ?? {};
+
+  if (!/^[a-z0-9-]+$/.test(id)) return { error: 'id is lowercase letters, digits and dashes' };
+  if (!name) return { error: 'The family needs a name' };
+  if (!drawn) return { error: 'Say which variant the drawing is of' };
+  if (!(span > 0) || !(length > 0)) return { error: 'Span and length are what size the drawing' };
+  if (!SHAPE_FAMILIES.includes(shape.family)) {
+    return { error: `family is one of ${SHAPE_FAMILIES.join(', ')}` };
+  }
+  if (!TIPS.includes(shape.tip)) return { error: `tip is one of ${TIPS.join(', ')}` };
+  if (![0, 2, 4].includes(Number(shape.engines))) return { error: 'engines is 0, 2 or 4' };
+  if (![1, 2].includes(Number(shape.fins))) return { error: 'fins is 1 or 2' };
+
+  const codes = (Array.isArray(entry.codes) ? entry.codes : [])
+    .map((c) => String(c).trim().toUpperCase())
+    .filter(Boolean);
+  if (!codes.length) return { error: 'A family needs at least one type code' };
+
+  // One code in two families would count a photo twice, and the board would
+  // then disagree with itself about how many there are.
+  for (const other of aircraftTypes) {
+    if (other.id === existing) continue;
+    const clash = codes.find((c) => other.codes.includes(c));
+    if (clash) return { error: `${clash} is already in ${other.name}` };
+  }
+  if (id !== existing && aircraftTypes.some((t) => t.id === id)) {
+    return { error: `${id} is already a family` };
+  }
+
+  const custom = (Array.isArray(shape.custom) ? shape.custom : [])
+    .map((d) => String(d).trim())
+    .filter(Boolean);
+
+  const num = (v, fallback) => (Number.isFinite(Number(v)) ? Number(v) : fallback);
+  const cleanShape = {
+    family: shape.family,
+    sweep: num(shape.sweep, 25),
+    wingAt: num(shape.wingAt, 0.4),
+    rootChord: num(shape.rootChord, 0.2),
+    taper: num(shape.taper, 0.3),
+    waist: num(shape.waist, 0.11),
+    engines: Number(shape.engines),
+    tip: shape.tip,
+    fins: Number(shape.fins),
+  };
+  // Both are optional in the type and default the other way, so they are only
+  // written when they are actually saying something.
+  if (shape.strake === false) cleanShape.strake = false;
+  if (shape.highWing === true) cleanShape.highWing = true;
+  if (custom.length) {
+    cleanShape.custom = custom;
+    const box = String(shape.customBox ?? '').trim();
+    // Only kept when it is four real numbers. A half typed box would scale the
+    // art to nothing and look like the paths were wrong.
+    const parts = box.split(/[\s,]+/).map(Number);
+    if (parts.length === 4 && parts.every(Number.isFinite) && parts[2] > 0 && parts[3] > 0) {
+      cleanShape.customBox = parts.join(' ');
+    }
+  }
+
+  return { value: { id, codes, name, drawn, span, length, shape: cleanShape } };
+}
+
+/** Photos on a family, by any of its codes. */
+const photosUsingFamily = (codes) =>
+  readLibrary()
+    .filter((p) => codes.includes(p.typeCode))
+    .map((p) => p.slug);
+
+/**
+ * The site's own generator, so that the preview in the editor is the drawing
+ * the board will produce rather than an approximation of it. A second copy of
+ * this geometry in the browser would drift, and the drift would only show up
+ * once something was already published.
+ *
+ * Imported lazily because it is TypeScript and Node strips the types itself:
+ * if that ever stops working, only the preview should break rather than the
+ * whole studio.
+ */
+let planformModule = null;
+async function drawPlanform(span, length, shape, reference) {
+  planformModule ??= import('../src/lib/planform.ts');
+  const { planform } = await planformModule;
+  return planform(span, length, shape, reference);
+}
+
+/** What the board scales against: the largest thing on it. */
+const scaleReference = () =>
+  Math.max(...aircraftTypes.map((t) => Math.max(t.span, t.length)));
 
 // --- projects ---------------------------------------------------------------
 
@@ -405,6 +666,11 @@ const server = http.createServer(async (req, res) => {
         gaps: findGaps(),
         airports,
         typeCodes,
+        aircraftTypes,
+        // The board draws everything against its largest aeroplane, so the
+        // editor's preview has to know the same number or a new type would be
+        // previewed at one size and published at another.
+        reference: scaleReference(),
         inbox: fs.existsSync(INBOX)
           ? fs.readdirSync(INBOX).filter((f) => /\.(jpe?g|png|tiff?|webp)$/i.test(f))
           : [],
@@ -625,7 +891,18 @@ const server = http.createServer(async (req, res) => {
        * with nobody having looked at it. Anything outside these folders is now
        * left alone and named in the log instead.
        */
-      const OWNED = ['src/content/photos', 'src/content/projects', 'src/content/trips'];
+      const OWNED_DIRS = ['src/content/photos', 'src/content/projects', 'src/content/trips'];
+
+      /**
+       * Named one file at a time rather than as `src/data`, on purpose. The
+       * studio writes exactly these two files in that folder and nothing else
+       * in it; staging the directory would sweep up drives.json, peaks.json
+       * and the rest, which is the same trap as `git add -A` in a smaller
+       * shape.
+       */
+      const OWNED_FILES = ['src/data/airports.json', 'src/data/aircraft-types.json'];
+      const OWNED = [...OWNED_DIRS, ...OWNED_FILES];
+      const owns = (f) => OWNED_DIRS.some((d) => f.startsWith(`${d}/`)) || OWNED_FILES.includes(f);
 
       const changed = status.out
         .split('\n')
@@ -644,8 +921,8 @@ const server = http.createServer(async (req, res) => {
             .replace(/^"|"$/g, ''),
         );
 
-      const mine = changed.filter((f) => OWNED.some((dir) => f.startsWith(`${dir}/`)));
-      const others = changed.filter((f) => !OWNED.some((dir) => f.startsWith(`${dir}/`)));
+      const mine = changed.filter(owns);
+      const others = changed.filter((f) => !owns(f));
 
       const note = others.length
         ? [
@@ -669,6 +946,139 @@ const server = http.createServer(async (req, res) => {
         if (!r.ok) return json(res, 500, { error: `git ${step[0]} failed`, log });
       }
       return json(res, 200, { ok: true, log: [...log, ...note] });
+    }
+
+    // --- airports --------------------------------------------------------
+
+    if (req.method === 'GET' && url.pathname === '/api/airport/lookup') {
+      const code = String(url.searchParams.get('icao') ?? '').trim().toUpperCase();
+      if (!ICAO.test(code)) return json(res, 400, { error: 'Give a three or four character code' });
+      try {
+        const found = await lookupAirport(code);
+        if (!found) return json(res, 404, { error: `OurAirports has nothing under ${code}` });
+        return json(res, 200, { ok: true, airport: found });
+      } catch (err) {
+        return json(res, 502, { error: `Lookup failed: ${err?.message ?? err}` });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/airport') {
+      const { existing, airport } = JSON.parse((await readBody(req)).toString('utf8'));
+      const { error, value } = validateAirport(airport, existing ?? null);
+      if (error) return json(res, 400, { error });
+
+      const next = { ...airports };
+
+      // Changing the code is a delete and an add. The photo sidecars store the
+      // old one, so it has to be off every photo first or they would point at
+      // a code that no longer exists and fail the content schema at build.
+      if (existing && existing !== value.icao) {
+        const inUse = photosUsingAirport(existing);
+        if (inUse.length) {
+          return json(res, 400, {
+            error:
+              `${existing} is on ${inUse.length} photo${inUse.length === 1 ? '' : 's'}. ` +
+              'Move those to another airport first, or the build will fail on them.',
+            photos: inUse,
+          });
+        }
+        delete next[existing];
+      }
+
+      next[value.icao] = value;
+      writeJson(AIRPORTS_FILE, next);
+      airports = readJson(AIRPORTS_FILE);
+      return json(res, 200, { ok: true, airports });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/airport/delete') {
+      const { icao } = JSON.parse((await readBody(req)).toString('utf8'));
+      if (!airports[icao]) return json(res, 404, { error: 'No such airport' });
+
+      const inUse = photosUsingAirport(icao);
+      if (inUse.length) {
+        return json(res, 400, {
+          error:
+            `${icao} is on ${inUse.length} photo${inUse.length === 1 ? '' : 's'} and cannot go yet.`,
+          photos: inUse,
+        });
+      }
+
+      const next = { ...airports };
+      delete next[icao];
+      writeJson(AIRPORTS_FILE, next);
+      airports = readJson(AIRPORTS_FILE);
+      return json(res, 200, { ok: true, airports });
+    }
+
+    // --- aircraft types --------------------------------------------------
+
+    /**
+     * Draws a shape without saving it, so the sliders have something to move.
+     * Runs the site's own generator rather than anything written for this
+     * page: what comes back is what the board will draw.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/aircraft/preview') {
+      const { span, length, shape, reference } = JSON.parse((await readBody(req)).toString('utf8'));
+      const s = Number(span);
+      const l = Number(length);
+      if (!(s > 0) || !(l > 0)) return json(res, 400, { error: 'Span and length size the drawing' });
+      try {
+        const ref = Number(reference) > 0 ? Number(reference) : Math.max(s, l);
+        return json(res, 200, { ok: true, drawing: await drawPlanform(s, l, shape, ref) });
+      } catch (err) {
+        return json(res, 400, { error: `Could not draw that: ${err?.message ?? err}` });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/aircraft') {
+      const { existing, family } = JSON.parse((await readBody(req)).toString('utf8'));
+      const { error, value } = validateFamily(family, existing ?? null);
+      if (error) return json(res, 400, { error });
+
+      const next = [...aircraftTypes];
+      const at = existing ? next.findIndex((t) => t.id === existing) : -1;
+      if (at >= 0) next[at] = value;
+      else next.push(value);
+
+      writeJson(AIRCRAFT_FILE, next);
+      aircraftTypes = readJson(AIRCRAFT_FILE);
+      typeCodes = deriveTypeCodes();
+      return json(res, 200, {
+        ok: true,
+        aircraftTypes,
+        typeCodes,
+        reference: scaleReference(),
+      });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/aircraft/delete') {
+      const { id } = JSON.parse((await readBody(req)).toString('utf8'));
+      const family = aircraftTypes.find((t) => t.id === id);
+      if (!family) return json(res, 404, { error: 'No such family' });
+
+      // Not a build failure the way a missing airport is: the photo keeps
+      // showing in the gallery and quietly stops reaching the board. Silent is
+      // the reason to refuse rather than a reason not to.
+      const inUse = photosUsingFamily(family.codes);
+      if (inUse.length) {
+        return json(res, 400, {
+          error:
+            `${family.name} is on ${inUse.length} photo${inUse.length === 1 ? '' : 's'}. ` +
+            'Deleting it would drop them off the board without saying so.',
+          photos: inUse,
+        });
+      }
+
+      writeJson(AIRCRAFT_FILE, aircraftTypes.filter((t) => t.id !== id));
+      aircraftTypes = readJson(AIRCRAFT_FILE);
+      typeCodes = deriveTypeCodes();
+      return json(res, 200, {
+        ok: true,
+        aircraftTypes,
+        typeCodes,
+        reference: scaleReference(),
+      });
     }
 
     res.writeHead(404);
