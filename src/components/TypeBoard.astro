@@ -67,7 +67,13 @@ const shown = mode === "caught" ? caught : wanted;
                   the box, so the group scales them to the board's reference. */}
               <g transform={drawing.transform}>
                 {drawing.paths.map((p) => (
-                  <path d={p.d} transform={p.transform} fill-rule={p.fillRule} />
+                  <path
+                    d={p.d}
+                    transform={p.transform}
+                    fill-rule={p.fillRule}
+                    stroke-width={p.strokeWidth}
+                    data-stroke={p.strokeWidth ? "" : undefined}
+                  />
                 ))}
               </g>
             </svg>
@@ -162,6 +168,26 @@ const shown = mode === "caught" ? caught : wanted;
   .ghost path {
     fill: var(--color-rule);
     stroke: none;
+  }
+
+  /* A traced drawing can hold lines as well as shapes: a panel line or a
+     control surface drawn with the pen and left as a stroke. Those are the one
+     thing that must not be filled, because filling an open line closes it and
+     leaves a sliver. Both boards paint them in their own colour, so whatever
+     the drawing was exported in never reaches the page. */
+  .inked path[data-stroke],
+  .ghost path[data-stroke] {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .inked path[data-stroke] {
+    stroke: var(--color-chart);
+  }
+
+  .ghost path[data-stroke] {
+    stroke: var(--color-rule);
   }
 
   .name {

@@ -79,6 +79,14 @@ export interface DrawnPath {
   d: string;
   transform?: string;
   fillRule?: 'nonzero' | 'evenodd';
+  /**
+   * Width of the line, when the shape was drawn as one.
+   *
+   * Present means stroke this rather than fill it. Filling a line closes it
+   * back on itself and leaves a sliver, which on a plate reads as a stray
+   * mark nobody drew. The colour is not carried: the board paints its own.
+   */
+  strokeWidth?: number;
 }
 
 export interface Drawing {

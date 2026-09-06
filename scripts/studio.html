@@ -253,6 +253,14 @@
       /* The plate outline, so it is obvious when pasted art is sitting off it. */
       .preview svg .frame { fill: none; stroke: var(--rule); stroke-width: 0.5; }
       .preview svg path { fill: var(--ink); }
+      /* Lines are stroked, never filled, and take the same ink as the shapes.
+         Whatever colour the drawing was exported in stops here. */
+      .preview svg path[data-stroke] {
+        fill: none;
+        stroke: var(--ink);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
       .preview .label { margin: 6px 0 0; }
       .preview .label[data-bad] { color: var(--signal); }
 
@@ -1412,6 +1420,9 @@
       const NOT_DRAWN_SELECTOR = "defs,clipPath,mask,symbol,marker,pattern";
 
       /** Things this cannot turn into a path, and what to say about each. */
+      const CANNOT_LABELS = {
+        invisible: "a shape with no fill and no line, invisible in your drawing too",
+      };
       const CANNOT = {
         image: "a placed image, which is the photo you traced over",
         text: "live text, which has to be outlined before exporting",
@@ -1538,18 +1549,40 @@
       }
 
       function importSvg(markup) {
-        const root = parseSvg(markup);
-        if (!root) {
+        const parsed = parseSvg(markup);
+        if (!parsed) {
           return { error: "No SVG in that. Export again and bring in the whole file." };
         }
 
+        /**
+         * Put in the document, off screen, before anything is read off it.
+         *
+         * Illustrator does not write fill, stroke or fill-rule onto the shape.
+         * It writes a class and a <style> block at the top of the file, so
+         * reading attributes finds nothing and every shape looks identical.
+         * Once it is in the document each one can be asked what it actually
+         * looks like, which is the only way to tell a filled shape from a line
+         * and the only way a fill rule in a class is ever seen.
+         */
+        const host = document.createElement("div");
+        host.setAttribute(
+          "style",
+          "position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden",
+        );
+        host.appendChild(document.importNode(parsed, true));
+        document.body.appendChild(host);
+        const root = host.firstElementChild;
+
         const paths = [];
         const skipped = new Map();
+        const skip = (key) => skipped.set(key, (skipped.get(key) ?? 0) + 1);
+
+        try {
         for (const el of root.querySelectorAll("*")) {
           const tag = el.tagName.toLowerCase();
 
           if (CANNOT[tag]) {
-            skipped.set(tag, (skipped.get(tag) ?? 0) + 1);
+            skip(tag);
             continue;
           }
           if (!AS_PATH[tag]) continue;
@@ -1565,20 +1598,39 @@
            * underneath it, and the plate looks blank or black.
            */
           if (el.closest(NOT_DRAWN_SELECTOR)) continue;
-          if (/display\s*:\s*none/.test(el.getAttribute("style") ?? "")) continue;
-          if (el.getAttribute("display") === "none") continue;
+
+          const look = getComputedStyle(el);
+          if (look.display === "none" || look.visibility === "hidden") continue;
+          if (Number(look.opacity) === 0) continue;
 
           const d = AS_PATH[tag](el).trim();
           if (!d) continue;
 
+          const filled = Boolean(look.fill) && look.fill !== "none";
+          const width =
+            look.stroke && look.stroke !== "none" ? parseFloat(look.strokeWidth) || 0 : 0;
+
+          // Neither filled nor drawn: a guide, or a leftover. It showed
+          // nothing in the drawing and it shows nothing here.
+          if (!filled && !width) {
+            skip("invisible");
+            continue;
+          }
+
           const entry = { d };
           const transform = stackedTransform(el, root);
           if (transform) entry.transform = transform;
-          const rule =
-            el.getAttribute("fill-rule") ??
-            (/fill-rule\s*:\s*evenodd/.test(el.getAttribute("style") ?? "") ? "evenodd" : null);
-          if (rule === "evenodd") entry.fillRule = "evenodd";
+
+          if (filled) {
+            if (look.fillRule === "evenodd") entry.fillRule = "evenodd";
+          } else {
+            // Drawn as a line. Filling it would close it into a sliver.
+            entry.strokeWidth = width;
+          }
           paths.push(entry);
+        }
+        } finally {
+          host.remove();
         }
 
         if (!paths.length) {
@@ -1592,7 +1644,10 @@
         return {
           custom: paths,
           customBox: [box.x, box.y, box.width, box.height].map(round).join(" "),
-          skipped: [...skipped.entries()].map(([tag, n]) => `${n} x ${CANNOT[tag]}`),
+          lines: paths.filter((p) => p.strokeWidth).length,
+          skipped: [...skipped.entries()].map(
+            ([key, n]) => `${n} x ${CANNOT[key] ?? CANNOT_LABELS[key] ?? key}`,
+          ),
         };
       }
 
@@ -1612,8 +1667,13 @@
       function showArt(section) {
         const { custom, customBox } = readArt(section);
         const note = section.querySelector("[data-art-note]");
+        const lines = custom.filter((p) => p.strokeWidth).length;
+        const drawn = custom.length - lines;
+        const parts = [];
+        if (drawn) parts.push(`${drawn} shape${drawn === 1 ? "" : "s"}`);
+        if (lines) parts.push(`${lines} line${lines === 1 ? "" : "s"}`);
         note.textContent = custom.length
-          ? `${custom.length} shape${custom.length === 1 ? "" : "s"}, fitted from ${customBox || "the plate"}`
+          ? `${parts.join(" and ")}, fitted from ${customBox || "the plate"}`
           : "None. The plate is drawn from the numbers above.";
       }
 
@@ -1711,7 +1771,11 @@
         const attr = (name, value) => (value ? ` ${name}="${esc(value)}"` : "");
         const g = attr("transform", body.drawing.transform);
         const paths = body.drawing.paths
-          .map((p) => `<path d="${esc(p.d)}"${attr("transform", p.transform)}${attr("fill-rule", p.fillRule)} />`)
+          .map(
+            (p) =>
+              `<path d="${esc(p.d)}"${attr("transform", p.transform)}${attr("fill-rule", p.fillRule)}` +
+              `${p.strokeWidth ? ` data-stroke stroke-width="${p.strokeWidth}"` : ""} />`,
+          )
           .join("");
         svg.innerHTML = `<rect class="frame" x="0" y="0" width="100" height="100" /><g${g}>${paths}</g>`;
         note.textContent = family.shape.custom.length ? "Your drawing, to the board's scale" : "To the board's scale";

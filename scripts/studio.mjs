@@ -289,6 +289,8 @@ function validateFamily(entry, existing) {
       const transform = String(entry?.transform ?? '').trim();
       if (transform) out.transform = transform;
       if (RULES.includes(entry?.fillRule)) out.fillRule = entry.fillRule;
+      const width = Number(entry?.strokeWidth);
+      if (Number.isFinite(width) && width > 0) out.strokeWidth = width;
       return out;
     })
     .filter(Boolean);
