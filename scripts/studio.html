@@ -1409,7 +1409,7 @@
       const SVG_NS = "http://www.w3.org/2000/svg";
 
       /** Elements that describe rather than draw. Nothing inside them renders. */
-      const NOT_DRAWN = new Set(["defs", "clippath", "mask", "symbol", "marker", "pattern"]);
+      const NOT_DRAWN_SELECTOR = "defs,clipPath,mask,symbol,marker,pattern";
 
       /** Things this cannot turn into a path, and what to say about each. */
       const CANNOT = {
@@ -1553,8 +1553,18 @@
             continue;
           }
           if (!AS_PATH[tag]) continue;
-          // Inside <defs> and friends nothing is drawn, it is only referenced.
-          if (el.closest(Object.keys(NOT_DRAWN).length ? [...NOT_DRAWN].join(",") : "defs")) continue;
+
+          /**
+           * Inside these, nothing is drawn. It is only there to be referenced.
+           *
+           * This matters far more than it sounds. Illustrator clips almost
+           * every export to its artboard, and writes that clip as a <clipPath>
+           * holding a rectangle the full size of the artboard, often outside
+           * <defs>. Import that rectangle as artwork and it is a solid shape
+           * covering the whole plate: the aeroplane is still there, drawn
+           * underneath it, and the plate looks blank or black.
+           */
+          if (el.closest(NOT_DRAWN_SELECTOR)) continue;
           if (/display\s*:\s*none/.test(el.getAttribute("style") ?? "")) continue;
           if (el.getAttribute("display") === "none") continue;
 
@@ -1657,6 +1667,15 @@
        * round trip to localhost, which costs nothing worth saving.
        */
       async function drawPreview(section) {
+        /**
+         * Two draws can be in the air at once: importing a drawing kicks one
+         * off, and the file input's own change event bubbles to the card and
+         * kicks off another. Whichever answers last would win, and the older
+         * one carries the shape from before the import. So each draw takes a
+         * number and a stale answer is dropped rather than rendered.
+         */
+        const token = (section.dataset.draw = String(Number(section.dataset.draw ?? 0) + 1));
+
         const svg = $("[data-preview]", section);
         const note = $("[data-note]", section);
         const family = collectFamily(section);
@@ -1679,6 +1698,7 @@
           }),
         });
         const body = await res.json();
+        if (section.dataset.draw !== token) return;
 
         if (!res.ok) {
           note.textContent = body.error ?? "Could not draw that";
