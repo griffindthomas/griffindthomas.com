@@ -31,14 +31,6 @@
     "lat": 47.9063,
     "lon": -122.2816
   },
-  "KIWA": {
-    "icao": "KIWA",
-    "iata": "AZA",
-    "name": "Phoenix-Mesa Gateway",
-    "city": "Mesa, Arizona",
-    "lat": 33.3078,
-    "lon": -111.6555
-  },
   "KBOS": {
     "icao": "KBOS",
     "iata": "BOS",
