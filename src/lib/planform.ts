@@ -49,24 +49,41 @@ export interface Planform {
    * parameters cannot reach them, and a bad generated shape is worse than a
    * traced one. Left empty on every type the generator does draw well.
    *
-   * Drawn nose up. The art keeps whatever coordinate space it was authored
-   * in: give `customBox` and it is fitted onto the plate from there, so a
-   * drawing exported from anything can be pasted in without being redrawn.
-   * The scaling that keeps the board to one scale is applied on top of that,
-   * so a traced shape still comes out the right size next to a generated one.
+   * Drawn nose up. The art keeps whatever coordinate space it was traced in:
+   * `customBox` says what that space was and the drawing is fitted onto the
+   * plate from there, so artwork exported from anything can be brought in
+   * without being redrawn. The scaling that keeps the board to one scale is
+   * applied on top of that, so a traced shape still comes out the right size
+   * next to a generated one.
    */
-  custom?: string[];
+  custom?: DrawnPath[];
   /**
-   * The `viewBox` the custom paths were drawn in. Omit when the art is
-   * already in the 100 by 100 plate. Aspect ratio is preserved and the art is
-   * centred, the same way an image fits a frame.
+   * The box the art actually occupies, as "x y width height".
+   *
+   * This is the bounding box of the geometry, not the artboard it was
+   * exported on. An Illustrator artboard is nearly always larger than the
+   * aeroplane traced on it, and fitting to the artboard would draw the
+   * aeroplane small with the empty margin around it kept.
    */
   customBox?: string;
 }
 
+/**
+ * One path on a plate.
+ *
+ * Generated shapes are just `d`. Traced ones keep the transform they were
+ * nested under in the drawing they came from, and their fill rule, because a
+ * tracing with a hole cut in it fills solid without one.
+ */
+export interface DrawnPath {
+  d: string;
+  transform?: string;
+  fillRule?: 'nonzero' | 'evenodd';
+}
+
 export interface Drawing {
   /** Path data, in draw order. Filled or stroked by the caller. */
-  paths: string[];
+  paths: DrawnPath[];
   viewBox: string;
   /**
    * Applied to the paths as a group, when there is one. Generated drawings
@@ -281,7 +298,7 @@ function fighter(
     );
   }
 
-  return { paths, viewBox: `0 0 ${BOX} ${BOX}` };
+  return { paths: paths.map((d) => ({ d })), viewBox: `0 0 ${BOX} ${BOX}` };
 }
 
 /**
@@ -388,5 +405,5 @@ export function planform(
     ]),
   );
 
-  return { paths, viewBox: `0 0 ${BOX} ${BOX}` };
+  return { paths: paths.map((d) => ({ d })), viewBox: `0 0 ${BOX} ${BOX}` };
 }

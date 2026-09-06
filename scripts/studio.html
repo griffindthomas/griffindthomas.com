@@ -260,7 +260,9 @@
       .slider input[type="range"] { accent-color: var(--signal); width: 100%; }
       .slider output { font-family: var(--mono); font-size: 10.5px; color: var(--graphite); text-align: right; }
 
-      .paths { font-family: var(--mono); font-size: 11px; min-height: 84px; }
+      .paths { font-family: var(--mono); font-size: 11px; min-height: 60px; }
+      .art { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+      .art .label[data-bad] { color: var(--signal); }
     </style>
   </head>
 
@@ -1357,12 +1359,17 @@
               </div>
 
               <div class="field wide">
-                <span class="label">Drawing, if the numbers cannot get there</span>
-                <textarea class="paths" name="custom" rows="4" placeholder="Paste an SVG and it unpacks itself, or put one path per line. Leave empty to use the generated shape.">${esc((sh.custom ?? []).join("\n"))}</textarea>
-              </div>
-              <div class="field wide">
-                <span class="label">Box the drawing was made in</span>
-                <input type="text" name="customBox" value="${esc(sh.customBox ?? "")}" placeholder="Filled in from a pasted SVG. Empty means it is already in a 100 by 100 box." />
+                <span class="label">Traced drawing, when the numbers cannot get there</span>
+                <div class="art">
+                  <label class="add-photos">
+                    Import an SVG
+                    <input type="file" accept=".svg,image/svg+xml" hidden data-art-file />
+                  </label>
+                  <button type="button" data-art-clear>Clear it</button>
+                  <span class="label" data-art-note></span>
+                </div>
+                <input type="hidden" name="art" value="${esc(JSON.stringify({ custom: sh.custom ?? [], customBox: sh.customBox ?? "" }))}" />
+                <textarea class="paths" name="paste" rows="3" placeholder="Or paste the contents of the .svg file here. Trace it nose up, outline any text, and leave the reference photo out of the export."></textarea>
               </div>
 
               <div class="field wide row-actions">
@@ -1378,36 +1385,247 @@
       const aircraftList = (types) => types.map((t) => aircraftCard(t, false)).join("");
 
       /**
-       * Pasted markup unpacks itself.
+       * An exported drawing, turned into plate artwork.
        *
-       * Nothing exports artwork in a hundred unit box, so the viewBox comes out
-       * with the paths and the site fits one onto the other. Without that, art
-       * from any real drawing tool lands somewhere off the plate at a size
-       * nobody could guess.
+       * Written against what Illustrator actually emits rather than against
+       * the shape of an SVG in the abstract, because four things it does
+       * routinely all used to come out wrong:
+       *
+       *   Nested groups carrying transforms. The geometry is meaningless
+       *   without them, so each path keeps the transforms it sat under.
+       *
+       *   Plain shapes. A traced outline is paths, but a canopy or an engine
+       *   drawn with the ellipse tool exports as <ellipse>, and anything that
+       *   only reads d= drops them without a word.
+       *
+       *   Holes. A shape with something cut out of it needs its fill rule or
+       *   it fills solid, and the cut is exactly what makes a tracing read.
+       *
+       *   The artboard. It is always bigger than the aeroplane on it, so the
+       *   fit is measured off the geometry itself: the paths are laid out
+       *   off screen and asked how much room they actually take. Fitting to
+       *   the artboard instead draws the aeroplane small inside its margin.
        */
-      function readCustom(section) {
-        const box = section.querySelector('[name="customBox"]');
-        const field = section.querySelector('[name="custom"]');
-        const raw = field.value.trim();
-        if (!raw) return { custom: [], customBox: "" };
+      const SVG_NS = "http://www.w3.org/2000/svg";
 
-        if (raw.includes("<")) {
-          const paths = [...raw.matchAll(/\sd\s*=\s*"([^"]+)"/g)].map((m) => m[1].trim()).filter(Boolean);
-          const vb = /viewBox\s*=\s*"([^"]+)"/.exec(raw)?.[1]?.trim() ?? "";
-          if (paths.length) {
-            field.value = paths.join("\n");
-            if (vb) box.value = vb;
-            return { custom: paths, customBox: vb || box.value.trim() };
-          }
+      /** Elements that describe rather than draw. Nothing inside them renders. */
+      const NOT_DRAWN = new Set(["defs", "clippath", "mask", "symbol", "marker", "pattern"]);
+
+      /** Things this cannot turn into a path, and what to say about each. */
+      const CANNOT = {
+        image: "a placed image, which is the photo you traced over",
+        text: "live text, which has to be outlined before exporting",
+        use: "a linked copy, which Illustrator writes when a symbol is reused",
+      };
+
+      const numbers = (value) =>
+        String(value ?? "")
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number)
+          .filter(Number.isFinite);
+
+      /** Every shape Illustrator emits, as path data. */
+      const AS_PATH = {
+        path: (e) => e.getAttribute("d") ?? "",
+        line: (e) => {
+          const [x1, y1, x2, y2] = ["x1", "y1", "x2", "y2"].map((a) => Number(e.getAttribute(a) || 0));
+          return `M ${x1} ${y1} L ${x2} ${y2}`;
+        },
+        polyline: (e) => {
+          const n = numbers(e.getAttribute("points"));
+          if (n.length < 4) return "";
+          const pts = [];
+          for (let i = 0; i + 1 < n.length; i += 2) pts.push(`${n[i]} ${n[i + 1]}`);
+          return `M ${pts.join(" L ")}`;
+        },
+        polygon: (e) => {
+          const d = AS_PATH.polyline(e);
+          return d ? `${d} Z` : "";
+        },
+        circle: (e) => {
+          const cx = Number(e.getAttribute("cx") || 0);
+          const cy = Number(e.getAttribute("cy") || 0);
+          const r = Number(e.getAttribute("r") || 0);
+          if (!(r > 0)) return "";
+          return `M ${cx - r} ${cy} a ${r} ${r} 0 1 0 ${r * 2} 0 a ${r} ${r} 0 1 0 ${-r * 2} 0 Z`;
+        },
+        ellipse: (e) => {
+          const cx = Number(e.getAttribute("cx") || 0);
+          const cy = Number(e.getAttribute("cy") || 0);
+          const rx = Number(e.getAttribute("rx") || 0);
+          const ry = Number(e.getAttribute("ry") || 0);
+          if (!(rx > 0) || !(ry > 0)) return "";
+          return `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${rx * 2} 0 a ${rx} ${ry} 0 1 0 ${-rx * 2} 0 Z`;
+        },
+        rect: (e) => {
+          const x = Number(e.getAttribute("x") || 0);
+          const y = Number(e.getAttribute("y") || 0);
+          const w = Number(e.getAttribute("width") || 0);
+          const h = Number(e.getAttribute("height") || 0);
+          if (!(w > 0) || !(h > 0)) return "";
+          // Rounded corners, because a rounded rectangle drawn sharp is a
+          // visibly different shape and Illustrator emits rx freely.
+          let rx = Math.min(Number(e.getAttribute("rx") || 0), w / 2);
+          let ry = Math.min(Number(e.getAttribute("ry") || 0), h / 2);
+          if (rx && !ry) ry = rx;
+          if (ry && !rx) rx = ry;
+          if (!rx || !ry) return `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z`;
+          return (
+            `M ${x + rx} ${y} H ${x + w - rx} A ${rx} ${ry} 0 0 1 ${x + w} ${y + ry}` +
+            ` V ${y + h - ry} A ${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h}` +
+            ` H ${x + rx} A ${rx} ${ry} 0 0 1 ${x} ${y + h - ry}` +
+            ` V ${y + ry} A ${rx} ${ry} 0 0 1 ${x + rx} ${y} Z`
+          );
+        },
+      };
+
+      /** Every transform the element sits under, outermost first. */
+      function stackedTransform(el, root) {
+        const parts = [];
+        for (let node = el; node && node !== root.parentElement; node = node.parentElement) {
+          const t = node.getAttribute?.("transform");
+          if (t && t.trim()) parts.unshift(t.trim());
         }
+        return parts.join(" ");
+      }
+
+      /**
+       * How much room the art takes, measured rather than assumed.
+       *
+       * Laid out off screen and asked, which is the only way to know: the
+       * answer depends on transforms, on curve control points that reach
+       * outside their end points, and on where on the artboard it was drawn.
+       */
+      function measureArt(paths) {
+        const svg = document.createElementNS(SVG_NS, "svg");
+        svg.setAttribute("style", "position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden");
+        const g = document.createElementNS(SVG_NS, "g");
+        for (const p of paths) {
+          const el = document.createElementNS(SVG_NS, "path");
+          el.setAttribute("d", p.d);
+          if (p.transform) el.setAttribute("transform", p.transform);
+          g.appendChild(el);
+        }
+        svg.appendChild(g);
+        document.body.appendChild(svg);
+        let box = null;
+        try {
+          const b = g.getBBox();
+          if (b.width > 0 && b.height > 0) box = b;
+        } catch {
+          // An empty or unrenderable set has no box, and the caller says so.
+        }
+        svg.remove();
+        return box;
+      }
+
+      /**
+       * Strict first, lenient second.
+       *
+       * XML parsing throws the whole file out over things that have nothing to
+       * do with the drawing: an xlink attribute whose namespace was never
+       * declared, a stray entity, a copied fragment. The HTML parser accepts
+       * all of that, and every attribute read below is lowercase either way,
+       * so there is nothing to lose by falling back to it.
+       */
+      function parseSvg(markup) {
+        const strict = new DOMParser().parseFromString(markup, "image/svg+xml");
+        if (!strict.querySelector("parsererror") && strict.documentElement?.tagName === "svg") {
+          return strict.documentElement;
+        }
+        return new DOMParser().parseFromString(markup, "text/html").querySelector("svg");
+      }
+
+      function importSvg(markup) {
+        const root = parseSvg(markup);
+        if (!root) {
+          return { error: "No SVG in that. Export again and bring in the whole file." };
+        }
+
+        const paths = [];
+        const skipped = new Map();
+        for (const el of root.querySelectorAll("*")) {
+          const tag = el.tagName.toLowerCase();
+
+          if (CANNOT[tag]) {
+            skipped.set(tag, (skipped.get(tag) ?? 0) + 1);
+            continue;
+          }
+          if (!AS_PATH[tag]) continue;
+          // Inside <defs> and friends nothing is drawn, it is only referenced.
+          if (el.closest(Object.keys(NOT_DRAWN).length ? [...NOT_DRAWN].join(",") : "defs")) continue;
+          if (/display\s*:\s*none/.test(el.getAttribute("style") ?? "")) continue;
+          if (el.getAttribute("display") === "none") continue;
+
+          const d = AS_PATH[tag](el).trim();
+          if (!d) continue;
+
+          const entry = { d };
+          const transform = stackedTransform(el, root);
+          if (transform) entry.transform = transform;
+          const rule =
+            el.getAttribute("fill-rule") ??
+            (/fill-rule\s*:\s*evenodd/.test(el.getAttribute("style") ?? "") ? "evenodd" : null);
+          if (rule === "evenodd") entry.fillRule = "evenodd";
+          paths.push(entry);
+        }
+
+        if (!paths.length) {
+          return { error: "Nothing drawable in that file. If it is one placed image, it still needs tracing." };
+        }
+
+        const box = measureArt(paths);
+        if (!box) return { error: "That art measured to nothing. Check it is not all hidden layers." };
+
+        const round = (v) => Math.round(v * 100) / 100;
         return {
-          custom: raw.split(/\n+/).map((l) => l.trim()).filter(Boolean),
-          customBox: box.value.trim(),
+          custom: paths,
+          customBox: [box.x, box.y, box.width, box.height].map(round).join(" "),
+          skipped: [...skipped.entries()].map(([tag, n]) => `${n} x ${CANNOT[tag]}`),
         };
       }
 
+      const readArt = (section) => {
+        try {
+          return JSON.parse(section.querySelector('[name="art"]').value);
+        } catch {
+          return { custom: [], customBox: "" };
+        }
+      };
+
+      function writeArt(section, art) {
+        section.querySelector('[name="art"]').value = JSON.stringify(art);
+        showArt(section);
+      }
+
+      function showArt(section) {
+        const { custom, customBox } = readArt(section);
+        const note = section.querySelector("[data-art-note]");
+        note.textContent = custom.length
+          ? `${custom.length} shape${custom.length === 1 ? "" : "s"}, fitted from ${customBox || "the plate"}`
+          : "None. The plate is drawn from the numbers above.";
+      }
+
+      /** Both ways in, one pipeline. */
+      function takeArt(section, markup) {
+        const note = section.querySelector("[data-art-note]");
+        const result = importSvg(markup);
+        if (result.error) {
+          note.textContent = result.error;
+          note.setAttribute("data-bad", "");
+          return;
+        }
+        note.removeAttribute("data-bad");
+        writeArt(section, { custom: result.custom, customBox: result.customBox });
+        if (result.skipped.length) {
+          showLog(["Brought in, but these were left out:", ...result.skipped.map((l) => `  ${l}`)]);
+        }
+        drawPreview(section);
+      }
+
       function collectFamily(section) {
-        const { custom, customBox } = readCustom(section);
+        const { custom, customBox } = readArt(section);
         const shape = {
           family: fieldValue(section, "family"),
           tip: fieldValue(section, "tip"),
@@ -1468,10 +1686,14 @@
           return;
         }
 
-        const g = body.drawing.transform ? ` transform="${esc(body.drawing.transform)}"` : "";
-        svg.innerHTML =
-          `<rect class="frame" x="0" y="0" width="100" height="100" />` +
-          `<g${g}>${body.drawing.paths.map((d) => `<path d="${esc(d)}" />`).join("")}</g>`;
+        // Each path carries its own transform and fill rule when it came out
+        // of a tracing, so it is rendered the same way the board renders it.
+        const attr = (name, value) => (value ? ` ${name}="${esc(value)}"` : "");
+        const g = attr("transform", body.drawing.transform);
+        const paths = body.drawing.paths
+          .map((p) => `<path d="${esc(p.d)}"${attr("transform", p.transform)}${attr("fill-rule", p.fillRule)} />`)
+          .join("");
+        svg.innerHTML = `<rect class="frame" x="0" y="0" width="100" height="100" /><g${g}>${paths}</g>`;
         note.textContent = family.shape.custom.length ? "Your drawing, to the board's scale" : "To the board's scale";
         note.removeAttribute("data-bad");
       }
@@ -1545,6 +1767,34 @@
             if (event.target.closest("[data-save]")) saveAircraft(section);
             else if (event.target.closest("[data-delete]")) removeAircraft(section);
           });
+
+          // Artwork comes in as a file or as pasted markup, and both land in
+          // the same importer. The paste box is a way in, never the store: it
+          // empties itself once the drawing has been taken out of it.
+          const file = section.querySelector("[data-art-file]");
+          file?.addEventListener("change", async () => {
+            const chosen = file.files[0];
+            if (!chosen) return;
+            takeArt(section, await chosen.text());
+            // Cleared so that choosing the same file twice fires again, which
+            // is what re-importing after a fix in Illustrator looks like.
+            file.value = "";
+          });
+
+          const paste = section.querySelector('[name="paste"]');
+          paste?.addEventListener("input", () => {
+            const markup = paste.value.trim();
+            if (!markup.includes("<svg")) return;
+            paste.value = "";
+            takeArt(section, markup);
+          });
+
+          section.querySelector("[data-art-clear]")?.addEventListener("click", () => {
+            writeArt(section, { custom: [], customBox: "" });
+            drawPreview(section);
+          });
+
+          showArt(section);
 
           // The preview is the whole reason the numbers are workable, so it
           // follows every input rather than waiting for a save.

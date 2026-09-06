@@ -66,8 +66,8 @@ const shown = mode === "caught" ? caught : wanted;
                   set no transform. Hand drawn ones are authored full size in
                   the box, so the group scales them to the board's reference. */}
               <g transform={drawing.transform}>
-                {drawing.paths.map((d) => (
-                  <path d={d} />
+                {drawing.paths.map((p) => (
+                  <path d={p.d} transform={p.transform} fill-rule={p.fillRule} />
                 ))}
               </g>
             </svg>

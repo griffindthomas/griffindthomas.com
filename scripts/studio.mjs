@@ -278,8 +278,19 @@ function validateFamily(entry, existing) {
     return { error: `${id} is already a family` };
   }
 
+  // Traced paths arrive as objects, because a tracing carries the transform it
+  // was nested under and the fill rule that keeps its holes open.
+  const RULES = ['nonzero', 'evenodd'];
   const custom = (Array.isArray(shape.custom) ? shape.custom : [])
-    .map((d) => String(d).trim())
+    .map((entry) => {
+      const d = String(entry?.d ?? '').trim();
+      if (!d) return null;
+      const out = { d };
+      const transform = String(entry?.transform ?? '').trim();
+      if (transform) out.transform = transform;
+      if (RULES.includes(entry?.fillRule)) out.fillRule = entry.fillRule;
+      return out;
+    })
     .filter(Boolean);
 
   const num = (v, fallback) => (Number.isFinite(Number(v)) ? Number(v) : fallback);

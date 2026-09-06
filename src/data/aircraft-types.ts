@@ -65,8 +65,9 @@ function validate(entries: unknown): AircraftFamily[] {
     // would draw nothing at all and the plate would come out blank.
     const custom = entry.shape.custom;
     if (custom !== undefined) {
-      const bad = !Array.isArray(custom) || custom.some((d) => typeof d !== 'string' || !d.trim());
-      if (bad) throw new Error(`${entry.id}: shape.custom must be a list of path data strings`);
+      const bad =
+        !Array.isArray(custom) || custom.some((p) => typeof p?.d !== 'string' || !p.d.trim());
+      if (bad) throw new Error(`${entry.id}: shape.custom must be a list of { d } paths`);
       const box = entry.shape.customBox;
       if (box !== undefined) {
         const parts = String(box).trim().split(/[\s,]+/).map(Number);
