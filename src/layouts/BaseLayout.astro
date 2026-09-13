@@ -43,7 +43,11 @@ const ogImage = new URL(image ?? "/og.png", Astro.site);
 const ICONS = "2";
 
 const SITE_NAME = "Griffin Thomas";
-const fullTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
+// A page that already opens with the name does not get it a second time. The
+// home page uses that to carry a descriptor in its own title, which is what a
+// search result for the name has to be able to tell apart from every other
+// Griffin Thomas.
+const fullTitle = title.startsWith(SITE_NAME) ? title : `${title} · ${SITE_NAME}`;
 ---
 
 <!doctype html>

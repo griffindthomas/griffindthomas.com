@@ -35,6 +35,9 @@ const personLd = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: SITE.name,
+  // Both spellings, because the initial is how this name is told apart and
+  // people type it either way.
+  alternateName: [SITE.fullName, SITE.fullName.replace(".", "")],
   url: SITE.url,
   email: `mailto:${SITE.email}`,
   image: new URL("/og.png", SITE.url).href,
@@ -43,6 +46,8 @@ const personLd = {
   affiliation: {
     "@type": "CollegeOrUniversity",
     name: "Arizona State University",
+    // The name it is actually searched by.
+    alternateName: "ASU",
     url: "https://www.asu.edu/",
   },
   knowsAbout: [
@@ -56,7 +61,7 @@ const personLd = {
 };
 ---
 
-<BaseLayout title={SITE.name} description={SITE.tagline}>
+<BaseLayout title={`${SITE.name} · Aerospace Engineering at ASU`} description={SITE.tagline}>
   <div class="mx-auto max-w-[88rem]">
     <section>
       <p class="data">{SITE.base.label}</p>

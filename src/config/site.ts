@@ -8,10 +8,26 @@
 
 export const SITE = {
   name: "Griffin Thomas",
+  /**
+   * With the middle initial, which is the half that makes the name findable.
+   *
+   * "Griffin Thomas" is a name eighty other people on LinkedIn also have, plus
+   * a dermatologist, an employment lawyer and an eighteenth century admiral.
+   * The D is the only distinguishing part, it is already the domain, and until
+   * now it appeared nowhere on the site. Used in the structured data so that
+   * searching the full name reaches this person rather than the admiral.
+   */
+  fullName: "Griffin D. Thomas",
   domain: "griffindthomas.com",
   url: "https://griffindthomas.com",
+  /**
+   * "(ASU)" is not padding. The university is called Arizona State in prose
+   * and ASU by everyone typing it into a search box, and the abbreviation did
+   * not appear anywhere on the site, so a search for the two together could
+   * not match a page that only ever said one of them.
+   */
   tagline:
-    "Aerospace engineering student at Arizona State. I build RC aircraft and photograph airliners at Sea-Tac, Boeing Field, and Sky Harbor.",
+    "Aerospace engineering student at Arizona State (ASU). I build RC aircraft and photograph airliners at Sea-Tac, Boeing Field, and Sky Harbor.",
   /**
    * ONE constant, deliberately. This address is routed through Cloudflare
    * Email Routing today and Google Workspace is a likely later migration;
