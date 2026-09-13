@@ -102,7 +102,12 @@ const skills = [
   <div class="mx-auto max-w-[88rem]">
     <header class="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
       <div>
-        <h1 class="font-display text-5xl sm:text-7xl">Resume</h1>
+        {/* The same eyebrow the home page uses above its heading. A resume
+            with no name on it is odd for anyone who lands here directly from
+            a search rather than through the nav, and this is the one page
+            where the full name with the initial belongs. */}
+        <p class="data">{SITE.fullName}</p>
+        <h1 class="font-display mt-6 text-5xl sm:text-7xl">Resume</h1>
       </div>
 
       <a

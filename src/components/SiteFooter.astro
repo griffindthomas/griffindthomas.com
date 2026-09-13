@@ -17,7 +17,10 @@ const elsewhere = [
     class="mx-auto flex max-w-[88rem] flex-col gap-6 px-5 py-8 sm:px-8 md:flex-row md:items-baseline md:justify-between lg:px-12"
   >
     <div class="data">
-      <p>&copy; {year} {SITE.name}</p>
+      {/* The full name, with the initial. It is what a copyright line carries
+          anyway, and it is the only string on the site that distinguishes
+          this Griffin Thomas from the eighty others. */}
+      <p>&copy; {year} {SITE.fullName}</p>
       {/* West Seattle, deliberately not the Tempe label above it, and the only
           way into /trips. Keeping the section out of the nav is a choice about
           visual noise, not a reason to make it unreachable for anyone reading
