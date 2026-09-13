@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The conventional name, which is the one people and crawlers reach for first.
+
+  Astro's sitemap integration writes sitemap-index.xml and sitemap-0.xml, and
+  nothing answered at /sitemap.xml, so submitting the obvious name returned a
+  404 and the submission failed. This is the same index served under the name
+  everyone tries, pointing at the same file the generated one points at.
+
+  It only needs revisiting if this site ever grows past the integration's
+  entry limit and a sitemap-1.xml appears alongside. At twelve pages against a
+  limit of forty-five thousand, that is not a near-term concern.
+-->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://griffindthomas.com/sitemap-0.xml</loc>
+  </sitemap>
+</sitemapindex>
