@@ -23,9 +23,25 @@ interface Props {
 
 const { title, description, image, bare = false, noindex = false } = Astro.props;
 
-// Astro.site is set in astro.config.mjs, so these resolve to absolute URLs -
-// required for OG tags, which reject relative paths.
-const canonical = new URL(Astro.url.pathname, Astro.site);
+/**
+ * The address this page is actually served at.
+ *
+ * `build.format: 'file'` writes /about.html, and during the static build
+ * `Astro.url.pathname` is that OUTPUT PATH rather than the URL anyone visits.
+ * Taken as it comes, every page declared a canonical of /about.html, and
+ * /about.html is a 307 back to /about. So each page named a redirect as its
+ * own true address, which is the one thing a canonical must never be, and it
+ * went into og:url as well: every link preview of this site pointed at
+ * /index.html.
+ *
+ * Routes that run in the Worker are already the real path and are untouched
+ * by the two replacements below.
+ *
+ * Astro.site is set in astro.config.mjs, so this resolves to an absolute URL,
+ * which OG tags require.
+ */
+const served = Astro.url.pathname.replace(/\/index\.html$/, "/").replace(/\.html$/, "");
+const canonical = new URL(served || "/", Astro.site);
 // The card that renders when the site is pasted into LinkedIn, a message or
 // Slack. Pages may override it; everything else falls back to the griffin
 // card. Regenerate with `node scripts/make-og.mjs`.
