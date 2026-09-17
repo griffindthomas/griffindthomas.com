@@ -247,9 +247,16 @@ const shown = mode === "caught" ? caught : wanted;
   button.plate {
     cursor: pointer;
   }
-  button.plate:hover .inked path,
-  button.plate:focus-visible .inked path {
-    fill: var(--color-signal);
+  /* Hover and focus change the ink, not the fill.
+
+     This rule used to set `fill` on the path directly, which reached past the
+     one declaration the plate's colour is supposed to come from. The fill went
+     to the signal colour and the seam stroke stayed on the old ink, so hovering
+     a traced aeroplane drew it in orange with every panel join outlined in
+     navy. It is the same mistake the selected state made, in a second place. */
+  button.plate:hover .inked,
+  button.plate:focus-visible .inked {
+    --plate-ink: var(--color-signal);
   }
   button.plate:hover .name,
   button.plate:focus-visible .name {
