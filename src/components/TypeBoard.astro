@@ -156,38 +156,49 @@ const shown = mode === "caught" ? caught : wanted;
     height: 100%;
   }
 
-  /* Caught: filled, the way a stamp is stuck in. */
-  .inked path {
-    fill: var(--color-chart);
-    stroke: none;
+  /* ONE decision about what colour a plate is.
+
+     A plate is drawn three ways at once: filled shapes, lines that must be
+     stroked rather than filled, and a hairline on every filled shape in a
+     tracing that closes the seams between its panels. All three have to be
+     the same colour, and each used to name that colour itself. Selecting a
+     plate then changed the fill and nothing else, so a selected tracing came
+     up orange with its seams and panel lines still drawn in the dark ink: an
+     aeroplane with every join showing.
+
+     So the colour is declared once, here, and everything below reads it. */
+  .inked {
+    --plate-ink: var(--color-chart);
   }
 
-  /* Wanted: the same drawing in a tone that is barely there. Filled rather
-     than outlined, because the aeroplane is built from overlapping shapes and
-     stroking it draws every join as well as the outline. */
+  /* Wanted: the same drawing in a tone that is barely there. */
+  .ghost {
+    --plate-ink: var(--color-rule);
+  }
+
+  /* Caught and filtered on: the one plate the gallery is showing. */
+  button.plate[aria-pressed="true"] .inked {
+    --plate-ink: var(--color-signal);
+  }
+
+  /* Filled, the way a stamp is stuck in, and never outlined: the aeroplane is
+     built from overlapping shapes and stroking it would draw every join. */
+  .inked path,
   .ghost path {
-    fill: var(--color-rule);
+    fill: var(--plate-ink);
     stroke: none;
   }
 
   /* A traced drawing can hold lines as well as shapes: a panel line or a
      control surface drawn with the pen and left as a stroke. Those are the one
      thing that must not be filled, because filling an open line closes it and
-     leaves a sliver. Both boards paint them in their own colour, so whatever
-     the drawing was exported in never reaches the page. */
+     leaves a sliver. */
   .inked path[data-stroke],
   .ghost path[data-stroke] {
     fill: none;
+    stroke: var(--plate-ink);
     stroke-linecap: round;
     stroke-linejoin: round;
-  }
-
-  .inked path[data-stroke] {
-    stroke: var(--color-chart);
-  }
-
-  .ghost path[data-stroke] {
-    stroke: var(--color-rule);
   }
 
   /* Seams.
@@ -206,16 +217,9 @@ const shown = mode === "caught" ? caught : wanted;
      alone. */
   .inked g[data-traced] path:not([data-stroke]),
   .ghost g[data-traced] path:not([data-stroke]) {
+    stroke: var(--plate-ink);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
-  }
-
-  .inked g[data-traced] path:not([data-stroke]) {
-    stroke: var(--color-chart);
-  }
-
-  .ghost g[data-traced] path:not([data-stroke]) {
-    stroke: var(--color-rule);
   }
 
   .name {
@@ -253,9 +257,6 @@ const shown = mode === "caught" ? caught : wanted;
   }
 
   /* The selected family. Nothing moves when a filter goes on. */
-  button.plate[aria-pressed="true"] .inked path {
-    fill: var(--color-signal);
-  }
   button.plate[aria-pressed="true"] .name {
     color: var(--color-signal);
   }
