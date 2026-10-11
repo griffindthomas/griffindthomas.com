@@ -5,14 +5,14 @@
   "registration": "TC-LLH",
   "airport": "KSEA",
   "location": "",
-  "caption": "",
+  "caption": "Taken 2 days after Turkish started service to Seattle.",
   "tags": [
     "airliner",
     "widebody"
   ],
   "featured": false,
   "order": 0,
-  "draft": true,
+  "draft": false,
   "shotAt": "2022-05-29T16:14:29",
   "timezone": "America/Los_Angeles",
   "image": "./img-0878.jpg",
