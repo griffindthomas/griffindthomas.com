@@ -6,7 +6,10 @@
   "airport": "KSEA",
   "location": "",
   "caption": "N844VA is an Airbus A320-200 that originally flew for Virgin America and later Alaska Airlines before being transferred to Tunisair as TS-ITD.",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

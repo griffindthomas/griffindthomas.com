@@ -6,7 +6,11 @@
   "airport": "KSEA",
   "location": "",
   "caption": "Alaska Airlines 737-900 Oneworld Livery",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody",
+    "special-livery"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

@@ -6,7 +6,10 @@
   "airport": "KSEA",
   "location": "",
   "caption": "The very first Virgin Atlantic A321neo, acquired by Alaska in the merger. Later sold to American Airlines and reregistered as N950XV",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,
