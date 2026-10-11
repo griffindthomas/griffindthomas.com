@@ -1,0 +1,36 @@
+{
+  "aircraft": "Boeing 737-700",
+  "typeCode": "B737",
+  "operator": "Alaska Airlines",
+  "registration": "N615AS",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": true,
+  "shotAt": "2026-10-10T17:54:19",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-0878-20261010-175419.jpg",
+  "lqip": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAABQBACdASoYABIAPu1grFAppSQjMBgIATAdiWcAv+wR+RWWGXTZ7cYUUBeAAP7fJLOniB+wU4JM/5+U24tfa21FyHJIntxgrOjcu4rN05YwCghpNMjBg4VDSuB2xrCCpt6TFt8pqlI5/oi8lnsJcgr5H8NIZWwNOgAAAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/500",
+    "iso": 20,
+    "rawDate": "2026:10:10 17:54:19"
+  },
+  "source": {
+    "file": "IMG_0878.JPG",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 1884520,
+    "originalLongEdge": 2997
+  }
+}

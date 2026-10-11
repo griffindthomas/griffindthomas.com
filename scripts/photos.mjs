@@ -71,6 +71,51 @@ export const slugOf = (base) =>
     .replace(/^-+|-+$/g, '');
 
 /**
+ * The slug this frame may actually have, which is not always the one its
+ * filename asks for.
+ *
+ * A filename is only unique within one camera. A Canon and an iPhone both
+ * count from IMG_0001, so two entirely different aeroplanes can arrive years
+ * apart both called IMG_0878.JPG. That happened: the second import took the
+ * first one's slug, overwrote its image, and left the first aeroplane's
+ * hand-entered record sitting on top of the second one's photograph. Nothing
+ * was reported, because by every check the importer made it looked like the
+ * same photo re-exported at a different size.
+ *
+ * So the frame's own capture time decides. Same time, same frame: keep the
+ * slug, which is the whole point of it being a pure function of the name.
+ * Different time, different aeroplane: take a slug of its own and say so.
+ *
+ * A frame with no EXIF date keeps the plain slug. There is nothing to compare
+ * it against, and inventing a discriminator would churn the library on every
+ * run.
+ */
+export function resolveSlug(base, rawDate, { library = LIBRARY } = {}) {
+  const plain = slugOf(base);
+  const jsonPath = path.join(library, `${plain}.json`);
+  if (!fs.existsSync(jsonPath)) return { slug: plain };
+
+  let existing;
+  try {
+    existing = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  } catch {
+    return { slug: plain };
+  }
+
+  const theirs = String(existing?.exif?.rawDate ?? '').trim();
+  const mine = String(rawDate ?? '').trim();
+  if (!theirs || !mine || theirs === mine) return { slug: plain };
+
+  // `2026:10:10 17:54:19` -> `20261010-175419`, which is this frame and no
+  // other, and is the same every time it is imported.
+  const stamp = mine.replace(/\D/g, '');
+  return {
+    slug: `${plain}-${stamp.slice(0, 8)}-${stamp.slice(8, 14)}`,
+    collidedWith: plain,
+  };
+}
+
+/**
  * EXIF dates look like `2026:08:02 12:08:24` and carry no zone. The value is
  * already the local wall clock, so this only reshapes the punctuation into
  * something ISO-ish. Deliberately no `Z` and no offset: appending one would
@@ -151,7 +196,25 @@ function emptySidecar() {
 const DERIVED_KEYS = ['image', 'lqip', 'exif', 'source'];
 
 export async function importOne(candidate, { force = false } = {}) {
-  const slug = slugOf(candidate.base);
+  // Read first. Which slug this photo may have depends on when it was taken,
+  // so the EXIF has to be in hand before any path is decided.
+  const [full, raw] = await Promise.all([
+    exifr.parse(candidate.full, { tiff: true, exif: true, gps: true }).catch(() => ({})),
+    exifr
+      .parse(candidate.full, { pick: ['DateTimeOriginal', 'CreateDate'], reviveValues: false })
+      .catch(() => ({})),
+  ]);
+  const ex = full ?? {};
+  const rawDate = raw?.DateTimeOriginal ?? raw?.CreateDate ?? '';
+
+  const { slug, collidedWith } = resolveSlug(candidate.base, rawDate);
+  if (collidedWith) {
+    console.warn(
+      `  ${candidate.file}: ${collidedWith} is already a different photograph, ` +
+        `taken ${String(rawDate).slice(0, 10)} vs its own date. Filed as ${slug}.`,
+    );
+  }
+
   const jpegName = `${slug}.jpg`;
   const jpegPath = path.join(LIBRARY, jpegName);
   const jsonPath = path.join(LIBRARY, `${slug}.json`);
@@ -163,18 +226,14 @@ export async function importOne(candidate, { force = false } = {}) {
   // Cheap identity check: same original file, same byte count. Re-encoding a
   // 22 MP JPEG is the slow part, and skipping it keeps repeat runs instant
   // and keeps git from seeing a churned binary on every import.
+  //
+  // This only ever compares a photo with itself now. Two different frames
+  // under one filename are separated by resolveSlug above, before they can
+  // reach the same path and the same record.
   const unchanged =
     existing?.source?.file === candidate.file &&
     existing?.source?.bytes === candidate.bytes &&
     fs.existsSync(jpegPath);
-
-  const [full, raw] = await Promise.all([
-    exifr.parse(candidate.full, { tiff: true, exif: true, gps: true }).catch(() => ({})),
-    exifr
-      .parse(candidate.full, { pick: ['DateTimeOriginal', 'CreateDate'], reviveValues: false })
-      .catch(() => ({})),
-  ]);
-  const ex = full ?? {};
 
   let lqip = existing?.lqip ?? '';
 
@@ -195,7 +254,6 @@ export async function importOne(candidate, { force = false } = {}) {
 
   const stored = await sharp(jpegPath).metadata();
 
-  const rawDate = raw?.DateTimeOriginal ?? raw?.CreateDate ?? '';
   const timezone = existing?.timezone ?? DEFAULT_TZ;
 
   const derived = {
