@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 8",
+  "typeCode": "B38M",
+  "operator": "Alaska Airlines",
+  "registration": "N839AK",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-10T17:53:33",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-0862.jpg",
+  "lqip": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAAAQBQCdASoYABIAPu1kq06ppaQiKA1RMB2JYwC1GtpBs0QZSS4akaozoAvyE7fY3hQAAP6U3n0AcU+phqwNRoKCC1RiDKwl4TUA26ksiYPY0m0xULOLy54aJiSuEyQRNrXmKIRGbkcHYbGuTEW+V+k3bcwRzDom7DkouMCN9itgepiQwr7OAAAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/500",
+    "iso": 40,
+    "rawDate": "2026:10:10 17:53:33"
+  },
+  "source": {
+    "file": "IMG_0862.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 3663958,
+    "originalLongEdge": 3290
+  }
+}

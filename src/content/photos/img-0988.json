@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-900",
+  "typeCode": "B739",
+  "operator": "Alaska Airlines",
+  "registration": "N423AS",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-10T18:01:45",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-0988.jpg",
+  "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwBACdASoYABIAPu1aqE2ppKOiN/VYATAdiUAXYAIpPSFAX9/AxD0UgAAA/lrR/rQbry5yhtTmc8BsrLbB0kjYIA3VzNizeatNfMkSLtEMQWujS4QPeN/tHQhejf5FK/aP1bhZmVBHEcDrNoBSBfFrQx3kKWAAAAA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/400",
+    "iso": 50,
+    "rawDate": "2026:10:10 18:01:45"
+  },
+  "source": {
+    "file": "IMG_0988.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 3766826,
+    "originalLongEdge": 3442
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A350-900",
+  "typeCode": "A359",
+  "operator": "Lufthansa",
+  "registration": "D-AIXP",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-10T17:02:58",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-0493.jpg",
+  "lqip": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABwBACdASoYABIAPuVipU2pJaOiMAwBIByJQBfJBCSc9QC9V8tYz+HVwplLIAD+xAHIlYxvK2ZsNsCgGi+4dqYL8Ws47tbxGCM8yn1XWS182b0ue8HGXMxvsynL5wb3svLj/5901mVFsKLaNGvG2AAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/640",
+    "iso": 20,
+    "rawDate": "2026:10:10 17:02:58"
+  },
+  "source": {
+    "file": "IMG_0493.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 3180448,
+    "originalLongEdge": 2984
+  }
+}

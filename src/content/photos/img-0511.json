@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 747-400F",
+  "typeCode": "B74F",
+  "operator": "CargoLux",
+  "registration": "LX-LCL",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-10T17:05:30",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-0511.jpg",
+  "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAACwBACdASoYABIAPu1oq08ppiOiMBgIATAdiUAK2AB6HvwCGIiRXiJS/Habg+kAAP6LBNpcvwXVsn42jPCOJwFJokG0Jw8363zxVfYZ2uNJLa1dIE0KR1GsFuo4BpnmS8Lc5d0WqEkw/LYIZxZuHKAsRECIXo0wAAA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/710",
+    "iso": 20,
+    "rawDate": "2026:10:10 17:05:30"
+  },
+  "source": {
+    "file": "IMG_0511.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 2799882,
+    "originalLongEdge": 2934
+  }
+}
