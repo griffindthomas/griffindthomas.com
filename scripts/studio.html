@@ -275,6 +275,43 @@
       .slider output { font-family: var(--mono); font-size: 10.5px; color: var(--graphite); text-align: right; }
 
       .paths { font-family: var(--mono); font-size: 11px; min-height: 60px; }
+
+      /* Find by tail number ---------------------------------------------- */
+
+      /* `.card` sets `display: grid`, which outranks the user agent's
+         `[hidden] { display: none }`. Without this, filtering sets the
+         attribute on a card and the card stays exactly where it was: the DOM
+         says hidden and the screen disagrees. */
+      .card[hidden] { display: none; }
+
+      #find-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+      #find {
+        flex: 0 1 320px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 7px 10px;
+        border: 1px solid var(--rule);
+        background: var(--paper);
+        color: var(--ink);
+      }
+      #find:focus { outline: none; border-color: var(--signal); }
+      #find::placeholder { text-transform: none; letter-spacing: 0; color: var(--graphite); }
+
+      /* The same airframe, more than once. Sits above the photograph because
+         that is what is being compared: whether this frame is one he already
+         has, which is a question about the picture and not about the form. */
+      .dupe {
+        margin: 0 0 6px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--signal);
+        cursor: pointer;
+      }
+      .dupe:hover { text-decoration: underline; }
       .art { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
       .art .label[data-bad] { color: var(--signal); }
     </style>
@@ -311,6 +348,12 @@
           They land in <code>photos-inbox</code> and are imported straight away. Several
           exports of the same frame are fine; the sharpest one wins.
         </p>
+      </div>
+
+      <div id="find-bar">
+        <input type="search" id="find" placeholder="Tail number, e.g. N615AS or tc-llh" autocomplete="off" />
+        <button type="button" id="find-clear">Clear</button>
+        <span class="label" id="find-count"></span>
       </div>
 
       <div id="cards"></div>
@@ -434,6 +477,10 @@
         return `
         <section class="card${missing.length ? " missing" : ""}" data-slug="${p.slug}">
           <div>
+            <!-- Filled in by markDuplicates once every card is on the page:
+                 a card cannot know on its own whether another one shares a
+                 registration with it. -->
+            <p class="dupe" data-dupe hidden></p>
             <img src="/img/${p.slug}.jpg" alt="" loading="lazy" />
             <div class="shot-meta">
               <div>${esc(p.slug)}</div>
@@ -1019,6 +1066,8 @@
         REFERENCE = state.reference ?? 1;
 
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
+        markDuplicates();
+        applyFind();
         $("#airport-cards").innerHTML = airportList(AIRPORTS);
         $("#aircraft-cards").innerHTML = aircraftList(AIRCRAFT);
         wireReferenceCards();
@@ -1141,6 +1190,14 @@
         for (const section of document.querySelectorAll(".card:not(.project)")) {
           section.addEventListener("change", () => saveNow(section, save));
           section.addEventListener("input", () => autosave(section, save));
+
+          // Typing a registration can make a duplicate appear or disappear, so
+          // the notes are rebuilt as it is typed rather than on the next load.
+          const reg = section.querySelector('[name="registration"]');
+          reg?.addEventListener("input", () => {
+            markDuplicates();
+            applyFind();
+          });
           // Live, because the point is to catch a code that lands nowhere
           // BEFORE it is saved and quietly missing from the type board.
           const code = section.querySelector('[name="typeCode"]');
@@ -1942,6 +1999,114 @@
           drawPreview(section);
         }
       }
+
+      // --- find by tail number, and spot the same airframe twice ---------------
+
+      /**
+       * A registration, reduced to what is actually being compared.
+       *
+       * N615AS, n615as and N-615-AS are one aeroplane. Tail numbers are
+       * written with and without their dash depending on the country and the
+       * typist, so neither searching nor counting duplicates can afford to
+       * care which was used.
+       */
+      const tail = (value) => String(value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+      const fieldOf = (section, name) =>
+        section.querySelector(`[name="${name}"]`)?.value ?? "";
+
+      /**
+       * Read live rather than off a data attribute written at render time.
+       *
+       * The registration on a card is editable, and the whole point of this is
+       * to catch a duplicate at the moment it is typed in, which is also the
+       * moment a stale index would still be saying there is only one.
+       */
+      const haystack = (section) =>
+        [
+          tail(fieldOf(section, "registration")),
+          fieldOf(section, "aircraft"),
+          fieldOf(section, "operator"),
+          section.dataset.slug ?? "",
+        ]
+          .join(" ")
+          .toUpperCase();
+
+      function applyFind() {
+        const box = $("#find");
+        const raw = box.value.trim();
+        const needle = raw.toUpperCase();
+        const asTail = tail(raw);
+        const cards = [...document.querySelectorAll("#cards .card")];
+
+        let shown = 0;
+        for (const section of cards) {
+          const hay = haystack(section);
+          // The dashless form is matched too, so "tc-llh" and "tcllh" both
+          // find TC-LLH, and so does part of it.
+          const hit = !raw || hay.includes(needle) || (asTail && hay.includes(asTail));
+          section.hidden = !hit;
+          if (hit) shown += 1;
+        }
+
+        $("#find-count").textContent = raw
+          ? `${shown} of ${cards.length}`
+          : `${cards.length} photos`;
+      }
+
+      /**
+       * Say, above the photograph, when the same airframe is in the library
+       * more than once.
+       *
+       * Counted across every card rather than within what is currently shown,
+       * because the question is whether he already has this aeroplane, not
+       * whether it happens to be on screen next to this one. Blank
+       * registrations are not a group: half the Blue Angels frames have none,
+       * and calling those six photos of the same aeroplane would be wrong.
+       */
+      function markDuplicates() {
+        const cards = [...document.querySelectorAll("#cards .card")];
+        const groups = new Map();
+        for (const section of cards) {
+          const reg = tail(fieldOf(section, "registration"));
+          if (!reg) continue;
+          groups.set(reg, [...(groups.get(reg) ?? []), section]);
+        }
+
+        for (const section of cards) {
+          const note = $("[data-dupe]", section);
+          if (!note) continue;
+          const reg = tail(fieldOf(section, "registration"));
+          const group = reg ? groups.get(reg) ?? [] : [];
+          if (group.length < 2) {
+            note.hidden = true;
+            note.textContent = "";
+            continue;
+          }
+          const nth = group.indexOf(section) + 1;
+          note.hidden = false;
+          note.textContent = `${fieldOf(section, "registration").trim()} — ${nth} of ${group.length}`;
+          note.title = "Show only this aeroplane";
+          note.dataset.reg = reg;
+        }
+      }
+
+      // Clicking the note narrows to that airframe, which is the thing you
+      // want next after being told there are four of them.
+      document.addEventListener("click", (event) => {
+        const note = event.target.closest("#cards [data-dupe]");
+        if (!note?.dataset.reg) return;
+        $("#find").value = note.dataset.reg;
+        applyFind();
+        document.querySelector("#cards .card:not([hidden])")?.scrollIntoView({ block: "center" });
+      });
+
+      $("#find").addEventListener("input", applyFind);
+      $("#find-clear").addEventListener("click", () => {
+        $("#find").value = "";
+        applyFind();
+        $("#find").focus();
+      });
 
       // --- tabs ---------------------------------------------------------------
       for (const tab of document.querySelectorAll(".tab")) {
