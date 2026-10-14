@@ -2540,15 +2540,35 @@
         const message = prompt("Describe the change", "Update photos");
         if (message === null) return;
 
-        $("#publish").disabled = true;
+        const button = $("#publish");
+        button.disabled = true;
         showLog(["publishing..."]);
-        const res = await fetch("/api/publish", {
-          method: "POST",
-          body: JSON.stringify({ message }),
-        });
-        const body = await res.json();
-        showLog([...(body.log ?? []), body.error ?? "Pushed. The site rebuilds in about a minute."]);
-        await load();
+
+        /**
+         * Re-enabled whatever happens.
+         *
+         * It was disabled on click and never set back, so Publish worked once
+         * per page load and then greyed out for good: a second edit could not
+         * be shipped without reloading, and nothing on screen said why. A
+         * failed publish left it dead too, which is the worst case, because
+         * that is the moment you most want to try again.
+         */
+        try {
+          const res = await fetch("/api/publish", {
+            method: "POST",
+            body: JSON.stringify({ message }),
+          });
+          const body = await res.json();
+          showLog([
+            ...(body.log ?? []),
+            body.error ?? "Pushed. The site rebuilds in about a minute.",
+          ]);
+          await load();
+        } catch (err) {
+          showLog([`Publish failed: ${err?.message ?? err}`, "Nothing was committed. Try again."]);
+        } finally {
+          button.disabled = false;
+        }
       });
 
       load();
