@@ -276,6 +276,65 @@
 
       .paths { font-family: var(--mono); font-size: 11px; min-height: 60px; }
 
+      /* Replace one photo's image ----------------------------------------- */
+      .card.dropping {
+        outline: 2px solid var(--signal);
+        outline-offset: 6px;
+      }
+      .card.dropping img { opacity: 0.45; }
+
+      #replace {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgb(0 0 0 / 45%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      #replace[hidden] { display: none; }
+      #replace .sheet {
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        padding: 22px 24px 20px;
+        max-width: 1000px;
+        width: 100%;
+        max-height: 100%;
+        overflow: auto;
+      }
+      #replace h2 { font-size: 19px; margin: 4px 0 16px; font-weight: 600; }
+      #replace .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      #replace figure { margin: 0; }
+      #replace figure img {
+        width: 100%;
+        display: block;
+        background: var(--sunk);
+        border: 1px solid var(--rule);
+      }
+      #replace figcaption { margin-top: 6px; }
+      .replace-warn {
+        margin: 14px 0 0;
+        padding: 9px 12px;
+        border-left: 2px solid var(--signal);
+        background: var(--sunk);
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+      .replace-warn strong {
+        display: block;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--signal);
+        margin-bottom: 2px;
+      }
+
       /* Find by tail number ---------------------------------------------- */
 
       /* `.card` sets `display: grid`, which outranks the user agent's
@@ -414,6 +473,41 @@
         <div id="aircraft-cards"></div>
       </div>
     </main>
+
+    <!-- Shown only while a dropped file is waiting to be confirmed. Nothing
+         about the photo changes until Replace is pressed. -->
+    <div id="replace" hidden>
+      <div class="sheet">
+        <p class="label" data-replace-for></p>
+        <h2 data-replace-title>Replace this image</h2>
+
+        <div class="compare">
+          <figure>
+            <img data-replace-before alt="" />
+            <figcaption class="label" data-replace-before-meta></figcaption>
+          </figure>
+          <figure>
+            <img data-replace-after alt="" />
+            <figcaption class="label" data-replace-after-meta></figcaption>
+          </figure>
+        </div>
+
+        <div data-replace-warnings></div>
+
+        <p class="label" style="margin: 14px 0 0">
+          Everything else is kept: the id and its links, registration, type, operator,
+          airfield, date, caption, tags, order and featured. The old image stays in git
+          history.
+        </p>
+
+        <div class="row-actions" style="margin-top: 16px">
+          <button type="button" class="primary" data-replace-go>Replace the image</button>
+          <button type="button" data-replace-cancel>Cancel</button>
+          <span class="spacer"></span>
+          <span class="status" data-replace-status></span>
+        </div>
+      </div>
+    </div>
 
     <script>
       const $ = (sel, root = document) => root.querySelector(sel);
@@ -1068,6 +1162,7 @@
         $("#cards").innerHTML = state.photos.map((p) => card(p, state.gaps)).join("");
         markDuplicates();
         applyFind();
+        wireReplaceDrops();
         $("#airport-cards").innerHTML = airportList(AIRPORTS);
         $("#aircraft-cards").innerHTML = aircraftList(AIRCRAFT);
         wireReferenceCards();
@@ -1997,6 +2092,161 @@
           });
           section.addEventListener("change", redraw);
           drawPreview(section);
+        }
+      }
+
+      // --- replace one photo's image -------------------------------------------
+
+      /**
+       * Dropping a file on a photo swaps that photo's picture and keeps the
+       * photo: same id, same links, same everything that was typed in. The
+       * usual reason is a re-crop of the same frame.
+       *
+       * Dropping anywhere else still imports a new photo, which is why these
+       * handlers stop the event rather than letting it reach the page.
+       */
+      let pending = null;
+
+      const sheet = () => $("#replace");
+
+      function showWarnings(list) {
+        const box = $("[data-replace-warnings]", sheet());
+        const LABEL = { capture: "Possibly a different photo", aspect: "Not 3:2", inbox: "Inbox" };
+        box.innerHTML = (list ?? [])
+          .map(
+            (w) =>
+              `<p class="replace-warn"><strong>${esc(LABEL[w.kind] ?? "Check")}</strong>${esc(w.text)}</p>`,
+          )
+          .join("");
+      }
+
+      async function stageReplacement(slug, file) {
+        const card = document.querySelector(`#cards .card[data-slug="${slug}"]`);
+        const status = card && $("[data-status]", card);
+        if (status) {
+          status.className = "status";
+          status.textContent = "Reading";
+        }
+
+        const res = await fetch(
+          `/api/photo/replace/stage?slug=${encodeURIComponent(slug)}&name=${encodeURIComponent(file.name)}`,
+          { method: "POST", body: file },
+        );
+        const body = await res.json();
+        if (status) status.textContent = "";
+
+        if (!res.ok) {
+          showLog(body.error ?? "Could not read that image");
+          return;
+        }
+
+        pending = { slug, token: body.token };
+        const s = sheet();
+        $("[data-replace-for]", s).textContent = `${slug}  ${file.name}`;
+        $("[data-replace-title]", s).textContent = "Replace this image, keep the photo";
+        // Cache-busted: this same URL has already been shown in the card, and
+        // after a replace it will be shown again with different bytes.
+        $("[data-replace-before]", s).src = `/img/${slug}.jpg?v=${Date.now()}`;
+        $("[data-replace-after]", s).src = `/api/photo/replace/pending/${body.token}.jpg`;
+        $("[data-replace-before-meta]", s).textContent = body.previous.width
+          ? `now  ${body.previous.width} x ${body.previous.height}`
+          : "now";
+        $("[data-replace-after-meta]", s).textContent =
+          `new  ${body.width} x ${body.height}` + (body.ratio ? `  (${body.ratio}:1)` : "");
+        showWarnings(body.warnings);
+        $("[data-replace-status]", s).textContent = "";
+        s.hidden = false;
+      }
+
+      async function closeSheet({ cancel }) {
+        const token = pending?.token;
+        pending = null;
+        sheet().hidden = true;
+        if (cancel && token) {
+          await fetch("/api/photo/replace/cancel", {
+            method: "POST",
+            body: JSON.stringify({ token }),
+          }).catch(() => {});
+        }
+      }
+
+      $("[data-replace-cancel]").addEventListener("click", () => closeSheet({ cancel: true }));
+      $("#replace").addEventListener("click", (event) => {
+        if (event.target === sheet()) closeSheet({ cancel: true });
+      });
+
+      $("[data-replace-go]").addEventListener("click", async () => {
+        if (!pending) return;
+        const { slug, token } = pending;
+        const status = $("[data-replace-status]", sheet());
+        status.className = "status";
+        status.textContent = "Replacing";
+
+        const res = await fetch("/api/photo/replace/commit", {
+          method: "POST",
+          body: JSON.stringify({ slug, token }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          status.className = "status error";
+          status.textContent = body.error ?? "Replace failed";
+          return;
+        }
+
+        pending = null;
+        sheet().hidden = true;
+        await load();
+        // The library path never changes, so the browser would happily show
+        // the picture it already has. Ask for it again by a different URL.
+        const img = document.querySelector(`#cards .card[data-slug="${slug}"] img`);
+        if (img) img.src = `/img/${slug}.jpg?v=${Date.now()}`;
+        showLog([
+          `${slug}: image replaced.`,
+          `  ${body.entry.source.width} x ${body.entry.source.height}, from ${body.entry.source.file}`,
+          '  Everything else kept. Publish to put it on the site.',
+        ]);
+        refreshStatus();
+      });
+
+      /** Every photo card is a drop target. */
+      function wireReplaceDrops() {
+        for (const card of document.querySelectorAll("#cards .card:not([data-drop-wired])")) {
+          card.setAttribute("data-drop-wired", "");
+          // dragenter and dragleave both fire for children, so the highlight
+          // is counted rather than toggled or it flickers across the form.
+          let depth = 0;
+
+          card.addEventListener("dragenter", (e) => {
+            if (![...(e.dataTransfer?.types ?? [])].includes("Files")) return;
+            e.preventDefault();
+            e.stopPropagation();
+            depth += 1;
+            card.classList.add("dropping");
+          });
+          card.addEventListener("dragover", (e) => {
+            if (![...(e.dataTransfer?.types ?? [])].includes("Files")) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = "copy";
+          });
+          card.addEventListener("dragleave", (e) => {
+            e.stopPropagation();
+            depth = Math.max(0, depth - 1);
+            if (depth === 0) card.classList.remove("dropping");
+          });
+          card.addEventListener("drop", async (e) => {
+            const files = [...(e.dataTransfer?.files ?? [])];
+            if (files.length === 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            depth = 0;
+            card.classList.remove("dropping");
+            if (files.length > 1) {
+              showLog("One file at a time: a replacement is one picture for one photo.");
+              return;
+            }
+            await stageReplacement(card.dataset.slug, files[0]);
+          });
         }
       }
 

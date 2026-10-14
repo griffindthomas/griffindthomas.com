@@ -147,6 +147,48 @@ function shutterString(exposureTime) {
   return `1/${Math.round(1 / exposureTime)}`;
 }
 
+/**
+ * Source file to stored derivative, and the inline placeholder with it.
+ *
+ * Pulled out so that importing a photo and replacing one are the same code
+ * rather than two copies that agree today. A replacement that encoded even
+ * slightly differently would show as a quality change the next time the two
+ * sat next to each other in the gallery.
+ */
+async function encodeDerivative(srcPath, jpegPath) {
+  await sharp(srcPath)
+    .rotate() // honour the EXIF orientation flag before it gets stripped
+    .resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: JPEG_QUALITY, mozjpeg: true, chromaSubsampling: '4:4:4' })
+    .toFile(jpegPath);
+
+  const blur = await sharp(srcPath).rotate().resize({ width: 24 }).webp({ quality: 40 }).toBuffer();
+  return `data:image/webp;base64,${blur.toString('base64')}`;
+}
+
+/**
+ * Camera settings off this file, falling back to whatever was already known.
+ *
+ * An export can come out stripped of its EXIF, and blanking a lens and an ISO
+ * that were already recorded is a loss with nothing gained. `rawDate` is
+ * deliberately NOT inherited: it identifies the frame, resolveSlug leans on
+ * it to tell two photographs apart, and an inherited one would make a
+ * different aeroplane look like the same one.
+ */
+function exifBlock(ex, rawDate, previous) {
+  const keep = (value, was) =>
+    value === '' || value === null || value === undefined ? (was ?? value) : value;
+  return {
+    camera: keep(cameraName(ex.Make, ex.Model), previous?.camera),
+    lens: keep(ex.LensModel ?? '', previous?.lens),
+    focalLength: keep(ex.FocalLength ? Math.round(ex.FocalLength) : null, previous?.focalLength),
+    aperture: keep(ex.FNumber ?? null, previous?.aperture),
+    shutter: keep(shutterString(ex.ExposureTime), previous?.shutter),
+    iso: keep(ex.ISO ?? null, previous?.iso),
+    rawDate: String(rawDate ?? ''),
+  };
+}
+
 /** Highest pixel count wins; ties broken by larger file (less compression). */
 export async function pickBestCopies(dir) {
   const files = fs.readdirSync(dir).filter((f) => /\.(jpe?g|png|tiff?|webp)$/i.test(f));
@@ -238,18 +280,7 @@ export async function importOne(candidate, { force = false } = {}) {
   let lqip = existing?.lqip ?? '';
 
   if (!unchanged || force) {
-    await sharp(candidate.full)
-      .rotate() // honour the EXIF orientation flag before it gets stripped
-      .resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: JPEG_QUALITY, mozjpeg: true, chromaSubsampling: '4:4:4' })
-      .toFile(jpegPath);
-
-    const blur = await sharp(candidate.full)
-      .rotate()
-      .resize({ width: 24 })
-      .webp({ quality: 40 })
-      .toBuffer();
-    lqip = `data:image/webp;base64,${blur.toString('base64')}`;
+    lqip = await encodeDerivative(candidate.full, jpegPath);
   }
 
   const stored = await sharp(jpegPath).metadata();
@@ -259,15 +290,7 @@ export async function importOne(candidate, { force = false } = {}) {
   const derived = {
     image: `./${jpegName}`,
     lqip,
-    exif: {
-      camera: cameraName(ex.Make, ex.Model),
-      lens: ex.LensModel ?? '',
-      focalLength: ex.FocalLength ? Math.round(ex.FocalLength) : null,
-      aperture: ex.FNumber ?? null,
-      shutter: shutterString(ex.ExposureTime),
-      iso: ex.ISO ?? null,
-      rawDate: String(rawDate ?? ''),
-    },
+    exif: exifBlock(ex, rawDate, existing?.exif),
     source: {
       file: candidate.file,
       width: stored.width,
@@ -309,6 +332,144 @@ export async function importOne(candidate, { force = false } = {}) {
   fs.writeFileSync(jsonPath, `${JSON.stringify(ordered, null, 2)}\n`);
 
   return { slug, jsonPath, reencoded: !unchanged || force, entry: ordered };
+}
+
+/**
+ * What a candidate replacement is, before anything is written.
+ *
+ * Everything here is a question the person dropping the file should get to
+ * answer first, so none of it writes: it reads the new file, reads the record
+ * it would land on, and reports what does not line up.
+ */
+export async function inspectReplacement({ slug, srcPath }) {
+  const jsonPath = path.join(LIBRARY, `${slug}.json`);
+  if (!fs.existsSync(jsonPath)) return { error: `No photo called ${slug}` };
+  const existing = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+
+  const meta = await sharp(srcPath).metadata();
+  const raw = await exifr
+    .parse(srcPath, { pick: ['DateTimeOriginal', 'CreateDate'], reviveValues: false })
+    .catch(() => ({}));
+  const rawDate = String(raw?.DateTimeOriginal ?? raw?.CreateDate ?? '');
+  const was = String(existing?.exif?.rawDate ?? '');
+
+  const warnings = [];
+
+  // Different capture time means this is very likely a different photograph,
+  // not a re-crop of this one.
+  if (!rawDate) {
+    warnings.push({
+      kind: 'capture',
+      text: 'This file carries no capture time, so it cannot be checked against the original.',
+    });
+  } else if (was && rawDate !== was) {
+    warnings.push({
+      kind: 'capture',
+      text: `Taken ${rawDate}, but this photo was taken ${was}. That is usually a different frame, not a re-crop.`,
+    });
+  }
+
+  // Everything is being standardised to 3:2.
+  const ratio = meta.width && meta.height ? meta.width / meta.height : 0;
+  const off = Math.abs(ratio - 3 / 2);
+  if (ratio && off > 0.01) {
+    warnings.push({
+      kind: 'aspect',
+      text: `${meta.width}x${meta.height} is ${ratio.toFixed(3)}:1, not 3:2. It will be stored as it is.`,
+    });
+  }
+
+  /**
+   * The inbox copy is swapped too, so that re-importing is a no-op rather
+   * than something that quietly puts the old frame back. That only holds if
+   * the new file is the one pickBestCopies would choose, and it picks on
+   * pixel count within a base name. A leftover `_1` variant with more pixels
+   * would outrank the re-crop and undo it on the next run.
+   */
+  const sourceName = existing?.source?.file ?? '';
+  const base = sourceName ? baseOf(sourceName) : '';
+  if (base && fs.existsSync(INBOX)) {
+    const siblings = fs
+      .readdirSync(INBOX)
+      .filter((f) => /\.(jpe?g|png|tiff?|webp)$/i.test(f) && baseOf(f) === base && f !== sourceName);
+    for (const f of siblings) {
+      const m = await sharp(path.join(INBOX, f)).metadata().catch(() => null);
+      if (m && m.width * m.height > meta.width * meta.height) {
+        warnings.push({
+          kind: 'inbox',
+          text: `${f} is still in the inbox and is larger, so the next import would pick it over this crop. Remove it first.`,
+        });
+      }
+    }
+  }
+
+  return {
+    slug,
+    sourceName,
+    width: meta.width,
+    height: meta.height,
+    ratio: ratio ? Number(ratio.toFixed(3)) : null,
+    rawDate,
+    previousRawDate: was,
+    previous: { width: existing?.source?.width ?? null, height: existing?.source?.height ?? null },
+    warnings,
+  };
+}
+
+/**
+ * Swap one photo's image, keeping the photo.
+ *
+ * The slug does not move, so the URL, the deep link and every hand-entered
+ * field stay exactly as they are; only the picture and its dimensions change.
+ * The inbox copy is overwritten too, so the inbox and the library go on
+ * agreeing and a later `npm run photos` has nothing to undo.
+ *
+ * The previous image stays in git history, which is where it is recoverable
+ * from. Nothing is left behind on disk under another name.
+ */
+export async function replaceImage({ slug, srcPath }) {
+  const jsonPath = path.join(LIBRARY, `${slug}.json`);
+  if (!fs.existsSync(jsonPath)) throw new Error(`No photo called ${slug}`);
+  const existing = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+
+  // Keep the inbox in step. Named for the file it stands in for, so the group
+  // pickBestCopies builds is unchanged and the slug it resolves to is too.
+  const sourceName = existing?.source?.file || `${slug}.jpg`;
+  fs.mkdirSync(INBOX, { recursive: true });
+  const inboxPath = path.join(INBOX, path.basename(sourceName));
+  fs.copyFileSync(srcPath, inboxPath);
+
+  const jpegPath = path.join(LIBRARY, `${slug}.jpg`);
+  const lqip = await encodeDerivative(inboxPath, jpegPath);
+
+  const [full, raw] = await Promise.all([
+    exifr.parse(inboxPath, { tiff: true, exif: true, gps: true }).catch(() => ({})),
+    exifr
+      .parse(inboxPath, { pick: ['DateTimeOriginal', 'CreateDate'], reviveValues: false })
+      .catch(() => ({})),
+  ]);
+  const ex = full ?? {};
+  const rawDate = raw?.DateTimeOriginal ?? raw?.CreateDate ?? '';
+
+  const stored = await sharp(jpegPath).metadata();
+  const srcMeta = await sharp(inboxPath).metadata();
+
+  const updated = {
+    ...existing,
+    image: `./${slug}.jpg`,
+    lqip,
+    exif: exifBlock(ex, rawDate, existing?.exif),
+    source: {
+      file: path.basename(sourceName),
+      width: stored.width,
+      height: stored.height,
+      bytes: fs.statSync(inboxPath).size,
+      originalLongEdge: Math.max(srcMeta.width ?? 0, srcMeta.height ?? 0),
+    },
+  };
+
+  fs.writeFileSync(jsonPath, `${JSON.stringify(updated, null, 2)}\n`);
+  return { slug, entry: updated, inboxPath };
 }
 
 export async function runImport({ from = INBOX, force = false, log = () => {} } = {}) {

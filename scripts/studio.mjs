@@ -23,6 +23,7 @@
  * Bound to 127.0.0.1 on purpose. This process writes files, runs the importer
  * and can push to git; it must never be reachable from the network.
  */
+import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -33,7 +34,14 @@ import { promisify } from 'node:util';
 import sharp from 'sharp';
 import YAML from 'yaml';
 
-import { INBOX, LIBRARY, findGaps, runImport } from './photos.mjs';
+import {
+  INBOX,
+  LIBRARY,
+  findGaps,
+  inspectReplacement,
+  replaceImage,
+  runImport,
+} from './photos.mjs';
 
 const execFileAsync = promisify(execFile);
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -91,6 +99,54 @@ const deriveTypeCodes = () =>
 let typeCodes = deriveTypeCodes();
 
 const sidecarPath = (slug) => path.join(LIBRARY, `${slug}.json`);
+
+// --- replacing one photo's image -------------------------------------------
+
+/**
+ * Where a dropped file waits while it is being looked at.
+ *
+ * Nothing is replaced until it is confirmed, so the file has to live
+ * somewhere in between. Deliberately not the inbox: a file sitting there is
+ * one the next import would turn into a new photo, which is the opposite of
+ * what is being asked for. Cleared on cancel, on commit, and on startup, so
+ * an abandoned drop cannot pile up.
+ */
+const STAGING = path.join(ROOT, '.cache', 'replace-staging');
+
+function clearStaging() {
+  if (fs.existsSync(STAGING)) fs.rmSync(STAGING, { recursive: true, force: true });
+  fs.mkdirSync(STAGING, { recursive: true });
+}
+clearStaging();
+
+const stagedPath = (token, kind) =>
+  path.join(STAGING, `${path.basename(String(token))}.${kind}`);
+
+/** A token is only ever a name this process made, never one from a request. */
+const validToken = (token) => /^[a-f0-9]{16}$/.test(String(token ?? ''));
+
+/**
+ * Drop a file, close the tab, and nothing ever confirms or cancels it.
+ *
+ * Startup clears the whole folder, but a studio left open for a week would
+ * collect those in the meantime, so anything untouched for half an hour goes
+ * on the next drop. Half an hour is far longer than deciding takes and far
+ * shorter than forgetting.
+ */
+const STALE_MS = 30 * 60 * 1000;
+
+function sweepStaging() {
+  if (!fs.existsSync(STAGING)) return;
+  const now = Date.now();
+  for (const f of fs.readdirSync(STAGING)) {
+    const full = path.join(STAGING, f);
+    try {
+      if (now - fs.statSync(full).mtimeMs > STALE_MS) fs.rmSync(full, { force: true });
+    } catch {
+      // A file that vanished underneath us needed removing anyway.
+    }
+  }
+}
 
 // --- airports ---------------------------------------------------------------
 
@@ -893,6 +949,86 @@ const server = http.createServer(async (req, res) => {
       fs.mkdirSync(INBOX, { recursive: true });
       fs.writeFileSync(path.join(INBOX, name), await readBody(req));
       return json(res, 200, { ok: true, name });
+    }
+
+    // --- replace one photo's image ---------------------------------------
+
+    /**
+     * Stage a dropped file and say what is wrong with it, writing nothing
+     * that the library can see. The answer drives the confirmation step.
+     */
+    if (req.method === 'POST' && url.pathname === '/api/photo/replace/stage') {
+      const slug = path.basename(url.searchParams.get('slug') ?? '');
+      const name = path.basename(url.searchParams.get('name') ?? '');
+      if (!fs.existsSync(sidecarPath(slug))) return json(res, 404, { error: 'No such photo' });
+      if (!/\.(jpe?g|png|tiff?|webp)$/i.test(name)) {
+        return json(res, 400, { error: `Not an image: ${name}` });
+      }
+
+      sweepStaging();
+      const token = crypto.randomBytes(8).toString('hex');
+      const file = stagedPath(token, 'src');
+      fs.mkdirSync(STAGING, { recursive: true });
+      fs.writeFileSync(file, await readBody(req));
+
+      let report;
+      try {
+        report = await inspectReplacement({ slug, srcPath: file });
+      } catch (err) {
+        fs.rmSync(file, { force: true });
+        return json(res, 400, { error: `Could not read that image: ${err?.message ?? err}` });
+      }
+      if (report.error) {
+        fs.rmSync(file, { force: true });
+        return json(res, 400, report);
+      }
+
+      // A view-sized copy, so the comparison does not ship a 20 MB original
+      // into the page just to be looked at next to a thumbnail.
+      await sharp(file)
+        .rotate()
+        .resize({ width: 1400, withoutEnlargement: true })
+        .jpeg({ quality: 82 })
+        .toFile(stagedPath(token, 'preview.jpg'));
+
+      return json(res, 200, { ok: true, token, name, ...report });
+    }
+
+    if (req.method === 'GET' && url.pathname.startsWith('/api/photo/replace/pending/')) {
+      const token = url.pathname.slice('/api/photo/replace/pending/'.length).replace(/\.jpg$/, '');
+      if (!validToken(token)) return json(res, 400, { error: 'bad token' });
+      const file = stagedPath(token, 'preview.jpg');
+      if (!fs.existsSync(file)) return json(res, 404, { error: 'nothing staged' });
+      res.writeHead(200, { 'content-type': 'image/jpeg', 'cache-control': 'no-store' });
+      return res.end(fs.readFileSync(file));
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/photo/replace/commit') {
+      const { slug, token } = JSON.parse((await readBody(req)).toString('utf8'));
+      if (!validToken(token)) return json(res, 400, { error: 'bad token' });
+      const file = stagedPath(token, 'src');
+      if (!fs.existsSync(file)) return json(res, 410, { error: 'That drop has expired. Drop it again.' });
+
+      try {
+        const result = await replaceImage({ slug: path.basename(String(slug)), srcPath: file });
+        return json(res, 200, { ok: true, entry: result.entry, slug: result.slug });
+      } catch (err) {
+        return json(res, 500, { error: String(err?.message ?? err) });
+      } finally {
+        // Staged copies are never kept: the replacement now lives in the
+        // inbox and the library, and a third copy would only go stale.
+        fs.rmSync(file, { force: true });
+        fs.rmSync(stagedPath(token, 'preview.jpg'), { force: true });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/photo/replace/cancel') {
+      const { token } = JSON.parse((await readBody(req)).toString('utf8'));
+      if (validToken(token)) {
+        fs.rmSync(stagedPath(token, 'src'), { force: true });
+        fs.rmSync(stagedPath(token, 'preview.jpg'), { force: true });
+      }
+      return json(res, 200, { ok: true });
     }
 
     // --- run the importer over the inbox ---------------------------------
