@@ -16,7 +16,7 @@
   "shotAt": "2026-10-10T17:43:12",
   "timezone": "America/Los_Angeles",
   "image": "./img-0733.jpg",
-  "lqip": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwBACdASoYABIAPulep02pJSOiN/VYASAdCWUAxvQQ7jPQi33Vu8Hb/YAA/sOBws/vLqrH2Cxx5A1ktkLSljuDWPpC3Dvh4xb07iNKVgQbvwldoIHXVSiinhwhgXROJnMSIcYByzqWQAAA",
+  "lqip": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAAAQBACdASoYABAAPu1iqk4ppaQiMAgBMB2JYwCdMoADTo5wZm8nS974tAD+w3x4LAqTuPaZ2mA5u2M5p4LRCdO8/WK5tDPdtPEb5ejawy9RMcBh3UBhAvtvEqAAAA==",
   "exif": {
     "camera": "Apple iPhone 18 Pro",
     "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
@@ -29,8 +29,8 @@
   "source": {
     "file": "IMG_0733.jpg",
     "width": 2800,
-    "height": 2100,
-    "bytes": 2232156,
-    "originalLongEdge": 3603
+    "height": 1867,
+    "bytes": 2142383,
+    "originalLongEdge": 3747
   }
 }
