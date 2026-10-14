@@ -10,7 +10,7 @@
     "airliner",
     "widebody"
   ],
-  "featured": true,
+  "featured": false,
   "order": 0,
   "draft": false,
   "shotAt": "2026-10-10T17:56:37",

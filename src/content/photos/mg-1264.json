@@ -11,7 +11,7 @@
     "airshow",
     "fighter"
   ],
-  "featured": false,
+  "featured": true,
   "order": 0,
   "draft": false,
   "shotAt": "2026-08-02T15:34:07",

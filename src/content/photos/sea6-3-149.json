@@ -10,13 +10,13 @@
     "airliner",
     "widebody"
   ],
-  "featured": true,
+  "featured": false,
   "order": 0,
-  "draft": false,
+  "draft": true,
   "shotAt": "2026-07-03T16:55:09",
   "timezone": "America/Los_Angeles",
   "image": "./sea6-3-149.jpg",
-  "lqip": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAABwBACdASoYABEAPuVcpk2pJTAiMAwCAByJZwBWIoeiDwW/hBJ98yNuo6wnAAD+sUUKIFICepHFbA95gLCVbw3QAfpjXQMe6UVc27gT++qowVexMlczri4v7Jszk5o1/408w67br4gH8n848+5eixCqPkLusAAA",
+  "lqip": "data:image/webp;base64,UklGRpgAAABXRUJQVlA4IIwAAACQBACdASoYABAAPu1qrU8ppiQiMAgBMB2JQBOmUGMEz/gNlwKww7A9GMLE/0AA97CXYrWZe2nyJsKLC6F3boNVbumEpXXDgQ9sh5DWMHfmTwWiUc3LWMp4nKpdxxki1/ILKSj8cwTKETiuiOtEj2B1CR9XSlo4njkBgZ6LxTlLaTPlm9omhs3eQHQAAA==",
   "exif": {
     "camera": "Canon EOS Rebel T7",
     "lens": "EF-S18-55mm f/3.5-5.6 IS II",
@@ -28,9 +28,9 @@
   },
   "source": {
     "file": "SEA6-3_149.jpg",
-    "width": 2800,
-    "height": 2000,
-    "bytes": 4882867,
-    "originalLongEdge": 4012
+    "width": 1280,
+    "height": 853,
+    "bytes": 910352,
+    "originalLongEdge": 1280
   }
 }

@@ -1,0 +1,35 @@
+{
+  "aircraft": "Boeing 737-700",
+  "typeCode": "B737",
+  "operator": "The Boeing Company",
+  "registration": "N836BA",
+  "airport": "KBFI",
+  "location": "",
+  "caption": "N836BA is a Boeing 737 Business Jet operated by the Boeing Company that serves as the \"Freedom Plane,\" a mobile museum flying foundational U.S. historical documents to cities across the nation.",
+  "tags": [
+    "special-livery"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-08-02T12:20:41",
+  "timezone": "America/Los_Angeles",
+  "image": "./mg-1107.jpg",
+  "lqip": "data:image/webp;base64,UklGRqAAAABXRUJQVlA4IJQAAAAwBACdASoYABAAPu1iqU2ppaQiMAgBMB2JZQDE+HADBNxyCcziszOCNgAA/trQFzok2NEq8Ky/qfPDgbbeyuc8YY6TG09vk7KTjHFVHKMxop10JYn5a3lOyMVmjL2SCc+QMp+OmSwrvivGE106LXeEEQv+Fh0xbDsT65NI91DM59Cph56n8HaRGSf7IN2goAJN4iAA",
+  "exif": {
+    "camera": "Canon EOS Rebel T7",
+    "lens": "EF75-300mm f/4-5.6",
+    "focalLength": 75,
+    "aperture": 11,
+    "shutter": "1/400",
+    "iso": 320,
+    "rawDate": "2026:08:02 12:20:41"
+  },
+  "source": {
+    "file": "_MG_1107.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 12347449,
+    "originalLongEdge": 5520
+  }
+}
