@@ -357,6 +357,15 @@
       }
       #find:focus { outline: none; border-color: var(--signal); }
       #find::placeholder { text-transform: none; letter-spacing: 0; color: var(--graphite); }
+      #find-dupes-label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      #find-dupes { accent-color: var(--signal); cursor: pointer; }
+      #find-dupes:checked + * , #find-dupes-label:has(#find-dupes:checked) { color: var(--signal); }
 
       /* The same airframe, more than once. Sits above the photograph because
          that is what is being compared: whether this frame is one he already
@@ -412,6 +421,10 @@
       <div id="find-bar">
         <input type="search" id="find" placeholder="Tail number, e.g. N615AS or tc-llh" autocomplete="off" />
         <button type="button" id="find-clear">Clear</button>
+        <label id="find-dupes-label" class="label">
+          <input type="checkbox" id="find-dupes" />
+          Only airframes I have more than one of
+        </label>
         <span class="label" id="find-count"></span>
       </div>
 
@@ -2287,21 +2300,35 @@
         const raw = box.value.trim();
         const needle = raw.toUpperCase();
         const asTail = tail(raw);
+        const dupesOnly = $("#find-dupes").checked;
         const cards = [...document.querySelectorAll("#cards .card")];
 
         let shown = 0;
+        let airframes = new Set();
         for (const section of cards) {
           const hay = haystack(section);
           // The dashless form is matched too, so "tc-llh" and "tcllh" both
           // find TC-LLH, and so does part of it.
-          const hit = !raw || hay.includes(needle) || (asTail && hay.includes(asTail));
+          const text = !raw || hay.includes(needle) || (asTail && hay.includes(asTail));
+          // markDuplicates has already worked out which cards are in a group
+          // and shown a note on each, so being in one is simply having one.
+          const isDupe = !$("[data-dupe]", section)?.hidden;
+          const hit = text && (!dupesOnly || isDupe);
           section.hidden = !hit;
-          if (hit) shown += 1;
+          if (hit) {
+            shown += 1;
+            const reg = tail(fieldOf(section, "registration"));
+            if (reg) airframes.add(reg);
+          }
         }
 
-        $("#find-count").textContent = raw
-          ? `${shown} of ${cards.length}`
-          : `${cards.length} photos`;
+        const parts = [];
+        if (raw || dupesOnly) parts.push(`${shown} of ${cards.length}`);
+        else parts.push(`${cards.length} photos`);
+        if (dupesOnly) {
+          parts.push(`${airframes.size} airframe${airframes.size === 1 ? "" : "s"}`);
+        }
+        $("#find-count").textContent = parts.join("  /  ");
       }
 
       /**
@@ -2347,13 +2374,16 @@
         const note = event.target.closest("#cards [data-dupe]");
         if (!note?.dataset.reg) return;
         $("#find").value = note.dataset.reg;
+        $("#find-dupes").checked = false;
         applyFind();
         document.querySelector("#cards .card:not([hidden])")?.scrollIntoView({ block: "center" });
       });
 
       $("#find").addEventListener("input", applyFind);
+      $("#find-dupes").addEventListener("change", applyFind);
       $("#find-clear").addEventListener("click", () => {
         $("#find").value = "";
+        $("#find-dupes").checked = false;
         applyFind();
         $("#find").focus();
       });
