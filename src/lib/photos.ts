@@ -93,11 +93,28 @@ export async function lightboxSrc(photo: Photo): Promise<string> {
 }
 
 /** The numbers under the gallery heading. All computed, never hand-typed. */
+/**
+ * The airline, without whoever happened to be flying it.
+ *
+ * A regional is recorded as "Alaska Airlines (Skywest)", because on the day
+ * that is what it was: Alaska's flight, Alaska's paint, SkyWest's crew and
+ * certificate. That belongs on the photograph.
+ *
+ * It does not belong in the filter bar. Listed as written, one airline turns
+ * into two chips that each hold part of its photographs, and picking either
+ * one hides the rest. So the filter groups on what is in front of the
+ * bracket, and the photograph goes on saying the whole thing.
+ */
+export function brand(operator: string): string {
+  const cut = String(operator ?? '').indexOf(' (');
+  return (cut === -1 ? String(operator ?? '') : operator.slice(0, cut)).trim();
+}
+
 export function galleryStats(photos: Photo[]) {
   const uniq = (xs: string[]) => [...new Set(xs.filter(Boolean))];
   const fields = uniq(photos.map((p) => p.data.airport));
   const types = uniq(photos.map((p) => p.data.aircraft));
-  const operators = uniq(photos.map((p) => p.data.operator));
+  const operators = uniq(photos.map((p) => brand(p.data.operator)));
   const dates = photos.map((p) => p.data.shotAt).sort();
 
   return {
@@ -142,7 +159,7 @@ export function buildFilters(photos: Photo[]): FilterGroup[] {
     {
       id: "operator",
       label: "Operator",
-      options: [...tally((p) => p.data.operator)]
+      options: [...tally((p) => brand(p.data.operator))]
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([value, count]) => ({ value, label: value, count })),
     },

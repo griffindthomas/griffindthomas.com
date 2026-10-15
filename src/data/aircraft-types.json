@@ -1552,6 +1552,28 @@
     }
   },
   {
+    "id": "a300",
+    "codes": [
+      "A306",
+      "A30B"
+    ],
+    "name": "A300",
+    "drawn": "A300-600F",
+    "span": 147.1,
+    "length": 177.4,
+    "shape": {
+      "family": "jet",
+      "engines": 2,
+      "fins": 1,
+      "sweep": 28,
+      "wingAt": 0.38,
+      "rootChord": 0.2,
+      "taper": 0.26,
+      "waist": 0.095,
+      "tip": "plain"
+    }
+  },
+  {
     "id": "a350",
     "codes": [
       "A359",
@@ -1783,9 +1805,32 @@
     }
   },
   {
+    "id": "a380",
+    "codes": [
+      "A388"
+    ],
+    "name": "A380",
+    "drawn": "A380-800",
+    "span": 261.7,
+    "length": 238.6,
+    "shape": {
+      "family": "jet",
+      "engines": 4,
+      "fins": 1,
+      "sweep": 33.5,
+      "wingAt": 0.35,
+      "rootChord": 0.23,
+      "taper": 0.19,
+      "waist": 0.095,
+      "tip": "plain"
+    }
+  },
+  {
     "id": "ejet",
     "codes": [
       "E170",
+      "E75",
+      "E175",
       "E75S",
       "E75L",
       "E190",
@@ -1806,6 +1851,31 @@
       "rootChord": 0.18,
       "taper": 0.28,
       "waist": 0.1,
+      "tip": "plain"
+    }
+  },
+  {
+    "id": "crj",
+    "codes": [
+      "CRJ1",
+      "CRJ2",
+      "CRJ7",
+      "CRJ9",
+      "CRJX"
+    ],
+    "name": "CRJ",
+    "drawn": "CRJ-900",
+    "span": 81.6,
+    "length": 118.9,
+    "shape": {
+      "family": "jet",
+      "engines": 0,
+      "fins": 1,
+      "sweep": 27,
+      "wingAt": 0.44,
+      "rootChord": 0.17,
+      "taper": 0.26,
+      "waist": 0.09,
       "tip": "plain"
     }
   },
@@ -2609,6 +2679,27 @@
     }
   },
   {
+    "id": "kc46",
+    "codes": [
+      "K46"
+    ],
+    "name": "KC-46",
+    "drawn": "KC-46A",
+    "span": 157.7,
+    "length": 165.5,
+    "shape": {
+      "family": "jet",
+      "engines": 2,
+      "fins": 1,
+      "sweep": 31.5,
+      "wingAt": 0.39,
+      "rootChord": 0.19,
+      "taper": 0.25,
+      "waist": 0.095,
+      "tip": "plain"
+    }
+  },
+  {
     "id": "fa18",
     "codes": [
       "F18",
@@ -2749,6 +2840,27 @@
         }
       ],
       "customBox": "0.01 -0.01 405.77 545.88"
+    }
+  },
+  {
+    "id": "f16",
+    "codes": [
+      "F16"
+    ],
+    "name": "F-16",
+    "drawn": "F-16C",
+    "span": 32.7,
+    "length": 49.4,
+    "shape": {
+      "family": "fighter",
+      "engines": 0,
+      "fins": 1,
+      "sweep": 40,
+      "wingAt": 0.45,
+      "rootChord": 0.32,
+      "taper": 0.16,
+      "waist": 0.155,
+      "tip": "plain"
     }
   },
   {

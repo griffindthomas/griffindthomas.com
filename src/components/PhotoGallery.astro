@@ -16,7 +16,7 @@
 import { Image } from "astro:assets";
 
 import { familyForCode } from "../data/aircraft-types";
-import { lightboxSrc, type FilterGroup, type Photo } from "../lib/photos";
+import { brand, lightboxSrc, type FilterGroup, type Photo } from "../lib/photos";
 
 interface Props {
   photos: Photo[];
@@ -97,7 +97,7 @@ const payload = photos.map((p, i) => ({
         class="shot"
         style={`--ar:${p.aspect.toFixed(4)}`}
         data-slug={p.slug}
-        data-operator={p.data.operator}
+        data-operator={brand(p.data.operator)}
         data-aircraft={p.data.aircraft}
         data-family={familyForCode(p.data.typeCode)?.id ?? ""}
         data-place={p.data.airport || p.data.location}
