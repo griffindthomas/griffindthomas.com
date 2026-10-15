@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A330-900",
+  "typeCode": "A339",
+  "operator": "Delta",
+  "registration": "N433DX",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:59:12",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1395.jpg",
+  "lqip": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAACQBACdASoYABAAPu1iqk2ppaQiMAgBMB2JYwC7G1/tv8nPw2tgggD5ncvi2IAA/tRdPGbeVtLTsN6Ht1ZkGViocSpqwZMoaA1KWdxRLSmMj//Ovwv+RJVqeV8SMv3Fg5L/pnfrVU5/IjpTUajum6dkFfGiLjYloHRcsAAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/640",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:59:12"
+  },
+  "source": {
+    "file": "IMG_1395.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 17704234,
+    "originalLongEdge": 7957
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aircraft": "Embraer 175",
+  "typeCode": "E75L",
+  "operator": "American Airlines (Skywest)",
+  "registration": "N508SY",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:46:59",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1309.jpg",
+  "lqip": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAABQBACdASoYABAAPu1iqk4ppaQiMAgBMB2JQBOmUDX/wHkU+MSdnx5kMHmAAP7UZMyAW6cUu1+EKQwkxZ0RF1K+Tl1rdrnq4bMeBIHEOvnEe/wEH8fn9oWicMs/bMaUSDJktsDFV5tVr1iNYUDiIQOMRxhEZ0/iZulQAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/1000",
+    "iso": 32,
+    "rawDate": "2026:10:13 13:46:59"
+  },
+  "source": {
+    "file": "IMG_1309.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 12155459,
+    "originalLongEdge": 5975
+  }
+}

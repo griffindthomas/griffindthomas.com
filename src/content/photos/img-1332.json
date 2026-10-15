@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A321neo",
+  "typeCode": "",
+  "operator": "Delta",
+  "registration": "N551DT",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:51:55",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1332.jpg",
+  "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAABQBACdASoYABAAPu1iqk4ppaQiMAgBMB2JQBOiP/wHoe3mosl72iQSnN4AAP7Uii/KlzsqZZQDGfCWho79LaeckuqazfVHUwtk7bW++aqVe4WWrBjOiR5uJK2bf8u0IrEJr4nY/ZG0FmnWo5NRF4iaZlSrLNLgAAA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/1000",
+    "iso": 32,
+    "rawDate": "2026:10:13 13:51:55"
+  },
+  "source": {
+    "file": "IMG_1332.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 17224513,
+    "originalLongEdge": 7401
+  }
+}

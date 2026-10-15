@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 9",
+  "typeCode": "B39M",
+  "operator": "United Airlines",
+  "registration": "N47412",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:21:43",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1239.jpg",
+  "lqip": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAAAwBACdASoYABAAPu1kqU2ppaQiMAgBMB2JQBOkDjE/wHkVKIfKkpIRpQAA/sReQJ+3NKb6musp/T58tJh9/KcRnEFQDixmwGQ4Di1d+BqrXn4YLf51vQa8oLjYBcJBc5KnNkxJ57AgcIqkqWtUcAAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/750",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:21:43"
+  },
+  "source": {
+    "file": "IMG_1239.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 15189169,
+    "originalLongEdge": 7232
+  }
+}

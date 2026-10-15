@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 787-9",
+  "typeCode": "B789",
+  "operator": "Japan Airlines",
+  "registration": "JA865J",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:57:54",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1362.jpg",
+  "lqip": "data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAABwBACdASoYABAAPu1kqU2ppaOiMAgBMB2JYgCdMoKOjbf4DspMx9OdPd2T8AD+xfN4bVkKe7xyvxTLsJmfNvTOuJGUnU7q/m/cuPwgxdbdC5+Oz1lJkZjucmnNx72rLNQhPPJOgztdCY2FRAOpmlwznuEqKQ1Ym1pr+S7C2GSqsqBAAAA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/640",
+    "iso": 25,
+    "rawDate": "2026:10:13 13:57:54"
+  },
+  "source": {
+    "file": "IMG_1362.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 3419428,
+    "originalLongEdge": 3217
+  }
+}

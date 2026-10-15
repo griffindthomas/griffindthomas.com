@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-800",
+  "typeCode": "B738",
+  "operator": "Delta",
+  "registration": "N3733Z",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T12:23:05",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1156.jpg",
+  "lqip": "data:image/webp;base64,UklGRowAAABXRUJQVlA4IIAAAAAwBACdASoYABAAPu1iqk2ppaQiMAgBMB2JYwCdINiDE5cSqDseDmSEvMAA/nklGWPCmCAM3/xChANbpAVxnmO4O2dB45Mk3IdyqmUuwmtMMC8z8tbK+MEb6MnDXB/u0Dw/NaeK24OT5294rqMENbE22L287dj3d0UZHTMeOdAAAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/640",
+    "iso": 25,
+    "rawDate": "2026:10:13 12:23:05"
+  },
+  "source": {
+    "file": "IMG_1156.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 5113711,
+    "originalLongEdge": 3757
+  }
+}

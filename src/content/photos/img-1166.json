@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 8",
+  "typeCode": "B38M",
+  "operator": "Southwest Airlines",
+  "registration": "N8867Q",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T12:55:33",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1166.jpg",
+  "lqip": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAADwBACdASoYABAAPu1iqk4ppaQiMAgBMB2JagCdIE59Vbf9kw/8cDHzHWcKLQ66Q+AA/I7WQ1LFsAgP3s+HGXtmgptkKz4YTTc4hOhwofFzO5Wg0kV+uIW+UVR6OH2TIDmknaulds0pWoxMPJ3VM5vQWN9H9vmXbBnD5te1JRzabM4g42IvRZ+iWrjW1VhypHuAR7We0AA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/700",
+    "iso": 20,
+    "rawDate": "2026:10:13 12:55:33"
+  },
+  "source": {
+    "file": "IMG_1166.jpg",
+    "width": 2800,
+    "height": 1866,
+    "bytes": 3802634,
+    "originalLongEdge": 3431
+  }
+}

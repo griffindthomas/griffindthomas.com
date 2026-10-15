@@ -1,0 +1,33 @@
+{
+  "aircraft": "Embraer 175",
+  "typeCode": "E75L",
+  "operator": "Alaska Airlines (Skywest)",
+  "registration": "N170SY",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T12:58:34",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1169.jpg",
+  "lqip": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAABQBACdASoYABAAPu1kqk4ppaQiMAgBMB2JQBOmUAfs4ceJZ7NSz9S58XK0AP5hT+ww2ck8OcABg8tNr3PbffafCHuLGBgA+Zj2anIxD91jg6OIllMkYllAm+ja466eXeZXwnbq5bORqxU1PY7U6FzJfy6Gcps1zSKbAAAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/800",
+    "iso": 20,
+    "rawDate": "2026:10:13 12:58:34"
+  },
+  "source": {
+    "file": "IMG_1169.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 5003376,
+    "originalLongEdge": 4032
+  }
+}

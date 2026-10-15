@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 787-10",
+  "typeCode": "B78X",
+  "operator": "British Airways",
+  "registration": "G-ZBLB",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:56:26",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1347.jpg",
+  "lqip": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAACwBACdASoYABAAPu1iqU2ppaOiMAgBMB2JQBOja2bRbb/yctDmycRts547WtuwAP7F8rup8+bDj+rP2uFnmNOFJT3NMAoNfOGrS8708tHU6VB5k2c/r1qcQiVbMTEkPWb6I/woE1r/Dkz9EdPLj7RGKyXwBXyMFXsKAmVTJweSDL0UjNyL8AAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/1000",
+    "iso": 32,
+    "rawDate": "2026:10:13 13:56:26"
+  },
+  "source": {
+    "file": "IMG_1347.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 13539815,
+    "originalLongEdge": 6402
+  }
+}

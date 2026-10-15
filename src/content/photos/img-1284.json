@@ -1,0 +1,33 @@
+{
+  "aircraft": "Embraer 175",
+  "typeCode": "E75L",
+  "operator": "Delta (Skywest)",
+  "registration": "N300SY",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:39:26",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1284.jpg",
+  "lqip": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAABQBACdASoYABIAPu1sqk6ppiOiMBgIATAdiWUAuwAQ7l/kPmlODAto4UmAAP7TFqcwuWTtB7EmjO98twcz3fZ9JzpxLu8lmdw+2ckd0HR9FjIg1KASSn7BC3kH9swcwJE7fm20Us8oquxsYzQpZMENvrCfFuKP2YRKXgAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/750",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:39:26"
+  },
+  "source": {
+    "file": "IMG_1284.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 11433925,
+    "originalLongEdge": 5923
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aircraft": "Embraer 175",
+  "typeCode": "E75L",
+  "operator": "Alaska Airlines (Horizon)",
+  "registration": "N624QX",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:46:27",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1307.jpg",
+  "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABwBACdASoYABIAPu1qqU8ppiOiMBgIATAdiWUALv/APS6qPuDO1CbH3BtOAAD+0+HY8cQElvzn786fgSDctHXgHWxspd1S+eMGEAKFZxHyrJ3OHxQoQ3VMxkTSBSAHYATPGoF/ZP/qe5RZeAAAAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/640",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:46:27"
+  },
+  "source": {
+    "file": "IMG_1307.jpg",
+    "width": 2800,
+    "height": 2100,
+    "bytes": 12760123,
+    "originalLongEdge": 6087
+  }
+}

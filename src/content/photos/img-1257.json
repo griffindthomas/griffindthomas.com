@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A321neo",
+  "typeCode": "A21N",
+  "operator": "American Airlines",
+  "registration": "N426AN",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:28:57",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1257.jpg",
+  "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAADQBACdASoYABAAPu1iqU2ppaOiMAgBMB2JYwCdMoM84T/bf4DbC2VoF3MNbg7KAAD+09sxrxLg4JQ3mb6wQWfNQ5ubWKh5CswQUfY2p1u9mXItxvhQh8N/USPnCgvVLORyEZm1H6g6jPJIhWQAAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/800",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:28:57"
+  },
+  "source": {
+    "file": "IMG_1257.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 18995022,
+    "originalLongEdge": 8039
+  }
+}

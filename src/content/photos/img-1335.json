@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 787-9",
+  "typeCode": "B789",
+  "operator": "Alaska Airlines",
+  "registration": "N780HA",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:55:12",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1335.jpg",
+  "lqip": "data:image/webp;base64,UklGRpoAAABXRUJQVlA4II4AAABQBACdASoYABAAPu1iqk2ppaQiMAgBMB2JQBOmUFG3tv8B5P5F4mYL07ZIAP6Rqx+qr1XJmtbpZb0K3CwQMddyXnbEK5hsSzNs2zgZb4gZkepRfuGbSn/JRYWfqnWZmSGzjdSAy7GYUbaxvjRHGLgE9e9PTjcK1GZVQWNHHNafGSb9P7dsmigaoKq7OAAA",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/1000",
+    "iso": 32,
+    "rawDate": "2026:10:13 13:55:12"
+  },
+  "source": {
+    "file": "IMG_1335.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 10704582,
+    "originalLongEdge": 5942
+  }
+}

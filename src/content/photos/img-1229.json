@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A350-900",
+  "typeCode": "A359",
+  "operator": "Delta",
+  "registration": "N511DN",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:13:26",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1229.jpg",
+  "lqip": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAABwAwCdASoYABAAPu1iqk2ppaQiMAgBMB2JQBWABDFLdKZvA2AA/rI5bFEng845tRUY9zzuAFMofCY39KvKGR9ne+cA+MAuRv4x88i5T7QSU7IixW3imbf2iFMPG02OPYKCw5vQEnbHGhIm2bFrY+nADwYgUkFuev7gAA==",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/950",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:13:26"
+  },
+  "source": {
+    "file": "IMG_1229.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 16873183,
+    "originalLongEdge": 7764
+  }
+}

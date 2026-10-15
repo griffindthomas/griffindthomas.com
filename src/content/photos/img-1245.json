@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A330-900",
+  "typeCode": "A339",
+  "operator": "Virgin Atlantic",
+  "registration": "G-VLDY",
+  "airport": "KSEA",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-10-13T13:26:41",
+  "timezone": "America/Los_Angeles",
+  "image": "./img-1245.jpg",
+  "lqip": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAwBACdASoYABAAPu1iqU2ppaQiMAgBMB2JYgCdG1/tv8B5OmNtW0duMkAA/sUPQSyWEOPoZrpmP7LVcBAaK/PaVpwYyC3YpmjP+Sodwvxn9pg7whhKValU7xFBnXae1bc/I9UOJopB5YcBW6CjIK/9k/J2N0FZAAA=",
+  "exif": {
+    "camera": "Apple iPhone 18 Pro",
+    "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
+    "focalLength": 17,
+    "aperture": 2.8,
+    "shutter": "1/670",
+    "iso": 20,
+    "rawDate": "2026:10:13 13:26:41"
+  },
+  "source": {
+    "file": "IMG_1245.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 9418847,
+    "originalLongEdge": 5587
+  }
+}
