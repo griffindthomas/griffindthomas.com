@@ -5,8 +5,12 @@
   "registration": "N652MK",
   "airport": "KSEA",
   "location": "",
-  "caption": "",
-  "tags": [],
+  "caption": "Horizon Air's retro livery.",
+  "tags": [
+    "airliner",
+    "narrowbody",
+    "special-livery"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

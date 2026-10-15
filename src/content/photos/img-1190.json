@@ -5,8 +5,11 @@
   "registration": "HL8572",
   "airport": "KSEA",
   "location": "",
-  "caption": "",
-  "tags": [],
+  "caption": "Korean Air's new livery.",
+  "tags": [
+    "airliner",
+    "widebody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

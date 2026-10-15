@@ -1,12 +1,15 @@
 {
   "aircraft": "Airbus A321neo",
-  "typeCode": "",
+  "typeCode": "A21N",
   "operator": "Delta",
   "registration": "N551DT",
   "airport": "KSEA",
   "location": "",
   "caption": "",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

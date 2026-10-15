@@ -6,7 +6,10 @@
   "airport": "KSEA",
   "location": "",
   "caption": "",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,

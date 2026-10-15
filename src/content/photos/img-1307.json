@@ -6,14 +6,17 @@
   "airport": "KSEA",
   "location": "",
   "caption": "",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,
   "shotAt": "2026-10-13T13:46:27",
   "timezone": "America/Los_Angeles",
   "image": "./img-1307.jpg",
-  "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAABwBACdASoYABIAPu1qqU8ppiOiMBgIATAdiWUALv/APS6qPuDO1CbH3BtOAAD+0+HY8cQElvzn786fgSDctHXgHWxspd1S+eMGEAKFZxHyrJ3OHxQoQ3VMxkTSBSAHYATPGoF/ZP/qe5RZeAAAAA==",
+  "lqip": "data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAAAwBACdASoYABAAPu1iqU2ppaQiMAgBMB2JQBOmUGTpT/gPGl42oOJ1zwAA/sXdBobCJLmcCNNKcAwFilSsAdvv89tJNGGZ4ACXuUbn769Hw2R829P5cC91mf5gaxRfvw0SnfhsZYda1wT9O31wtJYQhfWs1MZluIXJ+iAYNowaPhd41AA=",
   "exif": {
     "camera": "Apple iPhone 18 Pro",
     "lens": "iPhone 18 Pro back triple camera 16.891mm f/2.8",
@@ -26,8 +29,8 @@
   "source": {
     "file": "IMG_1307.jpg",
     "width": 2800,
-    "height": 2100,
-    "bytes": 12760123,
-    "originalLongEdge": 6087
+    "height": 1867,
+    "bytes": 10259248,
+    "originalLongEdge": 5789
   }
 }

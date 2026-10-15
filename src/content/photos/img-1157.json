@@ -1,12 +1,15 @@
 {
   "aircraft": "Embraer 175LR",
-  "typeCode": "",
+  "typeCode": "E75L",
   "operator": "Delta (Skywest)",
   "registration": "N313SY",
   "airport": "KSEA",
   "location": "",
   "caption": "",
-  "tags": [],
+  "tags": [
+    "airliner",
+    "narrowbody"
+  ],
   "featured": false,
   "order": 0,
   "draft": false,
