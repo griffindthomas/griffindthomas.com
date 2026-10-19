@@ -4,24 +4,12 @@ import PhotoGallery from "../components/PhotoGallery.astro";
 import SplitFlapBoard from "../components/SplitFlapBoard.astro";
 import TypeBoard from "../components/TypeBoard.astro";
 import AltimeterTape from "../components/AltimeterTape.astro";
-import { buildFilters, galleryStats, loadPhotos } from "../lib/photos";
+import { buildFilters, loadPhotos } from "../lib/photos";
 
 const photos = await loadPhotos();
 // The type board below is the type filter, drawn out, so the bar does not
 // carry a second copy of the same list.
 const filters = buildFilters(photos).filter((g) => g.id !== "aircraft");
-const stats = galleryStats(photos);
-
-// Every figure here is counted from the library at build time. None of it is
-// typed by hand, so it cannot drift out of date as photos are added.
-const readout = [
-  { label: "Photos", value: String(stats.count) },
-  { label: "Airfields", value: String(stats.fields) },
-  { label: "Types", value: String(stats.types) },
-  { label: "Operators", value: String(stats.operators) },
-  { label: "Longest lens", value: stats.longestLens ? `${stats.longestLens}mm` : "n/a" },
-  { label: "Latest", value: stats.latest },
-];
 ---
 
 <BaseLayout
@@ -34,25 +22,13 @@ const readout = [
       <h1 class="font-display mt-5 text-5xl sm:text-7xl">Spotting</h1>
     </header>
 
-    <dl class="border-rule mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t pt-6 sm:grid-cols-3 lg:grid-cols-6">
-      {
-        readout.map((r) => (
-          <div>
-            <dt class="data text-graphite">{r.label}</dt>
-            <dd class="font-display mt-1 text-2xl tabular-nums">{r.value}</dd>
-          </div>
-        ))
-      }
-    </dl>
-
     {
       photos.length > 0 && (
         <section class="mt-16" aria-labelledby="board-heading">
-          <div class="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-2">
+          <div class="border-rule border-b pb-2">
             <h2 id="board-heading" class="font-display text-3xl">
-              Latest catches
+              Latest
             </h2>
-            <p class="data">Newest first, one row per type</p>
           </div>
 
           <div class="mt-8">
