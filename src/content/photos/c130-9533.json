@@ -1,0 +1,35 @@
+{
+  "aircraft": "Lockheed Martin KC-130J Super Hercules",
+  "typeCode": "C130",
+  "operator": "United States",
+  "registration": "169533",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [
+    "military"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-10T16:23:37",
+  "timezone": "America/Los_Angeles",
+  "image": "./c130-9533.jpg",
+  "lqip": "data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAADwAwCdASoYABAAPu1iqU2ppaOiMAgBMB2JbACdMoR3ACVUYAlonnOQAPcepW+bTUnz6ei7ueNpiKK+3cweFGWI+8mgH+ys8g+uzqXTzOlX+SheEZoZoxwOLM17ZImzlxV230/F3Pyw9VtsKN9yQC8bOUA/O0A/SYbcqfcQLr0G/SiQAAA=",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 347,
+    "aperture": 8,
+    "shutter": "1/320",
+    "iso": 160,
+    "rawDate": "2026:11:10 16:23:37"
+  },
+  "source": {
+    "file": "C130-9533.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 6097081,
+    "originalLongEdge": 4156
+  }
+}
