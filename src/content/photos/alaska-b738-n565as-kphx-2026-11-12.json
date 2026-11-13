@@ -1,0 +1,35 @@
+{
+  "aircraft": "Boeing 737-800",
+  "typeCode": "B738",
+  "operator": "Alaska Airlines",
+  "registration": "N565AS",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "Disney ToonTown Livery.",
+  "tags": [
+    "special"
+  ],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:51:02",
+  "timezone": "America/Los_Angeles",
+  "image": "./alaska-b738-n565as-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRqoAAABXRUJQVlA4IJ4AAABQBACdASoYABAAPu1iqU2ppaOiMAgBMB2JYgCdMoAlwBV/h20qqfeHl/XQAP54lEOTuv2z8SEUGVT3CpNnoZFTBIbtp2G98ZB7f5jkrr3ihrSL2YbUy+p42Gd+vSFyH2gQL9C1cSH3k0GoRwAQnIcFpijYg9sQsM66HC/7aK1eBkM87teD+GYhFNnvgGBjU86SnxH2++NLY3Xa64AAAA==",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 270,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 200,
+    "rawDate": "2026:11:12 13:51:02"
+  },
+  "source": {
+    "file": "Alaska_B738_N565AS_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 13695147,
+    "originalLongEdge": 5523
+  }
+}

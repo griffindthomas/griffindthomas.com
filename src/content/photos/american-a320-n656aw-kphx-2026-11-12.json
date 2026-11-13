@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A320",
+  "typeCode": "A320",
+  "operator": "American Airlines",
+  "registration": "N656AW",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:08:38",
+  "timezone": "America/Los_Angeles",
+  "image": "./american-a320-n656aw-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAADQAwCdASoYABAAPu1iqU2ppaOiMAgBMB2JZQCo9BuXUsuO35ZSe4AA+n7q69YpL/WcJThbn2BsyX0UQghvoJ/bU9vW4hBnZgbgSADURz/PQaVLcMUSHqWCn5oXq/jSJzzRoorcyvJuQ+Pb9fx32zzv/WiCARCAfPfDCvKOqgBJyAGMGSXD8AAA",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 113,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 100,
+    "rawDate": "2026:11:12 13:08:38"
+  },
+  "source": {
+    "file": "American_A320_N656AW_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1830,
+    "bytes": 12842048,
+    "originalLongEdge": 6635
+  }
+}

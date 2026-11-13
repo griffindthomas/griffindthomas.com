@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-900",
+  "typeCode": "B738",
+  "operator": "American Airlines",
+  "registration": "N965AN",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:02:41",
+  "timezone": "America/Los_Angeles",
+  "image": "./american-b738-n965an-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAADQAwCdASoYABAAPu1iqk2ppaQiMAgBMB2JZQCsBa0BR5PAOMorj2AA+jqyWZOoATrcm0GJvAYB6sudXCVtkT9aP22XUSkkdSXU2D6MdYZbwKgMPuYvgLxVNPakuZfJ0Zr/8kuVxgY7P580y2gKg6dtdlWojkAOeWlP1ZwgNI2W2IkAldz0FwAA",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 135,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 100,
+    "rawDate": "2026:11:12 13:02:41"
+  },
+  "source": {
+    "file": "American_B738_N965AN_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1818,
+    "bytes": 14186955,
+    "originalLongEdge": 6101
+  }
+}

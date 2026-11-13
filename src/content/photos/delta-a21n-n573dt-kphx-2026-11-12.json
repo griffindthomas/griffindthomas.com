@@ -1,0 +1,33 @@
+{
+  "aircraft": "Airbus A321neo",
+  "typeCode": "A21N",
+  "operator": "Delta Airlines",
+  "registration": "N573DT",
+  "airport": "",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:07:31",
+  "timezone": "America/Los_Angeles",
+  "image": "./delta-a21n-n573dt-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRpIAAABXRUJQVlA4IIYAAAAwBACdASoYABAAPu1iqU2ppaOiMAgBMB2JZwDA3ywBR8CwZ2vf95sl24AA+o4AhfSlXbfelkduWilRGMuVhTglFwDLoiiLTrLP5Lxs/evcMR7xAZbtSELP+imkXLmw5zoz+38CWiaRULLigekk4XWdjeyxi0LoHuupiRS++kNQTkrmG3QAAA==",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 135,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 100,
+    "rawDate": "2026:11:12 13:07:31"
+  },
+  "source": {
+    "file": "Delta_A21N_N573DT_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1864,
+    "bytes": 14865889,
+    "originalLongEdge": 6128
+  }
+}

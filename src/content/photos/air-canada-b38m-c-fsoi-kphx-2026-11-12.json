@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737 MAX 8",
+  "typeCode": "B38M",
+  "operator": "Air Canada",
+  "registration": "C-FSOI",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:53:33",
+  "timezone": "America/Los_Angeles",
+  "image": "./air-canada-b38m-c-fsoi-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRqQAAABXRUJQVlA4IJgAAABwBACdASoYABAAPu1iqU2ppaQiMAgBMB2JZQCsBagWwAlQLj7D6Jvw2ab39gD+thHGc92l6zTMHz4paFHSEaiFdPATdqzxawAb2tcEXJRuz4ZS0W6ZoHnec89juwrIWpdhlgeynVRP5m95kkH9lKiP4DtabwL5yGkoAv8eeN/r8K1NLjKrF1UttmXbeZCGw3AkA2Qz3gAAAA==",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 100,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 250,
+    "rawDate": "2026:11:12 13:53:33"
+  },
+  "source": {
+    "file": "Air-Canada_B38M_C-FSOI_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1867,
+    "bytes": 12179919,
+    "originalLongEdge": 5632
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-900",
+  "typeCode": "B739",
+  "operator": "Alaska Airlines",
+  "registration": "N224AK",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:02:03",
+  "timezone": "America/Los_Angeles",
+  "image": "./alaska-b739-n224ak-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAACQAwCdASoYAA4APu1iqk4ppaQiMAgBMB2JZwAAUkl2B+guoIXoAP6o09/6N0Gudazj4PXldYDe1MNtCpSd2W7s451nduDPRc9ACl8n0+6nTRq08ONwkv36KvJKMN6diM7UkSmI92HdhGEDZAAAAA==",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 174,
+    "aperture": 8,
+    "shutter": "1/1250",
+    "iso": 100,
+    "rawDate": "2026:11:12 13:02:03"
+  },
+  "source": {
+    "file": "Alaska_B739_N224AK_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1605,
+    "bytes": 11117684,
+    "originalLongEdge": 6725
+  }
+}

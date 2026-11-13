@@ -1,0 +1,33 @@
+{
+  "aircraft": "Boeing 737-800",
+  "typeCode": "B738",
+  "operator": "Westjet",
+  "registration": "C-GJLZ",
+  "airport": "KPHX",
+  "location": "",
+  "caption": "",
+  "tags": [],
+  "featured": false,
+  "order": 0,
+  "draft": false,
+  "shotAt": "2026-11-12T13:11:04",
+  "timezone": "America/Los_Angeles",
+  "image": "./westjet-b738-c-gjlz-kphx-2026-11-12.jpg",
+  "lqip": "data:image/webp;base64,UklGRqAAAABXRUJQVlA4IJQAAAAwBACdASoYAA8APu1iqU2ppaOiMAgBMB2JZwC7ACEtNsYQGgSZpLEazAAA9dSewHjT3TN8TLpyEUR/SGXZ3an47gJBeDP0UV+wz9Svq3J+4yaVxffR9UnrMqbbf3/JtFBB1WCVxjhHZC/hgcqfqobVtM0PoxV+YlEcFIyTwSrMtD8vVpZ4LPSISwEdAA+oQV9a1xgA",
+  "exif": {
+    "camera": "Canon EOS R7",
+    "lens": "RF100-400mm F5.6-8 IS USM",
+    "focalLength": 100,
+    "aperture": 8,
+    "shutter": "1/1000",
+    "iso": 100,
+    "rawDate": "2026:11:12 13:11:04"
+  },
+  "source": {
+    "file": "Westjet_B738_C-GJLZ_KPHX_2026-11-12.jpg",
+    "width": 2800,
+    "height": 1736,
+    "bytes": 16327109,
+    "originalLongEdge": 6523
+  }
+}
